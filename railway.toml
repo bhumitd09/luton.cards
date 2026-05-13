@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+buildCommand = "./node_modules/.bin/prisma generate && npm run build"
+
+[deploy]
+# Direct binary paths skip npx package resolution overhead on each cold start
+startCommand = "./node_modules/.bin/prisma migrate deploy && node node_modules/next/dist/bin/next start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

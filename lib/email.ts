@@ -1,0 +1,277 @@
+// Email sending utility using Resend
+// Only sends if RESEND_API_KEY is configured — silently skips if not
+
+export interface OrderEmailData {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  items: { productName: string; quantity: number; price: number }[]
+  subtotal: number
+  shippingCost: number
+  discount: number
+  total: number
+  shippingMethod?: string
+  shippingAddress?: string
+  trackingNumber?: string
+  trackingCarrier?: string
+}
+
+function formatPrice(pence: number): string {
+  return `£${pence.toFixed(2)}`
+}
+
+function buildItemRows(items: OrderEmailData['items']): string {
+  return items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;">${item.productName}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;text-align:center;">${item.quantity}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;text-align:right;">${formatPrice(item.price * item.quantity)}</td>
+    </tr>`
+    )
+    .join('')
+}
+
+function buildOrderConfirmationHtml(data: OrderEmailData): string {
+  const itemRows = buildItemRows(data.items)
+  const discountRow =
+    data.discount > 0
+      ? `<tr>
+          <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Discount</td>
+          <td style="padding:6px 12px;font-size:13px;color:#EC1E79;text-align:right;">-${formatPrice(data.discount)}</td>
+        </tr>`
+      : ''
+  const addressBlock = data.shippingAddress
+    ? `<div style="margin-top:24px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #eee;">
+        <div style="font-size:12px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:6px;">Shipping Address</div>
+        <div style="font-size:14px;color:#333;line-height:1.5;">${data.shippingAddress.replace(/,\s*/g, '<br>')}</div>
+      </div>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Order Confirmed</title></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#EC1E79;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+            <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">LUTON CARDS</div>
+            <div style="font-size:28px;font-weight:700;color:#fff;margin-top:12px;">Order Confirmed &#10003;</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">Order #${data.orderId.slice(-8).toUpperCase()}</div>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="background:#fff;padding:40px;">
+            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${data.customerName},</p>
+            <p style="font-size:15px;color:#555;margin:0 0 28px 0;line-height:1.6;">Thanks for your order &mdash; we&rsquo;ll get it packed up and sent your way.</p>
+
+            <!-- Order table -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:8px;overflow:hidden;border-collapse:collapse;">
+              <thead>
+                <tr style="background:#f9f9f9;">
+                  <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Item</th>
+                  <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Qty</th>
+                  <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemRows}
+              </tbody>
+            </table>
+
+            <!-- Totals -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+              <tr>
+                <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Subtotal</td>
+                <td style="padding:6px 12px;font-size:13px;color:#333;text-align:right;">${formatPrice(data.subtotal)}</td>
+              </tr>
+              <tr>
+                <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Shipping${data.shippingMethod ? ` (${data.shippingMethod})` : ''}</td>
+                <td style="padding:6px 12px;font-size:13px;color:#333;text-align:right;">${data.shippingCost > 0 ? formatPrice(data.shippingCost) : 'Free'}</td>
+              </tr>
+              ${discountRow}
+              <tr style="border-top:2px solid #eee;">
+                <td colspan="2" style="padding:10px 12px;font-size:15px;font-weight:700;color:#111;">Total</td>
+                <td style="padding:10px 12px;font-size:15px;font-weight:700;color:#111;text-align:right;">${formatPrice(data.total)}</td>
+              </tr>
+            </table>
+
+            ${addressBlock}
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f9f9f9;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
+            <p style="font-size:13px;color:#999;margin:0 0 4px 0;">Questions? Email us at <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
+            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Premium Pokemon Cards</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
+
+function buildShippingNotificationHtml(data: OrderEmailData): string {
+  const tracking = data.trackingNumber ?? ''
+  const carrier = (data.trackingCarrier ?? 'Other').trim()
+
+  let trackingLink = ''
+  if (carrier.toLowerCase().includes('royal mail')) {
+    trackingLink = `https://www.royalmail.com/track-your-item#/tracking-results/${tracking}`
+  } else if (carrier.toLowerCase().includes('dpd')) {
+    trackingLink = `https://track.dpd.co.uk/search?reference=${tracking}`
+  }
+
+  const trackingBlock = trackingLink
+    ? `<a href="${trackingLink}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#EC1E79;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;">Track Your Parcel &rarr;</a>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Your Order Is On Its Way</title></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#EC1E79;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
+            <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">LUTON CARDS</div>
+            <div style="font-size:28px;font-weight:700;color:#fff;margin-top:12px;">Your order is on its way! &#128230;</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">Order #${data.orderId.slice(-8).toUpperCase()}</div>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="background:#fff;padding:40px;">
+            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${data.customerName},</p>
+            <p style="font-size:15px;color:#555;margin:0 0 28px 0;line-height:1.6;">Great news &mdash; your order has been shipped and is on its way to you!</p>
+
+            <!-- Tracking box -->
+            <div style="background:#f0fdf9;border:2px solid #EC1E79;border-radius:10px;padding:24px;text-align:center;">
+              <div style="font-size:12px;font-weight:700;color:#EC1E79;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Tracking Number</div>
+              <div style="font-size:22px;font-weight:900;color:#111;letter-spacing:2px;">${tracking}</div>
+              <div style="font-size:13px;color:#666;margin-top:6px;">Carrier: ${carrier}</div>
+              ${trackingBlock}
+            </div>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f9f9f9;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
+            <p style="font-size:13px;color:#999;margin:0 0 4px 0;">Questions? Email us at <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
+            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Premium Pokemon Cards</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
+
+function buildAdminNotificationHtml(data: OrderEmailData): string {
+  const itemLines = data.items
+    .map((i) => `  - ${i.productName} x${i.quantity} @ ${formatPrice(i.price)} each`)
+    .join('\n')
+
+  const lines = [
+    `New order received: #${data.orderId.slice(-8).toUpperCase()}`,
+    ``,
+    `Customer: ${data.customerName} <${data.customerEmail}>`,
+    ``,
+    `Items:`,
+    itemLines,
+    ``,
+    `Subtotal: ${formatPrice(data.subtotal)}`,
+    `Shipping: ${formatPrice(data.shippingCost)}`,
+    data.discount > 0 ? `Discount: -${formatPrice(data.discount)}` : null,
+    `Total: ${formatPrice(data.total)}`,
+    data.shippingAddress ? `\nShip to: ${data.shippingAddress}` : null,
+    data.shippingMethod ? `Method: ${data.shippingMethod}` : null,
+  ]
+    .filter((l) => l !== null)
+    .join('\n')
+
+  const htmlLines = lines.replace(/\n/g, '<br>')
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>New Order</title></head>
+<body style="margin:0;padding:32px;font-family:monospace;font-size:14px;color:#111;background:#fff;line-height:1.8;">
+  <div style="white-space:pre-wrap;">${htmlLines}</div>
+</body>
+</html>`
+}
+
+async function sendEmail(payload: {
+  from: string
+  to: string
+  subject: string
+  html: string
+}): Promise<void> {
+  const key = process.env.RESEND_API_KEY
+  if (!key) return
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error('Resend API error:', res.status, text)
+  }
+}
+
+const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@lutoncards.co.uk'
+
+export async function sendOrderConfirmation(data: OrderEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: FROM,
+    to: data.customerEmail,
+    subject: `Order confirmed — #${data.orderId.slice(-8).toUpperCase()}`,
+    html: buildOrderConfirmationHtml(data),
+  })
+}
+
+export async function sendAdminOrderNotification(data: OrderEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: FROM,
+    to: ADMIN_EMAIL,
+    subject: `New order #${data.orderId.slice(-8).toUpperCase()} from ${data.customerName}`,
+    html: buildAdminNotificationHtml(data),
+  })
+}
+
+export async function sendShippingNotification(data: OrderEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: FROM,
+    to: data.customerEmail,
+    subject: `Your order is on its way! — #${data.orderId.slice(-8).toUpperCase()}`,
+    html: buildShippingNotificationHtml(data),
+  })
+}

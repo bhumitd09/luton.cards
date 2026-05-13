@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?  @db.Text
+  price        Float
+  comparePrice Float?
+  stock        Int      @default(0)
+  category     String
+  game         String   @default("pokemon") // 'pokemon' | 'one-piece'
+  images       String[]
+  grade        String?
+  grader       String?
+  featured     Boolean  @default(false)
+  active       Boolean  @default(true)
+  tags         String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@index([game])
+  @@index([featured])
+  @@index([active])
+}
+
+model Content {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("text")
+  label     String?
+  updatedAt DateTime @updatedAt
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  size      Int
+  mimeType  String
+  alt       String?
+  createdAt DateTime @default(now())
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  role         String    @default("admin")
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  email            String
+  name             String
+  phone            String?
+  address          String?
+  status           String      @default("pending")
+  total            Float
+  notes            String?
+  shippingLine1    String?
+  shippingLine2    String?
+  shippingCity     String?
+  shippingPostcode String?
+  shippingCountry  String?     @default("GB")
+  shippingMethod   String?
+  shippingCost     Float?      @default(0)
+  trackingNumber   String?
+  trackingCarrier  String?
+  // Optional link to registered customer (guest orders leave this null)
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items            OrderItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([userId])
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  productName String
+  price       Float
+  quantity    Int
+}
+
+model ShippingZone {
+  id        String         @id @default(cuid())
+  name      String
+  countries String[]
+  active    Boolean        @default(true)
+  rates     ShippingRate[]
+  createdAt DateTime       @default(now())
+}
+
+model ShippingRate {
+  id         String       @id @default(cuid())
+  zoneId     String
+  zone       ShippingZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  name       String
+  price      Float
+  minDays    Int          @default(1)
+  maxDays    Int          @default(5)
+  freeAbove  Float?
+  active     Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+}
+
+model Discount {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  type      String    // 'percentage' | 'fixed'
+  value     Float     // e.g. 10 for 10% or £10 off
+  minOrder  Float?    // minimum order value to apply
+  maxUses   Int?      // null = unlimited
+  uses      Int       @default(0)
+  active    Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  name       String
+  location   String?
+  rating     Int      @default(5)   // 1-5
+  body       String   @db.Text
+  productRef String?  // optional product name reference
+  approved   Boolean  @default(false)
+  featured   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model SyncLog {
+  id        String   @id @default(cuid())
+  source    String   @default("collecttcg")
+  status    String   // "success" | "error" | "partial"
+  message   String?
+  created   Int      @default(0)   // products created
+  updated   Int      @default(0)   // products updated
+  skipped   Int      @default(0)
+  duration  Int      @default(0)   // ms
+  createdAt DateTime @default(now())
+}
+
+model SellSubmission {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  game        String   // 'pokemon' | 'one-piece' | 'mixed'
+  details     String   @db.Text
+  estimate    String?  // collector's estimated value (free-text)
+  images      String[]
+  status      String   @default("new") // 'new' | 'reviewing' | 'offered' | 'accepted' | 'declined' | 'closed'
+  adminNotes  String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  phone         String?
+  marketingOptIn Boolean  @default(false)
+  // Default shipping address (saved at checkout for convenience)
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  postcode      String?
+  country       String?   @default("GB")
+  createdAt     DateTime  @default(now())
+  lastLogin     DateTime?
+  orders        Order[]
+}

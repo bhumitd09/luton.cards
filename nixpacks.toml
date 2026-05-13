@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["nodejs_18", "openssl"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = [
+  "./node_modules/.bin/prisma generate",
+  "npm run build"
+]
+
+[start]
+# Use direct binary instead of npx — avoids package resolution overhead on every cold start
+cmd = "./node_modules/.bin/prisma migrate deploy && node node_modules/next/dist/bin/next start"

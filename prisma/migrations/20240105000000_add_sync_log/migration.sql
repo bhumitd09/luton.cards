@@ -1,0 +1,12 @@
+CREATE TABLE "SyncLog" (
+  "id" TEXT NOT NULL,
+  "source" TEXT NOT NULL DEFAULT 'collecttcg',
+  "status" TEXT NOT NULL,
+  "message" TEXT,
+  "created" INTEGER NOT NULL DEFAULT 0,
+  "updated" INTEGER NOT NULL DEFAULT 0,
+  "skipped" INTEGER NOT NULL DEFAULT 0,
+  "duration" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "SyncLog_pkey" PRIMARY KEY ("id")
+);
