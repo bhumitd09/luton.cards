@@ -43,6 +43,17 @@ async function main() {
     { key: 'footer_tagline', value: 'Pokémon and One Piece trading cards from Luton, UK. Properly sourced, properly priced.', type: 'text', label: 'Footer Tagline' },
     { key: 'instagram_handle', value: 'lutoncards', type: 'text', label: 'Instagram Handle' },
     { key: 'instagram_posts', value: '[]', type: 'json', label: 'Instagram Posts' },
+    {
+      key: 'team_members',
+      value: JSON.stringify([
+        { name: 'Bhumit', role: 'Co-Founder & Developer', tag: 'Tech & Operations', photo: '', bio: 'Builds and runs the tech behind Luton Cards. Keeps the site, stock and checkout running so the rest of the team can focus on the cards.' },
+        { name: 'Bash', role: 'Co-Founder & Buyer', tag: 'Sourcing & Buying', photo: '', bio: 'Sources the stock. Hunts singles, sealed product and graded slabs across the UK — if it goes on the site, Bash has held it first.' },
+        { name: 'Ramz', role: 'Co-Founder & Social Media', tag: 'Community & Content', photo: '', bio: 'Runs the socials and the community on Instagram, TikTok and YouTube — making sure collectors know what we have and what is dropping next.' },
+        { name: 'Allan', role: 'Co-Founder & Grading', tag: 'Grading Specialist', photo: '', bio: 'The grading specialist. Years of PSA, CGC and ACE submissions — every slab on the site has been through his hands.' },
+      ]),
+      type: 'json',
+      label: 'Team Members',
+    },
   ]
 
   for (const content of contents) {

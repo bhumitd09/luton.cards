@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, MapPin, Trophy, Users } from 'lucide-react'
 import { Header } from '@/components/header'
@@ -15,53 +15,62 @@ import { AnimatedGradientText } from '@/components/magicui/animated-gradient-tex
 type TeamMember = {
   name: string
   role: string
-  initials: string
   bio: string
   tag: string
+  photo?: string
 }
 
-const TEAM: TeamMember[] = [
+const DEFAULT_TEAM: TeamMember[] = [
   {
     name: 'Bhumit',
-    role: 'Co-Founder',
-    initials: 'BH',
+    role: 'Co-Founder & Developer',
     bio: 'Builds and runs the tech. Keeps the site, stock and checkout running smooth.',
     tag: 'Tech & Operations',
   },
   {
     name: 'Bash',
-    role: 'Co-Founder',
-    initials: 'BA',
+    role: 'Co-Founder & Buyer',
     bio: 'Sources the stock. Hunts singles, sealed product and graded slabs across the UK.',
     tag: 'Sourcing & Buying',
   },
   {
     name: 'Ramz',
-    role: 'Co-Founder',
-    initials: 'RZ',
+    role: 'Co-Founder & Social Media',
     bio: 'Runs the socials and the community on Instagram, TikTok and YouTube.',
     tag: 'Community & Content',
   },
   {
     name: 'Allan',
-    role: 'Co-Founder',
-    initials: 'AL',
+    role: 'Co-Founder & Grading',
     bio: 'The grading specialist. Years of PSA, CGC and ACE submissions under his belt.',
     tag: 'Grading Specialist',
   },
 ]
 
-function Avatar({ initials }: { initials: string }) {
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function Avatar({ name, photo }: { name: string; photo?: string }) {
   return (
     <div className="relative mb-6 size-[120px]">
       {/* outer glow ring */}
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#EC1E79] via-[#FF4DA6] to-[#7e1247] opacity-90 blur-[2px]" />
-      {/* inner */}
-      <div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-gradient-to-br from-[#1a0612] via-[#2b0a1f] to-[#0a0a0a]">
-        <span className="bg-gradient-to-br from-white via-white to-white/70 bg-clip-text text-[2.6rem] font-black tracking-[-0.04em] text-transparent">
-          {initials}
-        </span>
-      </div>
+      {/* inner — photo if available, else gradient with initials */}
+      {photo ? (
+        <div className="absolute inset-[3px] overflow-hidden rounded-full bg-neutral-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo} alt={name} className="size-full object-cover" />
+        </div>
+      ) : (
+        <div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-gradient-to-br from-[#1a0612] via-[#2b0a1f] to-[#0a0a0a]">
+          <span className="bg-gradient-to-br from-white via-white to-white/70 bg-clip-text text-[2.6rem] font-black tracking-[-0.04em] text-transparent">
+            {initialsOf(name)}
+          </span>
+        </div>
+      )}
       {/* tiny accent dot */}
       <div className="absolute -right-1 bottom-1 size-3 rounded-full border-2 border-white bg-[#EC1E79]" />
     </div>
@@ -81,17 +90,23 @@ function TeamCard({ member, index }: { member: TeamMember; index: number }) {
       className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-7 transition-transform duration-300 hover:-translate-y-1"
     >
       <div className="flex flex-col items-center text-center">
-        <Avatar initials={member.initials} />
+        <Avatar name={member.name} photo={member.photo} />
         <h3 className="m-0 text-[1.35rem] font-black tracking-[-0.02em] text-neutral-900">
           {member.name}
         </h3>
-        <p className="m-0 mb-3 mt-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
-          {member.role}
-        </p>
-        <div className="mb-4 inline-block rounded-full bg-[#fff0f7] px-3 py-1 text-[11px] font-bold text-[#7e1247]">
-          {member.tag}
-        </div>
-        <p className="m-0 text-[14px] leading-[1.7] text-neutral-500">{member.bio}</p>
+        {member.role && (
+          <p className="m-0 mb-3 mt-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
+            {member.role}
+          </p>
+        )}
+        {member.tag && (
+          <div className="mb-4 inline-block rounded-full bg-[#fff0f7] px-3 py-1 text-[11px] font-bold text-[#7e1247]">
+            {member.tag}
+          </div>
+        )}
+        {member.bio && (
+          <p className="m-0 text-[14px] leading-[1.7] text-neutral-500">{member.bio}</p>
+        )}
       </div>
       {hovered && <BorderBeam size={240} duration={9} colorFrom="#EC1E79" colorTo="#FF80B8" borderWidth={1.5} />}
     </motion.div>
@@ -100,6 +115,25 @@ function TeamCard({ member, index }: { member: TeamMember; index: number }) {
 
 export default function AboutPage() {
   const particlesRef = useRef<HTMLDivElement>(null)
+  const [team, setTeam] = useState<TeamMember[]>(DEFAULT_TEAM)
+
+  useEffect(() => {
+    fetch('/api/content?keys=team_members')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (!data?.team_members) return
+        try {
+          const parsed = JSON.parse(String(data.team_members))
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTeam(parsed.filter((m: unknown): m is TeamMember => {
+              const x = m as TeamMember
+              return !!x && typeof x.name === 'string' && x.name.length > 0
+            }))
+          }
+        } catch {}
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <>
@@ -190,7 +224,7 @@ export default function AboutPage() {
             {[
               { icon: MapPin, value: 'Luton, UK', label: 'Based in' },
               { icon: Trophy, value: '2025', label: 'Established' },
-              { icon: Users, value: '4', label: 'Founders', isNumber: true },
+              { icon: Users, value: String(team.length), label: team.length === 1 ? 'Founder' : 'Founders', isNumber: true },
             ].map((stat, i) => {
               const Icon = stat.icon
               return (
@@ -220,9 +254,17 @@ export default function AboutPage() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {TEAM.map((member, i) => (
-                <TeamCard key={member.name} member={member} index={i} />
+            <div
+              className={[
+                'grid grid-cols-1 gap-5 sm:grid-cols-2',
+                team.length === 3 ? 'lg:grid-cols-3' :
+                team.length >= 4 ? 'lg:grid-cols-4' :
+                team.length === 2 ? 'lg:grid-cols-2' :
+                'lg:grid-cols-1',
+              ].join(' ')}
+            >
+              {team.map((member, i) => (
+                <TeamCard key={member.name + i} member={member} index={i} />
               ))}
             </div>
           </div>
