@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// Disable Next.js route-level caching. We still cache at the CDN/browser layer
+// via the Cache-Control response header — that gives fast responses for public
+// visitors while ensuring admin testing always sees fresh data.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Public Instagram feed endpoint.
  *
@@ -81,7 +87,9 @@ async function fetchFromGraph(token: string, limit = 8): Promise<IGPost[] | null
   try {
     const fields = 'id,caption,media_url,media_type,permalink,thumbnail_url,timestamp'
     const url = `https://graph.instagram.com/me/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`
-    const res = await fetch(url, { next: { revalidate: 900 } }) // 15-min cache
+    // No internal Next.js fetch cache — outer route is force-dynamic, and the
+    // response Cache-Control header handles CDN/browser caching for public visitors.
+    const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) {
       console.warn('IG graph fetch failed:', res.status, await res.text())
       return null
