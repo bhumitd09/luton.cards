@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Search, X, TrendingUp, ShoppingBag, DollarSign } from 'lucide-react'
+import { Users, Search, X, TrendingUp, ShoppingBag, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -325,12 +325,18 @@ function SlideOver({
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 12
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [sortBy, setSortBy] = useState<SortBy>('spend')
+  const [page, setPage] = useState(1)
+
+  // Reset to page 1 when filter/sort changes
+  useEffect(() => { setPage(1) }, [search, sortBy])
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
@@ -363,6 +369,10 @@ export default function CustomersPage() {
     if (sortBy === 'orders') return b.totalOrders - a.totalOrders
     return new Date(b.lastOrderAt).getTime() - new Date(a.lastOrderAt).getTime()
   })
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   // Stats
   const totalRevenue = customers.reduce((sum, c) => sum + c.totalSpent, 0)
@@ -521,7 +531,7 @@ export default function CustomersPage() {
           </div>
 
           {/* Rows */}
-          {sorted.map((customer, i) => {
+          {paged.map((customer, i) => {
             const status = getCustomerStatus(customer.totalOrders)
             return (
               <motion.div
@@ -533,8 +543,8 @@ export default function CustomersPage() {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '2fr 80px 120px 130px 100px 90px',
-                  padding: '0.875rem 1.25rem',
-                  borderBottom: i < sorted.length - 1 ? '1px solid #1a1a1a' : 'none',
+                  padding: '0.6rem 1.25rem',
+                  borderBottom: i < paged.length - 1 ? '1px solid #1a1a1a' : 'none',
                   cursor: 'pointer',
                   transition: 'background 0.15s',
                   alignItems: 'center',
@@ -613,6 +623,61 @@ export default function CustomersPage() {
               </motion.div>
             )
           })}
+
+          {/* Pagination footer */}
+          {sorted.length > PAGE_SIZE && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.75rem 1.25rem',
+              borderTop: '1px solid #1f1f1f',
+              background: '#0f0f10',
+            }}>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                Showing <span style={{ color: '#d1d5db', fontWeight: 700 }}>
+                  {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)}
+                </span> of {sorted.length} customers
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                    padding: '0.35rem 0.7rem', borderRadius: '6px',
+                    border: '1px solid #1f1f1f',
+                    background: page <= 1 ? '#0a0a0a' : '#111',
+                    color: page <= 1 ? '#4b5563' : '#9ca3af',
+                    fontSize: '0.75rem', fontWeight: 700,
+                    cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <ChevronLeft size={12} /> Prev
+                </button>
+                <span style={{ fontSize: '0.75rem', color: '#6b7280', padding: '0 0.5rem' }}>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                    padding: '0.35rem 0.7rem', borderRadius: '6px',
+                    border: '1px solid #1f1f1f',
+                    background: page >= totalPages ? '#0a0a0a' : '#111',
+                    color: page >= totalPages ? '#4b5563' : '#9ca3af',
+                    fontSize: '0.75rem', fontWeight: 700,
+                    cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Next <ChevronRight size={12} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

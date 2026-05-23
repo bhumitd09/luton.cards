@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback, DragEvent, ChangeEvent } from 'react'
-import { X, Loader2, GripVertical } from 'lucide-react'
+import { X, Loader2, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ function uid(): string {
 export function ImageUploader({
   images,
   onChange,
-  max = 5,
+  max = 8,
   label = 'Images',
 }: ImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -114,6 +114,24 @@ export function ImageUploader({
 
   const removeImage = (index: number) => {
     onChange(images.filter((_, i) => i !== index))
+  }
+
+  // ── Reorder ───────────────────────────────────────────────────────────────
+
+  const moveImage = (from: number, to: number) => {
+    if (to < 0 || to >= images.length) return
+    const next = [...images]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    onChange(next)
+  }
+
+  const setAsMain = (index: number) => {
+    if (index === 0) return
+    const next = [...images]
+    const [promoted] = next.splice(index, 1)
+    next.unshift(promoted)
+    onChange(next)
   }
 
   const canUploadMore = images.length + uploading.length < max
@@ -223,6 +241,7 @@ export function ImageUploader({
           {images.map((url, i) => (
             <div
               key={url + i}
+              className="img-tile"
               style={{
                 position: 'relative',
                 borderRadius: '10px',
@@ -231,14 +250,10 @@ export function ImageUploader({
                 background: '#161616',
               }}
             >
-              {/* Drag handle */}
-              <div style={{
-                position: 'absolute', top: '4px', left: '4px',
-                color: '#4b5563', cursor: 'grab', zIndex: 1,
-                display: 'flex', alignItems: 'center',
-              }}>
-                <GripVertical size={12} />
-              </div>
+              <style>{`
+                .img-tile .img-overlay { opacity: 0; transition: opacity 0.15s ease; }
+                .img-tile:hover .img-overlay { opacity: 1; }
+              `}</style>
 
               <div style={{ width: '100%', paddingBottom: '100%', position: 'relative', borderRadius: '10px', overflow: 'hidden' }}>
                 <img
@@ -254,29 +269,100 @@ export function ImageUploader({
                     el.style.opacity = '0.3'
                   }}
                 />
+
+                {/* MAIN badge on first image */}
                 {i === 0 && (
                   <span style={{
                     position: 'absolute', bottom: '4px', left: '4px',
                     background: 'rgba(0,0,0,0.75)', color: '#EC1E79',
                     fontSize: '0.6rem', fontWeight: 700,
                     padding: '1px 5px', borderRadius: '4px',
+                    display: 'inline-flex', alignItems: 'center', gap: '2px',
+                    zIndex: 3,
                   }}>
-                    MAIN
+                    <Star size={9} fill="#EC1E79" /> MAIN
                   </span>
                 )}
+
+                {/* Hover overlay with reorder controls */}
+                <div
+                  className="img-overlay"
+                  style={{
+                    position: 'absolute', inset: 0,
+                    background: 'rgba(0,0,0,0.55)',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center',
+                    gap: '0.35rem', zIndex: 2,
+                  }}
+                >
+                  {/* Reorder row */}
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => moveImage(i, i - 1)}
+                      disabled={i === 0}
+                      title="Move left"
+                      style={{
+                        width: 24, height: 24, borderRadius: 6,
+                        background: i === 0 ? '#2a2a2a' : '#fff',
+                        color: i === 0 ? '#4b5563' : '#000',
+                        border: 'none', cursor: i === 0 ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      <ChevronLeft size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImage(i, i + 1)}
+                      disabled={i === images.length - 1}
+                      title="Move right"
+                      style={{
+                        width: 24, height: 24, borderRadius: 6,
+                        background: i === images.length - 1 ? '#2a2a2a' : '#fff',
+                        color: i === images.length - 1 ? '#4b5563' : '#000',
+                        border: 'none', cursor: i === images.length - 1 ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 0,
+                      }}
+                    >
+                      <ChevronRight size={13} />
+                    </button>
+                  </div>
+
+                  {/* Set as main button (only for non-first images) */}
+                  {i > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAsMain(i)}
+                      title="Make this the main image"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                        padding: '3px 7px', borderRadius: 5,
+                        background: '#EC1E79', color: '#fff', border: 'none',
+                        fontSize: '0.65rem', fontWeight: 700,
+                        cursor: 'pointer', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Star size={9} /> Set main
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Remove button */}
               <button
                 type="button"
                 onClick={() => removeImage(i)}
+                title="Remove"
                 style={{
                   position: 'absolute', top: '-6px', right: '-6px',
                   width: '20px', height: '20px', borderRadius: '50%',
                   background: '#ef4444', border: '2px solid #0a0a0a',
                   cursor: 'pointer', display: 'flex',
                   alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', padding: 0, zIndex: 2,
+                  color: '#fff', padding: 0, zIndex: 3,
                 }}
               >
                 <X size={10} />

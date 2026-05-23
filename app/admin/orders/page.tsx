@@ -991,7 +991,7 @@ export default function OrdersPage() {
   const fetchOrders = useCallback(async (status: StatusFilter, page: number, searchQuery: string) => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' })
+      const params = new URLSearchParams({ page: String(page), limit: '12' })
       if (status !== 'all') params.set('status', status)
       if (searchQuery.trim()) params.set('search', searchQuery.trim())
       const res = await fetch(`/api/admin/orders?${params}`)

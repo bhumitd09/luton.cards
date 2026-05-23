@@ -111,7 +111,7 @@ function buildOrderConfirmationHtml(data: OrderEmailData): string {
         <tr>
           <td style="background:#f9f9f9;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
             <p style="font-size:13px;color:#999;margin:0 0 4px 0;">Questions? Email us at <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
-            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Premium Pokemon Cards</p>
+            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK</p>
           </td>
         </tr>
 
@@ -174,7 +174,7 @@ function buildShippingNotificationHtml(data: OrderEmailData): string {
         <tr>
           <td style="background:#f9f9f9;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
             <p style="font-size:13px;color:#999;margin:0 0 4px 0;">Questions? Email us at <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
-            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Premium Pokemon Cards</p>
+            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK</p>
           </td>
         </tr>
 
