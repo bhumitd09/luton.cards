@@ -21,6 +21,7 @@ import {
   Boxes,
   Star,
   Plug,
+  Upload,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -216,6 +217,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navManage = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/admin/products', icon: Package, label: 'Products', badgeKey: 'outOfStockProducts' as const, badgeColor: '#ef4444' },
+    { href: '/admin/import', icon: Upload, label: 'Bulk Import' },
     { href: '/admin/inventory', icon: Boxes, label: 'Inventory' },
     { href: '/admin/content', icon: FileText, label: 'Content' },
     { href: '/admin/pages', icon: Globe, label: 'Pages' },
