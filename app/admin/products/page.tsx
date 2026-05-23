@@ -603,7 +603,7 @@ export default function AdminProductsPage() {
 
   // Pagination
   const [page, setPage] = useState(1)
-  const LIMIT = 20
+  const LIMIT = 12
 
   // Modal / edit
   const [editProduct, setEditProduct] = useState<Product | null | 'new'>()

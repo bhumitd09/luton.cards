@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Instagram, Plus, Trash2, GripVertical, Check, AlertCircle, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { Instagram, Plus, Trash2, GripVertical, Check, AlertCircle, ExternalLink, Image as ImageIcon, Key, RefreshCw, Zap } from 'lucide-react'
 
 type IGPost = {
   url: string
@@ -11,46 +11,66 @@ type IGPost = {
 }
 
 type Status = 'idle' | 'saving' | 'saved' | 'error'
+type Source = 'graph' | 'manual' | 'empty'
 
-const MAX_POSTS = 8
+const MAX_POSTS = 12
 
 export default function AdminInstagramPage() {
   const [handle, setHandle] = useState('')
+  const [token, setToken] = useState('')
+  const [tokenRefreshedAt, setTokenRefreshedAt] = useState<string | null>(null)
   const [posts, setPosts] = useState<IGPost[]>([])
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [previewPosts, setPreviewPosts] = useState<IGPost[] | null>(null)
+  const [previewSource, setPreviewSource] = useState<Source | null>(null)
+  const [testing, setTesting] = useState(false)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/content/instagram_handle').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/admin/content/instagram_access_token').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/admin/content/instagram_token_refreshed_at').then(r => (r.ok ? r.json() : null)).catch(() => null),
       fetch('/api/admin/content/instagram_posts').then(r => (r.ok ? r.json() : null)).catch(() => null),
     ])
-      .then(([handleRes, postsRes]) => {
-        if (handleRes?.value) setHandle(String(handleRes.value).replace(/^@/, ''))
-        if (postsRes?.value) {
+      .then(([h, t, r, p]) => {
+        if (h?.value) setHandle(String(h.value).replace(/^@/, ''))
+        if (t?.value) setToken(String(t.value))
+        if (r?.value) setTokenRefreshedAt(String(r.value))
+        if (p?.value) {
           try {
-            const parsed = JSON.parse(String(postsRes.value))
-            if (Array.isArray(parsed)) {
-              setPosts(parsed.filter(p => p && typeof p.url === 'string'))
-            }
-          } catch {
-            // ignore
-          }
+            const parsed = JSON.parse(String(p.value))
+            if (Array.isArray(parsed)) setPosts(parsed.filter(x => x && typeof x.url === 'string'))
+          } catch {}
         }
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [])
 
-  const updatePost = (i: number, patch: Partial<IGPost>) => {
+  const testConnection = async () => {
+    setTesting(true)
+    setError(null)
+    setPreviewPosts(null)
+    setPreviewSource(null)
+    try {
+      const res = await fetch('/api/instagram', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Fetch failed')
+      const data = await res.json()
+      setPreviewPosts(Array.isArray(data.posts) ? data.posts : [])
+      setPreviewSource(data.source as Source)
+    } catch {
+      setError('Could not reach /api/instagram')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const updatePost = (i: number, patch: Partial<IGPost>) =>
     setPosts(prev => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)))
-  }
   const removePost = (i: number) => setPosts(prev => prev.filter((_, idx) => idx !== i))
-  const addPost = () => {
-    if (posts.length >= MAX_POSTS) return
-    setPosts(prev => [...prev, { url: '', image: '', caption: '' }])
-  }
+  const addPost = () => posts.length < MAX_POSTS && setPosts(prev => [...prev, { url: '', image: '', caption: '' }])
   const movePost = (i: number, dir: -1 | 1) => {
     setPosts(prev => {
       const next = [...prev]
@@ -64,31 +84,18 @@ export default function AdminInstagramPage() {
   const handleSave = async () => {
     setStatus('saving')
     setError(null)
-
-    // Validate
     const cleanedPosts = posts
       .map(p => ({ url: p.url.trim(), image: p.image.trim(), caption: (p.caption || '').trim() }))
       .filter(p => p.url || p.image)
     for (const p of cleanedPosts) {
       if (!p.url || !p.image) {
-        setError('Each post needs both an Instagram URL and an image URL.')
-        setStatus('error')
-        return
-      }
-      if (!p.url.startsWith('http')) {
-        setError(`Invalid Instagram URL: "${p.url}"`)
-        setStatus('error')
-        return
-      }
-      if (!p.image.startsWith('http')) {
-        setError(`Invalid image URL: "${p.image}"`)
+        setError('Each manual post needs both Instagram URL and image URL.')
         setStatus('error')
         return
       }
     }
-
     try {
-      await Promise.all([
+      const writes = [
         fetch('/api/admin/content/instagram_handle', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -99,27 +106,49 @@ export default function AdminInstagramPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ value: JSON.stringify(cleanedPosts), type: 'json', label: 'Instagram Posts' }),
         }),
-      ])
+      ]
+      // Only write the token if it's been touched (avoid storing whitespace)
+      if (token.trim()) {
+        writes.push(
+          fetch('/api/admin/content/instagram_access_token', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: token.trim(), type: 'text', label: 'Instagram Access Token' }),
+          }),
+        )
+        // Mark "refreshed now" so the auto-refresh waits 50 days
+        writes.push(
+          fetch('/api/admin/content/instagram_token_refreshed_at', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: new Date().toISOString(), type: 'text', label: 'Instagram Token Refreshed At' }),
+          }),
+        )
+      }
+      await Promise.all(writes)
       setStatus('saved')
+      setTokenRefreshedAt(token.trim() ? new Date().toISOString() : tokenRefreshedAt)
       setTimeout(() => setStatus('idle'), 1800)
     } catch {
-      setError('Failed to save. Try again.')
+      setError('Save failed. Try again.')
       setStatus('error')
     }
   }
+
+  const sourceLabel = previewSource === 'graph' ? 'Live from Instagram (Graph API)' : previewSource === 'manual' ? 'Manual posts (fallback)' : 'No posts found'
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-6 text-white sm:p-8">
       <div className="mx-auto max-w-[1100px]">
         {/* header */}
-        <div className="mb-7 flex items-start justify-between gap-4 flex-wrap">
+        <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <p className="m-0 mb-2 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
+            <p className="m-0 mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
               <Instagram size={11} /> Content
             </p>
-            <h1 className="m-0 text-[1.85rem] font-black tracking-[-0.025em]">Instagram Feed</h1>
-            <p className="m-0 mt-1.5 text-sm text-neutral-400">
-              Curate which Instagram posts appear on the homepage. Up to {MAX_POSTS} posts.
+            <h1 className="m-0 text-[1.6rem] font-black tracking-[-0.025em]">Instagram Feed</h1>
+            <p className="m-0 mt-1 text-sm text-neutral-400">
+              Connect Instagram for auto-sync, or curate posts manually as a fallback.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -131,22 +160,20 @@ export default function AdminInstagramPage() {
             <button
               onClick={handleSave}
               disabled={status === 'saving' || loading}
-              className="rounded-xl bg-[#EC1E79] px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_8px_24px_-8px_rgba(236,30,121,0.55)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
+              className="rounded-xl bg-[#EC1E79] px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_6px_18px_-6px_rgba(236,30,121,0.55)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
             >
-              {status === 'saving' ? 'Saving…' : 'Save changes'}
+              {status === 'saving' ? 'Saving…' : 'Save'}
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
-          {/* left: form */}
-          <div className="flex flex-col gap-5">
-            {/* handle */}
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-400">
-                Instagram Handle (used for the &ldquo;Follow&rdquo; button)
-              </label>
-              <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 focus-within:border-[#EC1E79]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+          {/* left: forms */}
+          <div className="flex flex-col gap-4">
+            {/* Handle */}
+            <Card>
+              <Label>Instagram Handle</Label>
+              <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 focus-within:border-[#EC1E79]">
                 <span className="text-base font-bold text-neutral-500">@</span>
                 <input
                   value={handle}
@@ -160,125 +187,177 @@ export default function AdminInstagramPage() {
                   href={`https://instagram.com/${handle.replace(/^@/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2.5 inline-flex items-center gap-1 text-[12px] font-bold text-[#EC1E79] transition-colors hover:text-[#FF80B8]"
+                  className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-[#EC1E79] hover:text-[#FF80B8]"
                 >
                   <ExternalLink size={11} /> instagram.com/{handle.replace(/^@/, '')}
                 </a>
               )}
-            </div>
+            </Card>
 
-            {/* posts list */}
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="m-0 text-[12px] font-bold uppercase tracking-[0.1em] text-neutral-300">
-                  Posts ({posts.length}/{MAX_POSTS})
-                </h2>
+            {/* Auto-sync via Meta Graph API */}
+            <Card accent>
+              <div className="mb-2.5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Zap size={14} className="text-[#EC1E79]" />
+                  <h3 className="m-0 text-[12px] font-extrabold uppercase tracking-[0.1em] text-white">
+                    Auto-sync (Meta Graph API)
+                  </h3>
+                </div>
+                {token && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                    <span className="size-1.5 rounded-full bg-emerald-400" /> Connected
+                  </span>
+                )}
+              </div>
+              <p className="m-0 mb-3 text-[12.5px] leading-[1.55] text-neutral-400">
+                Paste a long-lived Instagram access token. Your homepage auto-updates with the latest posts.
+                Tokens last 60 days — we auto-refresh after 50 days, no action needed.
+              </p>
+              <Label>Access token</Label>
+              <div className="relative mt-1.5">
+                <Key size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <input
+                  type="password"
+                  value={token}
+                  onChange={e => setToken(e.target.value)}
+                  placeholder="IGQVJ..."
+                  className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5 pl-9 text-[13px] font-mono text-white outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
+                />
+              </div>
+              {tokenRefreshedAt && (
+                <p className="m-0 mt-2 flex items-center gap-1 text-[11px] text-neutral-500">
+                  <RefreshCw size={10} /> Last refreshed {new Date(tokenRefreshedAt).toLocaleDateString('en-GB')}
+                </p>
+              )}
+
+              <button
+                onClick={testConnection}
+                disabled={testing || loading}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-[12px] font-bold text-neutral-200 transition-colors hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {testing ? 'Testing…' : 'Test live feed'}
+              </button>
+
+              <AnimatePresence>
+                {previewPosts && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-3 rounded-xl border border-neutral-800 bg-neutral-950 p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                        Source: <span className="text-[#EC1E79]">{sourceLabel}</span>
+                      </span>
+                      <span className="text-[11px] font-bold text-neutral-500">
+                        {previewPosts.length} posts
+                      </span>
+                    </div>
+                    {previewPosts.length > 0 && (
+                      <div className="grid grid-cols-6 gap-1.5">
+                        {previewPosts.slice(0, 6).map((p, i) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            key={i}
+                            src={p.image}
+                            alt=""
+                            className="aspect-square w-full rounded-md border border-neutral-800 object-cover"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+
+            {/* Manual fallback posts */}
+            <Card>
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="m-0 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                    Manual posts (fallback)
+                  </h3>
+                  <p className="m-0 mt-1 text-[11.5px] text-neutral-500">
+                    Used if no access token, or as a backup. Up to {MAX_POSTS}.
+                  </p>
+                </div>
                 <button
                   onClick={addPost}
                   disabled={posts.length >= MAX_POSTS}
                   className="inline-flex items-center gap-1 rounded-lg bg-[#EC1E79]/15 px-2.5 py-1 text-[11px] font-bold text-[#EC1E79] transition-colors hover:bg-[#EC1E79]/25 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Plus size={11} /> Add Post
+                  <Plus size={11} /> Add
                 </button>
               </div>
 
               {loading ? (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-[120px] animate-pulse rounded-xl bg-neutral-800/40" />
+                <div className="space-y-2">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="h-[78px] animate-pulse rounded-xl bg-neutral-800/40" />
                   ))}
                 </div>
               ) : posts.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-neutral-800 px-6 py-12 text-center">
-                  <Instagram size={28} className="mx-auto mb-3 text-neutral-600" />
-                  <p className="m-0 text-sm font-bold text-neutral-400">No posts added yet</p>
-                  <p className="m-0 mt-1 text-xs text-neutral-500">
-                    Click &ldquo;Add Post&rdquo; to curate what appears on the homepage.
-                  </p>
+                <div className="rounded-xl border border-dashed border-neutral-800 px-5 py-8 text-center">
+                  <ImageIcon size={20} className="mx-auto mb-2 text-neutral-600" />
+                  <p className="m-0 text-[12px] text-neutral-500">No manual posts. Token-driven feed will be used.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <AnimatePresence initial={false}>
                     {posts.map((post, i) => (
                       <motion.div
                         key={i}
                         layout
-                        initial={{ opacity: 0, y: 6 }}
+                        initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: -10 }}
-                        className="grid grid-cols-[24px_72px_1fr_auto] items-start gap-3 rounded-xl border border-neutral-800 bg-neutral-950 p-3"
+                        className="grid grid-cols-[20px_60px_1fr_auto] items-start gap-2.5 rounded-xl border border-neutral-800 bg-neutral-950 p-2.5"
                       >
-                        {/* reorder */}
-                        <div className="flex flex-col items-center gap-0.5 pt-1.5">
-                          <button
-                            type="button"
-                            onClick={() => movePost(i, -1)}
-                            disabled={i === 0}
-                            className="text-neutral-600 hover:text-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-30"
-                            title="Move up"
-                          >
-                            ▲
-                          </button>
-                          <GripVertical size={11} className="text-neutral-700" />
-                          <button
-                            type="button"
-                            onClick={() => movePost(i, 1)}
-                            disabled={i === posts.length - 1}
-                            className="text-neutral-600 hover:text-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-30"
-                            title="Move down"
-                          >
-                            ▼
-                          </button>
+                        <div className="flex flex-col items-center gap-0.5 pt-1">
+                          <button type="button" onClick={() => movePost(i, -1)} disabled={i === 0} className="text-neutral-600 hover:text-[#EC1E79] disabled:opacity-30">▲</button>
+                          <GripVertical size={10} className="text-neutral-700" />
+                          <button type="button" onClick={() => movePost(i, 1)} disabled={i === posts.length - 1} className="text-neutral-600 hover:text-[#EC1E79] disabled:opacity-30">▼</button>
                         </div>
-
-                        {/* preview */}
-                        <div className="flex aspect-square size-[72px] items-center justify-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900">
+                        <div className="flex aspect-square size-[60px] items-center justify-center overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900">
                           {post.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={post.image} alt="Preview" className="size-full object-cover" />
+                            <img src={post.image} alt="" className="size-full object-cover" />
                           ) : (
-                            <ImageIcon size={20} className="text-neutral-700" />
+                            <ImageIcon size={16} className="text-neutral-700" />
                           )}
                         </div>
-
-                        {/* inputs */}
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           <input
                             value={post.url}
                             onChange={e => updatePost(i, { url: e.target.value })}
-                            placeholder="https://www.instagram.com/p/SHORTCODE/"
-                            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[12px] font-medium text-white outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
+                            placeholder="https://www.instagram.com/p/..."
+                            className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1 text-[11.5px] font-medium text-white outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
                           />
                           <input
                             value={post.image}
                             onChange={e => updatePost(i, { image: e.target.value })}
-                            placeholder="Image URL (.jpg / .png) — Cloudinary or any CDN"
-                            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[12px] font-medium text-white outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
+                            placeholder="Image URL"
+                            className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1 text-[11.5px] font-medium text-white outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
                           />
                           <input
                             value={post.caption || ''}
                             onChange={e => updatePost(i, { caption: e.target.value })}
-                            placeholder="Optional caption (shown on hover)"
+                            placeholder="Caption (optional)"
                             maxLength={150}
-                            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[12px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
+                            className="w-full rounded-md border border-neutral-800 bg-neutral-950 px-2 py-1 text-[11.5px] text-neutral-200 outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
                           />
                         </div>
-
-                        {/* delete */}
-                        <button
-                          type="button"
-                          onClick={() => removePost(i)}
-                          className="rounded-lg bg-red-500/10 p-2 text-red-400 transition-colors hover:bg-red-500/20"
-                          title="Delete"
-                        >
-                          <Trash2 size={13} />
+                        <button type="button" onClick={() => removePost(i)} className="rounded-md bg-red-500/10 p-1.5 text-red-400 transition-colors hover:bg-red-500/20" title="Delete">
+                          <Trash2 size={12} />
                         </button>
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
               )}
-            </div>
+            </Card>
 
             {error && (
               <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
@@ -288,35 +367,55 @@ export default function AdminInstagramPage() {
             )}
           </div>
 
-          {/* right: cheatsheet */}
-          <aside className="space-y-4">
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-              <h3 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
-                How to use
-              </h3>
-              <ol className="m-0 list-decimal space-y-2.5 pl-4 text-[12.5px] leading-[1.55] text-neutral-400">
-                <li>Open an Instagram post on the web (instagram.com/p/...) and copy the URL.</li>
-                <li>
-                  Get the image: right-click the post image → &ldquo;Copy image address&rdquo;. Or upload to Cloudinary via the
-                  Media tab and paste that URL.
-                </li>
-                <li>Optionally add a short caption (shown on hover).</li>
-                <li>Save. Posts appear on the homepage Instagram section in the order shown here.</li>
-              </ol>
-            </div>
-
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
+          {/* right: setup guide */}
+          <aside className="space-y-3">
+            <Card>
               <h3 className="m-0 mb-2 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
-                Why manual?
+                Get a token (5 min)
               </h3>
-              <p className="m-0 text-[12.5px] leading-[1.55] text-neutral-400">
-                Instagram&apos;s API requires OAuth tokens and weekly re-auth. Manual curation is more
-                reliable and lets you pick your <em>best</em> posts instead of just the latest.
+              <ol className="m-0 list-decimal space-y-2 pl-4 text-[12px] leading-[1.55] text-neutral-400">
+                <li>Convert your Instagram to a <b>Business</b> or <b>Creator</b> account (Settings → Account).</li>
+                <li>Connect it to a Facebook Page (any Page you admin).</li>
+                <li>Go to <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="font-bold text-[#EC1E79] hover:underline">developers.facebook.com/apps</a>, create an app, add the <b>Instagram</b> product.</li>
+                <li>In <b>Instagram → API Setup with Instagram Business Login</b>, generate a long-lived access token.</li>
+                <li>Paste the token here, click <b>Save</b>, then <b>Test live feed</b>.</li>
+              </ol>
+            </Card>
+
+            <Card>
+              <h3 className="m-0 mb-2 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                Why both?
+              </h3>
+              <p className="m-0 text-[12px] leading-[1.55] text-neutral-400">
+                Token-based auto-sync is the default — homepage stays current automatically. Manual posts act as a
+                fallback (and can be used for a hand-picked &ldquo;greatest hits&rdquo; feed) if you delete the token or
+                Instagram has an outage.
               </p>
-            </div>
+            </Card>
           </aside>
         </div>
       </div>
     </div>
+  )
+}
+
+function Card({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <div
+      className={[
+        'rounded-2xl border bg-neutral-900/40 p-4',
+        accent ? 'border-[#EC1E79]/30' : 'border-neutral-800',
+      ].join(' ')}
+    >
+      {children}
+    </div>
+  )
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-400">
+      {children}
+    </label>
   )
 }

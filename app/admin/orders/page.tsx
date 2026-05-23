@@ -977,7 +977,7 @@ function OrderDetailModal({
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 1 })
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 12, total: 0, totalPages: 1 })
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [dateRange, setDateRange] = useState<DateRange>('All time')
   const [loading, setLoading] = useState(true)
@@ -998,7 +998,7 @@ export default function OrdersPage() {
       if (!res.ok) throw new Error('Failed to fetch orders')
       const data = await res.json()
       setOrders(data.orders ?? [])
-      setPagination(data.pagination ?? { page: 1, limit: 20, total: 0, totalPages: 1 })
+      setPagination(data.pagination ?? { page: 1, limit: 12, total: 0, totalPages: 1 })
     } catch (err) {
       console.error(err)
     } finally {

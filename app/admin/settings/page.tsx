@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   User,
-  Lock,
   Store,
+  Mail,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -13,15 +13,9 @@ import {
   EyeOff,
   Loader2,
   Download,
-  Mail,
+  Database,
+  Send,
 } from 'lucide-react'
-
-interface AdminUser {
-  id: string
-  email: string
-  name: string
-  role: string
-}
 
 interface AdminProfile {
   id: string
@@ -32,219 +26,16 @@ interface AdminProfile {
   lastLogin: string | null
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
+type Tab = 'profile' | 'store' | 'email' | 'data'
 
-function SectionCard({
-  title,
-  icon: Icon,
-  iconColor,
-  children,
-  borderColor,
-}: {
-  title: string
-  icon: React.ElementType
-  iconColor: string
-  children: React.ReactNode
-  borderColor?: string
-}) {
-  return (
-    <div style={{
-      background: '#111',
-      border: `1px solid ${borderColor ?? '#1f1f1f'}`,
-      borderRadius: '16px',
-      overflow: 'hidden',
-      marginBottom: '1.5rem',
-    }}>
-      <div style={{
-        padding: '1.25rem 1.5rem',
-        borderBottom: `1px solid ${borderColor ?? '#1f1f1f'}`,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-      }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          background: `${iconColor}18`,
-          border: `1px solid ${iconColor}30`,
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <Icon size={16} color={iconColor} />
-        </div>
-        <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>{title}</h2>
-      </div>
-      <div style={{ padding: '1.5rem' }}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function InputField({
-  label,
-  type = 'text',
-  value,
-  onChange,
-  placeholder,
-  disabled,
-  rightElement,
-}: {
-  label: string
-  type?: string
-  value: string
-  onChange?: (v: string) => void
-  placeholder?: string
-  disabled?: boolean
-  rightElement?: React.ReactNode
-}) {
-  return (
-    <div style={{ marginBottom: '1rem' }}>
-      <label style={{
-        display: 'block',
-        fontSize: '0.8125rem',
-        fontWeight: 600,
-        color: '#9ca3af',
-        marginBottom: '0.5rem',
-      }}>
-        {label}
-      </label>
-      <div style={{ position: 'relative' }}>
-        <input
-          type={type}
-          value={value}
-          onChange={e => onChange?.(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          style={{
-            width: '100%',
-            padding: rightElement ? '0.75rem 2.75rem 0.75rem 0.875rem' : '0.75rem 0.875rem',
-            background: disabled ? '#0f0f0f' : '#161616',
-            border: '1px solid #1f1f1f',
-            borderRadius: '10px',
-            color: disabled ? '#6b7280' : '#fff',
-            fontSize: '0.9rem',
-            outline: 'none',
-            boxSizing: 'border-box',
-            transition: 'border-color 0.2s',
-            cursor: disabled ? 'not-allowed' : 'text',
-          }}
-          onFocus={e => { if (!disabled) e.target.style.borderColor = 'rgba(236,30,121,0.5)' }}
-          onBlur={e => { e.target.style.borderColor = '#1f1f1f' }}
-        />
-        {rightElement && (
-          <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
-            {rightElement}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function ActionButton({
-  loading,
-  disabled,
-  onClick,
-  label,
-  variant = 'primary',
-}: {
-  loading: boolean
-  disabled?: boolean
-  onClick: () => void
-  label: string
-  variant?: 'primary' | 'danger'
-}) {
-  const isDisabled = loading || disabled
-  const bg = isDisabled
-    ? '#1a1a1a'
-    : variant === 'danger'
-    ? 'rgba(239,68,68,0.12)'
-    : '#EC1E79'
-  const color = isDisabled
-    ? '#6b7280'
-    : variant === 'danger'
-    ? '#ef4444'
-    : '#000'
-  const border = variant === 'danger' ? '1px solid rgba(239,68,68,0.3)' : 'none'
-
-  return (
-    <motion.button
-      onClick={onClick}
-      disabled={isDisabled}
-      whileHover={!isDisabled ? { scale: 1.02 } : {}}
-      whileTap={!isDisabled ? { scale: 0.98 } : {}}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.7rem 1.25rem',
-        background: bg,
-        color,
-        border,
-        borderRadius: '10px',
-        fontWeight: 700,
-        fontSize: '0.875rem',
-        cursor: isDisabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.2s',
-      }}
-    >
-      {loading && (
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-          <Loader2 size={14} />
-        </motion.div>
-      )}
-      {label}
-    </motion.button>
-  )
-}
-
-function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000)
-    return () => clearTimeout(t)
-  }, [onClose])
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      style={{
-        position: 'fixed',
-        bottom: '1.5rem',
-        right: '1.5rem',
-        background: type === 'success' ? 'rgba(236,30,121,0.15)' : 'rgba(239,68,68,0.15)',
-        border: `1px solid ${type === 'success' ? 'rgba(236,30,121,0.3)' : 'rgba(239,68,68,0.3)'}`,
-        color: type === 'success' ? '#EC1E79' : '#fca5a5',
-        padding: '0.75rem 1.25rem',
-        borderRadius: '12px',
-        fontSize: '0.875rem',
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        zIndex: 50,
-        maxWidth: '360px',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      {type === 'success' ? <CheckCircle size={15} /> : <XCircle size={15} />}
-      {message}
-    </motion.div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+// ───────────────────────────────────────────────────────────────────────────
+// Settings page — single-screen tabbed layout
+// ───────────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  // Admin Profile
+  const [tab, setTab] = useState<Tab>('profile')
+
+  // Profile
   const [profile, setProfile] = useState<AdminProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileName, setProfileName] = useState('')
@@ -258,41 +49,30 @@ export default function SettingsPage() {
   const [showProfileNewPw, setShowProfileNewPw] = useState(false)
   const [showProfileConfirmPw, setShowProfileConfirmPw] = useState(false)
 
-  // Account
-  const [user, setUser] = useState<AdminUser | null>(null)
-  const [loadingUser, setLoadingUser] = useState(true)
-
-  // Password
-  const [currentPw, setCurrentPw] = useState('')
-  const [newPw, setNewPw] = useState('')
-  const [confirmPw, setConfirmPw] = useState('')
-  const [showCurrentPw, setShowCurrentPw] = useState(false)
-  const [showNewPw, setShowNewPw] = useState(false)
-  const [showConfirmPw, setShowConfirmPw] = useState(false)
-  const [pwLoading, setPwLoading] = useState(false)
-
-  // Store Information
+  // Store
   const [siteName, setSiteName] = useState('')
   const [contactEmail, setContactEmail] = useState('')
   const [storeLoading, setStoreLoading] = useState(false)
   const [loadingStore, setLoadingStore] = useState(true)
 
-  // Email notifications
+  // Email
   const [emailFrom, setEmailFrom] = useState('')
   const [emailFromLoading, setEmailFromLoading] = useState(false)
   const [loadingEmailFrom, setLoadingEmailFrom] = useState(true)
   const [resendConfigured, setResendConfigured] = useState<boolean | null>(null)
   const [testEmailLoading, setTestEmailLoading] = useState(false)
 
-  // Export
+  // Data
   const [exportLoading, setExportLoading] = useState(false)
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
 
-  const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type })
-
-  // Load admin profile
+  // ── Loaders ─────────────────────────────────────────────────────────────
   useEffect(() => {
     fetch('/api/admin/profile')
       .then(r => r.json())
@@ -306,18 +86,6 @@ export default function SettingsPage() {
       .finally(() => setProfileLoading(false))
   }, [])
 
-  // Load admin user
-  useEffect(() => {
-    fetch('/api/admin/auth')
-      .then(r => r.json())
-      .then(data => {
-        if (data.user) setUser(data.user)
-      })
-      .catch(() => {})
-      .finally(() => setLoadingUser(false))
-  }, [])
-
-  // Load store content
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/content/site_name').then(r => r.json()).catch(() => null),
@@ -328,7 +96,6 @@ export default function SettingsPage() {
     }).finally(() => setLoadingStore(false))
   }, [])
 
-  // Load email settings
   useEffect(() => {
     Promise.all([
       fetch('/api/admin/content/email_from_address').then(r => r.json()).catch(() => null),
@@ -341,10 +108,7 @@ export default function SettingsPage() {
     }).finally(() => setLoadingEmailFrom(false))
   }, [])
 
-  // -------------------------------------------------------------------------
-  // Handlers
-  // -------------------------------------------------------------------------
-
+  // ── Handlers ────────────────────────────────────────────────────────────
   const handleSaveProfileName = async () => {
     if (!profileName.trim()) {
       showToast('Name cannot be empty', 'error')
@@ -360,12 +124,12 @@ export default function SettingsPage() {
       const data = await res.json()
       if (res.ok) {
         setProfile(data)
-        showToast('Name updated successfully', 'success')
+        showToast('Name updated', 'success')
       } else {
         showToast(data.error || 'Failed to update name', 'error')
       }
     } catch {
-      showToast('Network error. Please try again.', 'error')
+      showToast('Network error', 'error')
     } finally {
       setSaveNameLoading(false)
     }
@@ -382,7 +146,7 @@ export default function SettingsPage() {
       return
     }
     if (profileNewPw.length < 8) {
-      setProfilePwError('New password must be at least 8 characters')
+      setProfilePwError('Min 8 characters')
       return
     }
     setProfilePwLoading(true)
@@ -394,54 +158,17 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        showToast('Password updated successfully', 'success')
+        showToast('Password updated', 'success')
         setProfileCurrentPw('')
         setProfileNewPw('')
         setProfileConfirmPw('')
       } else {
-        setProfilePwError(data.error || 'Failed to update password')
+        setProfilePwError(data.error || 'Failed')
       }
     } catch {
-      setProfilePwError('Network error. Please try again.')
+      setProfilePwError('Network error')
     } finally {
       setProfilePwLoading(false)
-    }
-  }
-
-  const handlePasswordChange = async () => {
-    if (!currentPw || !newPw || !confirmPw) {
-      showToast('All password fields are required', 'error')
-      return
-    }
-    if (newPw !== confirmPw) {
-      showToast('New passwords do not match', 'error')
-      return
-    }
-    if (newPw.length < 8) {
-      showToast('New password must be at least 8 characters', 'error')
-      return
-    }
-
-    setPwLoading(true)
-    try {
-      const res = await fetch('/api/admin/auth/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        showToast('Password updated successfully', 'success')
-        setCurrentPw('')
-        setNewPw('')
-        setConfirmPw('')
-      } else {
-        showToast(data.error || 'Failed to update password', 'error')
-      }
-    } catch {
-      showToast('Network error. Please try again.', 'error')
-    } finally {
-      setPwLoading(false)
     }
   }
 
@@ -463,10 +190,10 @@ export default function SettingsPage() {
       if (siteRes.ok && emailRes.ok) {
         showToast('Store settings saved', 'success')
       } else {
-        showToast('Failed to save some settings', 'error')
+        showToast('Save failed', 'error')
       }
     } catch {
-      showToast('Network error. Please try again.', 'error')
+      showToast('Network error', 'error')
     } finally {
       setStoreLoading(false)
     }
@@ -480,13 +207,10 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'email_from_address', value: emailFrom, type: 'text', label: 'Email From Address' }),
       })
-      if (res.ok) {
-        showToast('Email from address saved', 'success')
-      } else {
-        showToast('Failed to save email from address', 'error')
-      }
+      if (res.ok) showToast('Saved', 'success')
+      else showToast('Save failed', 'error')
     } catch {
-      showToast('Network error. Please try again.', 'error')
+      showToast('Network error', 'error')
     } finally {
       setEmailFromLoading(false)
     }
@@ -497,13 +221,10 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/admin/email/test', { method: 'POST' })
       const data = await res.json()
-      if (data.sent) {
-        showToast('Test email sent successfully', 'success')
-      } else {
-        showToast(data.reason || 'Failed to send test email', 'error')
-      }
+      if (data.sent) showToast('Test email sent', 'success')
+      else showToast(data.reason || 'Failed to send', 'error')
     } catch {
-      showToast('Network error. Please try again.', 'error')
+      showToast('Network error', 'error')
     } finally {
       setTestEmailLoading(false)
     }
@@ -513,7 +234,7 @@ export default function SettingsPage() {
     setExportLoading(true)
     try {
       const res = await fetch('/api/admin/products?limit=1000')
-      if (!res.ok) throw new Error('Failed to fetch products')
+      if (!res.ok) throw new Error('Fetch failed')
       const data = await res.json()
       const products = data.products ?? data
       const blob = new Blob([JSON.stringify(products, null, 2)], { type: 'application/json' })
@@ -525,452 +246,402 @@ export default function SettingsPage() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      showToast('Products exported successfully', 'success')
+      showToast('Products exported', 'success')
     } catch {
-      showToast('Failed to export products', 'error')
+      showToast('Export failed', 'error')
     } finally {
       setExportLoading(false)
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
+  const TABS: { id: Tab; label: string; icon: React.ElementType; description: string }[] = [
+    { id: 'profile', label: 'Profile', icon: User, description: 'Name + password' },
+    { id: 'store', label: 'Store', icon: Store, description: 'Site name + contact email' },
+    { id: 'email', label: 'Email', icon: Mail, description: 'From address + test' },
+    { id: 'data', label: 'Data', icon: Database, description: 'Export + danger zone' },
+  ]
 
   return (
-    <div style={{ padding: '2rem', color: '#fff', maxWidth: '700px' }}>
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        style={{ marginBottom: '2rem' }}
-      >
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.025em', marginBottom: '0.25rem' }}>
-          Settings
-        </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-          Manage your account, store configuration, and data
-        </p>
-      </motion.div>
-
-      {/* 0. Admin Profile */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
-        <SectionCard title="Admin Profile" icon={User} iconColor="#EC1E79">
-          {/* Name */}
-          <InputField
-            label="Name"
-            value={profileName}
-            onChange={setProfileName}
-            placeholder="Your display name"
-            disabled={profileLoading}
-          />
-          {/* Email (read-only) */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: '#9ca3af',
-              marginBottom: '0.5rem',
-            }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={profileLoading ? '' : (profile?.email ?? '')}
-              readOnly
-              disabled
-              placeholder="Loading..."
-              style={{
-                width: '100%',
-                padding: '0.75rem 0.875rem',
-                background: '#0f0f0f',
-                border: '1px solid #1f1f1f',
-                borderRadius: '10px',
-                color: '#6b7280',
-                fontSize: '0.9rem',
-                outline: 'none',
-                boxSizing: 'border-box',
-                cursor: 'not-allowed',
-              }}
-            />
-            <p style={{ fontSize: '0.75rem', color: '#4b5563', marginTop: '0.35rem' }}>
-              Email cannot be changed here
+    <div className="min-h-screen bg-[#0a0a0a] p-6 text-white sm:p-8">
+      <div className="mx-auto max-w-[1100px]">
+        {/* Header */}
+        <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="m-0 text-[1.6rem] font-black tracking-[-0.025em]">Settings</h1>
+            <p className="m-0 mt-1 text-sm text-neutral-400">
+              {profile?.email ? <>Signed in as <span className="text-neutral-200">{profile.email}</span></> : 'Account & store config'}
             </p>
           </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <ActionButton
-              label="Save Name"
-              loading={saveNameLoading}
-              disabled={profileLoading || !profileName.trim()}
-              onClick={handleSaveProfileName}
-            />
-          </div>
+        </div>
 
-          {/* Change Password sub-section */}
-          <div style={{ borderTop: '1px solid #1f1f1f', paddingTop: '1.25rem' }}>
-            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#d1d5db', marginBottom: '1rem' }}>
-              Change Password
-            </h3>
-            <InputField
-              label="Current Password"
-              type={showProfileCurrentPw ? 'text' : 'password'}
-              value={profileCurrentPw}
-              onChange={v => { setProfileCurrentPw(v); setProfilePwError('') }}
-              placeholder="Enter current password"
-              rightElement={
+        {/* Two-column layout: tabs sidebar + active panel */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
+          {/* Tabs */}
+          <nav className="flex flex-row gap-1 overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-900/40 p-2 md:flex-col md:overflow-visible">
+            {TABS.map(t => {
+              const Icon = t.icon
+              const active = tab === t.id
+              return (
                 <button
+                  key={t.id}
                   type="button"
-                  onClick={() => setShowProfileCurrentPw(v => !v)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: 0 }}
+                  onClick={() => setTab(t.id)}
+                  className={[
+                    'group flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors md:shrink',
+                    active
+                      ? 'bg-[#EC1E79] text-white shadow-[0_6px_18px_-6px_rgba(236,30,121,0.55)]'
+                      : 'text-neutral-400 hover:bg-neutral-800/60 hover:text-white',
+                  ].join(' ')}
                 >
-                  {showProfileCurrentPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  <Icon size={15} />
+                  <div className="hidden md:block">
+                    <div className="text-[13px] font-bold">{t.label}</div>
+                    <div className={`text-[10.5px] ${active ? 'text-white/70' : 'text-neutral-500'}`}>
+                      {t.description}
+                    </div>
+                  </div>
+                  <span className="md:hidden text-[13px] font-bold">{t.label}</span>
                 </button>
-              }
-            />
-            <InputField
-              label="New Password"
-              type={showProfileNewPw ? 'text' : 'password'}
-              value={profileNewPw}
-              onChange={v => { setProfileNewPw(v); setProfilePwError('') }}
-              placeholder="Min 8 characters"
-              rightElement={
-                <button
-                  type="button"
-                  onClick={() => setShowProfileNewPw(v => !v)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: 0 }}
+              )
+            })}
+          </nav>
+
+          {/* Active panel */}
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
+            <AnimatePresence mode="wait">
+              {tab === 'profile' && (
+                <motion.div
+                  key="profile"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="grid grid-cols-1 gap-7 md:grid-cols-2"
                 >
-                  {showProfileNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              }
-            />
-            <InputField
-              label="Confirm New Password"
-              type={showProfileConfirmPw ? 'text' : 'password'}
-              value={profileConfirmPw}
-              onChange={v => { setProfileConfirmPw(v); setProfilePwError('') }}
-              placeholder="Repeat new password"
-              rightElement={
-                <button
-                  type="button"
-                  onClick={() => setShowProfileConfirmPw(v => !v)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: 0 }}
-                >
-                  {showProfileConfirmPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              }
-            />
-            {profilePwError && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                background: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.2)',
-                borderRadius: '8px',
-                padding: '0.6rem 0.875rem',
-                marginBottom: '1rem',
-                fontSize: '0.8125rem',
-                color: '#fca5a5',
-              }}>
-                <XCircle size={13} />
-                {profilePwError}
-              </div>
-            )}
-            <ActionButton
-              label="Save Password"
-              loading={profilePwLoading}
-              disabled={!profileCurrentPw || !profileNewPw || !profileConfirmPw}
-              onClick={handleProfilePasswordChange}
-            />
-          </div>
-        </SectionCard>
-      </motion.div>
+                  {/* Name + email */}
+                  <section>
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                      Profile details
+                    </h2>
+                    <Field label="Email (read-only)">
+                      <input
+                        readOnly
+                        disabled
+                        value={profileLoading ? '' : profile?.email ?? ''}
+                        placeholder="Loading…"
+                        className="w-full cursor-not-allowed rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-[13px] text-neutral-500 outline-none"
+                      />
+                    </Field>
+                    <Field label="Display name">
+                      <input
+                        value={profileName}
+                        onChange={e => setProfileName(e.target.value)}
+                        disabled={profileLoading}
+                        placeholder="Your name"
+                        className={darkInput}
+                      />
+                    </Field>
+                    <button
+                      onClick={handleSaveProfileName}
+                      disabled={profileLoading || saveNameLoading || !profileName.trim()}
+                      className={primaryBtn}
+                    >
+                      {saveNameLoading && <Loader2 size={13} className="animate-spin" />}
+                      Save name
+                    </button>
+                  </section>
 
-      {/* 1. Account Settings */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <SectionCard title="Account Settings" icon={User} iconColor="#EC1E79">
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem' }}>
-              Email
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ color: '#fff', fontSize: '0.9375rem', fontWeight: 500 }}>
-                {loadingUser
-                  ? <span style={{ color: '#4b5563' }}>Loading...</span>
-                  : user?.email ?? 'admin@lutoncards.co.uk'}
-              </span>
-              <span style={{
-                background: 'rgba(236,30,121,0.12)',
-                color: '#EC1E79',
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '999px',
-                textTransform: 'uppercase',
-              }}>
-                {user?.role ?? 'admin'}
-              </span>
-            </div>
-          </div>
-
-          <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem' }}>
-            Name
-          </div>
-          <div style={{
-            padding: '0.75rem 0.875rem',
-            background: '#0f0f0f',
-            border: '1px solid #1f1f1f',
-            borderRadius: '10px',
-            color: '#6b7280',
-            fontSize: '0.9rem',
-          }}>
-            Admin
-          </div>
-        </SectionCard>
-      </motion.div>
-
-      {/* 2. Change Password */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <SectionCard title="Change Password" icon={Lock} iconColor="#818cf8">
-          <InputField
-            label="Current Password"
-            type={showCurrentPw ? 'text' : 'password'}
-            value={currentPw}
-            onChange={setCurrentPw}
-            placeholder="Enter current password"
-            rightElement={
-              <button
-                type="button"
-                onClick={() => setShowCurrentPw(v => !v)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: 0 }}
-              >
-                {showCurrentPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            }
-          />
-          <InputField
-            label="New Password"
-            type={showNewPw ? 'text' : 'password'}
-            value={newPw}
-            onChange={setNewPw}
-            placeholder="Min 8 characters"
-            rightElement={
-              <button
-                type="button"
-                onClick={() => setShowNewPw(v => !v)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: 0 }}
-              >
-                {showNewPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            }
-          />
-          <InputField
-            label="Confirm New Password"
-            type={showConfirmPw ? 'text' : 'password'}
-            value={confirmPw}
-            onChange={setConfirmPw}
-            placeholder="Repeat new password"
-            rightElement={
-              <button
-                type="button"
-                onClick={() => setShowConfirmPw(v => !v)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: 0 }}
-              >
-                {showConfirmPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            }
-          />
-          <div style={{ marginTop: '0.5rem' }}>
-            <ActionButton
-              label="Update Password"
-              loading={pwLoading}
-              disabled={!currentPw || !newPw || !confirmPw}
-              onClick={handlePasswordChange}
-            />
-          </div>
-        </SectionCard>
-      </motion.div>
-
-      {/* 3. Store Information */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        <SectionCard title="Store Information" icon={Store} iconColor="#34d399">
-          <InputField
-            label="Site Name"
-            value={siteName}
-            onChange={setSiteName}
-            placeholder="Luton Cards"
-            disabled={loadingStore}
-          />
-          <InputField
-            label="Contact Email"
-            type="email"
-            value={contactEmail}
-            onChange={setContactEmail}
-            placeholder="hello@lutoncards.co.uk"
-            disabled={loadingStore}
-          />
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem' }}>
-              Currency
-            </div>
-            <div style={{
-              padding: '0.75rem 0.875rem',
-              background: '#0f0f0f',
-              border: '1px solid #1f1f1f',
-              borderRadius: '10px',
-              color: '#6b7280',
-              fontSize: '0.9rem',
-            }}>
-              £ GBP — British Pound Sterling
-            </div>
-          </div>
-          <ActionButton
-            label="Save Store Settings"
-            loading={storeLoading}
-            disabled={loadingStore}
-            onClick={handleStoreSave}
-          />
-        </SectionCard>
-      </motion.div>
-
-      {/* 4. Email Notifications */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.175 }}>
-        <SectionCard title="Email Notifications" icon={Mail} iconColor="#60a5fa">
-          {/* Status badge */}
-          <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {resendConfigured === null ? (
-              <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>Checking configuration...</span>
-            ) : resendConfigured ? (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                background: 'rgba(236,30,121,0.12)', color: '#EC1E79',
-                fontSize: '0.8125rem', fontWeight: 700, padding: '4px 12px', borderRadius: '999px',
-              }}>
-                <CheckCircle size={13} /> Configured
-              </span>
-            ) : (
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                background: 'rgba(239,68,68,0.12)', color: '#ef4444',
-                fontSize: '0.8125rem', fontWeight: 700, padding: '4px 12px', borderRadius: '999px',
-              }}>
-                <XCircle size={13} /> Not configured
-              </span>
-            )}
-          </div>
-
-          {/* Instructions */}
-          {!resendConfigured && (
-            <div style={{
-              padding: '12px 16px', background: 'rgba(96,165,250,0.06)',
-              border: '1px solid rgba(96,165,250,0.2)', borderRadius: '8px', marginBottom: '1.25rem',
-            }}>
-              <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: '0 0 6px 0', lineHeight: '1.5' }}>
-                Add <code style={{ background: '#1a1a1a', padding: '1px 6px', borderRadius: '4px', color: '#60a5fa' }}>RESEND_API_KEY</code> to your Railway environment variables to enable email notifications.
-              </p>
-              <a
-                href="https://resend.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: '0.8125rem', color: '#60a5fa', textDecoration: 'none', fontWeight: 600 }}
-              >
-                Sign up at resend.com (free — 3,000 emails/month) &rarr;
-              </a>
-            </div>
-          )}
-
-          {/* EMAIL_FROM input */}
-          <InputField
-            label="From Address (EMAIL_FROM)"
-            type="email"
-            value={emailFrom}
-            onChange={setEmailFrom}
-            placeholder="orders@lutoncards.co.uk"
-            disabled={loadingEmailFrom}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
-            <ActionButton
-              label="Save From Address"
-              loading={emailFromLoading}
-              disabled={loadingEmailFrom || !emailFrom}
-              onClick={handleEmailFromSave}
-            />
-            <ActionButton
-              label="Send Test Email"
-              loading={testEmailLoading}
-              disabled={!resendConfigured}
-              onClick={handleTestEmail}
-            />
-          </div>
-        </SectionCard>
-      </motion.div>
-
-      {/* 5. Danger Zone */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <SectionCard title="Danger Zone" icon={AlertTriangle} iconColor="#ef4444" borderColor="rgba(239,68,68,0.3)">
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: '1.5rem',
-            padding: '1rem',
-            background: 'rgba(239,68,68,0.05)',
-            border: '1px solid rgba(239,68,68,0.15)',
-            borderRadius: '10px',
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.35rem' }}>
-                Export All Products
-              </div>
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', lineHeight: '1.5' }}>
-                Downloads a JSON file containing all product data from the store. This action does not modify any data, but the file may contain sensitive pricing and inventory information — handle with care.
-              </div>
-            </div>
-            <motion.button
-              onClick={handleExportProducts}
-              disabled={exportLoading}
-              whileHover={!exportLoading ? { scale: 1.02 } : {}}
-              whileTap={!exportLoading ? { scale: 0.98 } : {}}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.6rem 1rem',
-                background: exportLoading ? '#1a1a1a' : 'rgba(239,68,68,0.12)',
-                color: exportLoading ? '#6b7280' : '#ef4444',
-                border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: '8px',
-                fontWeight: 600,
-                fontSize: '0.8125rem',
-                cursor: exportLoading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {exportLoading ? (
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                  <Loader2 size={13} />
+                  {/* Change password */}
+                  <section>
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                      Change password
+                    </h2>
+                    <Field label="Current password">
+                      <PasswordInput
+                        value={profileCurrentPw}
+                        onChange={v => { setProfileCurrentPw(v); setProfilePwError('') }}
+                        show={showProfileCurrentPw}
+                        toggle={() => setShowProfileCurrentPw(v => !v)}
+                        placeholder="Current password"
+                      />
+                    </Field>
+                    <Field label="New password">
+                      <PasswordInput
+                        value={profileNewPw}
+                        onChange={v => { setProfileNewPw(v); setProfilePwError('') }}
+                        show={showProfileNewPw}
+                        toggle={() => setShowProfileNewPw(v => !v)}
+                        placeholder="Min 8 characters"
+                      />
+                    </Field>
+                    <Field label="Confirm new password">
+                      <PasswordInput
+                        value={profileConfirmPw}
+                        onChange={v => { setProfileConfirmPw(v); setProfilePwError('') }}
+                        show={showProfileConfirmPw}
+                        toggle={() => setShowProfileConfirmPw(v => !v)}
+                        placeholder="Repeat new password"
+                      />
+                    </Field>
+                    {profilePwError && (
+                      <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
+                        {profilePwError}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleProfilePasswordChange}
+                      disabled={profilePwLoading || !profileCurrentPw || !profileNewPw || !profileConfirmPw}
+                      className={primaryBtn}
+                    >
+                      {profilePwLoading && <Loader2 size={13} className="animate-spin" />}
+                      Update password
+                    </button>
+                  </section>
                 </motion.div>
-              ) : (
-                <Download size={13} />
               )}
-              Export JSON
-            </motion.button>
+
+              {tab === 'store' && (
+                <motion.div
+                  key="store"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                    Store information
+                  </h2>
+                  <p className="m-0 mb-5 text-[13px] text-neutral-400">
+                    Public-facing site identity. These values appear in metadata and the contact page.
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Field label="Site name">
+                      <input
+                        value={siteName}
+                        onChange={e => setSiteName(e.target.value)}
+                        disabled={loadingStore}
+                        placeholder="Luton Cards"
+                        className={darkInput}
+                      />
+                    </Field>
+                    <Field label="Contact email">
+                      <input
+                        type="email"
+                        value={contactEmail}
+                        onChange={e => setContactEmail(e.target.value)}
+                        disabled={loadingStore}
+                        placeholder="hello@lutoncards.com"
+                        className={darkInput}
+                      />
+                    </Field>
+                  </div>
+                  <button onClick={handleStoreSave} disabled={storeLoading || loadingStore} className={primaryBtn}>
+                    {storeLoading && <Loader2 size={13} className="animate-spin" />}
+                    Save store settings
+                  </button>
+                </motion.div>
+              )}
+
+              {tab === 'email' && (
+                <motion.div
+                  key="email"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <h2 className="m-0 mb-1 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                        Email notifications
+                      </h2>
+                      <p className="m-0 text-[13px] text-neutral-400">
+                        Address used as the &ldquo;From&rdquo; on order emails. Send a test below.
+                      </p>
+                    </div>
+                    <StatusPill ok={resendConfigured === true} loading={loadingEmailFrom} />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto]">
+                    <Field label="From address">
+                      <input
+                        type="email"
+                        value={emailFrom}
+                        onChange={e => setEmailFrom(e.target.value)}
+                        disabled={loadingEmailFrom}
+                        placeholder="orders@lutoncards.com"
+                        className={darkInput}
+                      />
+                    </Field>
+                    <div className="flex items-end gap-2 pb-1">
+                      <button
+                        onClick={handleEmailFromSave}
+                        disabled={emailFromLoading || loadingEmailFrom}
+                        className={primaryBtn}
+                      >
+                        {emailFromLoading && <Loader2 size={13} className="animate-spin" />}
+                        Save
+                      </button>
+                      <button
+                        onClick={handleTestEmail}
+                        disabled={testEmailLoading || !resendConfigured}
+                        className={secondaryBtn}
+                        title={!resendConfigured ? 'Configure RESEND_API_KEY in env to enable test sends' : ''}
+                      >
+                        {testEmailLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                        Send test
+                      </button>
+                    </div>
+                  </div>
+
+                  {!resendConfigured && !loadingEmailFrom && (
+                    <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[12.5px] leading-[1.55] text-amber-200/90">
+                      Email provider not configured. Set the <code className="rounded bg-black/40 px-1 py-0.5 text-amber-300">RESEND_API_KEY</code> env var
+                      in Railway to enable transactional emails (order confirmation, admin notifications, test sends).
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {tab === 'data' && (
+                <motion.div
+                  key="data"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="grid grid-cols-1 gap-7 md:grid-cols-2"
+                >
+                  {/* Export */}
+                  <section>
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                      Export
+                    </h2>
+                    <p className="m-0 mb-4 text-[13px] leading-[1.55] text-neutral-400">
+                      Download the full product catalogue as JSON. Useful for backups or
+                      re-importing via Bulk Import on another instance.
+                    </p>
+                    <button onClick={handleExportProducts} disabled={exportLoading} className={primaryBtn}>
+                      {exportLoading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                      Export products (JSON)
+                    </button>
+                  </section>
+
+                  {/* Danger zone */}
+                  <section>
+                    <h2 className="m-0 mb-3 flex items-center gap-1.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-red-400">
+                      <AlertTriangle size={12} /> Danger zone
+                    </h2>
+                    <p className="m-0 mb-4 text-[13px] leading-[1.55] text-neutral-400">
+                      Database resets / destructive operations are intentionally not exposed in
+                      the admin UI. If you need to wipe orders or products, use Railway&apos;s
+                      Postgres data tab — that way the action is logged and intentional.
+                    </p>
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-[12.5px] text-red-200/80">
+                      Need a hard reset? Drop the relevant table in Railway then redeploy —
+                      migrations + seed will rebuild structure.
+                    </div>
+                  </section>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </SectionCard>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key={toast.message}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border bg-neutral-950 px-4 py-3 shadow-2xl"
+            style={{
+              borderColor: toast.type === 'success' ? 'rgba(52,211,153,0.4)' : 'rgba(239,68,68,0.4)',
+            }}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle size={16} className="text-emerald-400" />
+            ) : (
+              <XCircle size={16} className="text-red-400" />
+            )}
+            <span className="text-[13px] font-bold text-white">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
+
+// ─── Small components ──────────────────────────────────────────────────────
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3.5">
+      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-400">
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function PasswordInput({
+  value, onChange, show, toggle, placeholder,
+}: {
+  value: string
+  onChange: (v: string) => void
+  show: boolean
+  toggle: () => void
+  placeholder?: string
+}) {
+  return (
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`${darkInput} pr-10`}
+      />
+      <button
+        type="button"
+        onClick={toggle}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff size={14} /> : <Eye size={14} />}
+      </button>
+    </div>
+  )
+}
+
+function StatusPill({ ok, loading }: { ok: boolean; loading: boolean }) {
+  if (loading) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+        <Loader2 size={10} className="animate-spin" /> Checking
+      </span>
+    )
+  }
+  return (
+    <span
+      className={[
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+        ok
+          ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+          : 'border border-amber-500/30 bg-amber-500/10 text-amber-300',
+      ].join(' ')}
+    >
+      <span className="size-1.5 rounded-full" style={{ background: ok ? '#34d399' : '#f59e0b' }} />
+      {ok ? 'Email ready' : 'Not configured'}
+    </span>
+  )
+}
+
+const darkInput =
+  'box-border w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-[13px] font-medium text-white outline-none transition-colors placeholder:text-neutral-600 focus:border-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-50'
+
+const primaryBtn =
+  'inline-flex items-center gap-1.5 rounded-xl bg-[#EC1E79] px-4 py-2.5 text-[13px] font-extrabold text-white shadow-[0_6px_18px_-6px_rgba(236,30,121,0.55)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50'
+
+const secondaryBtn =
+  'inline-flex items-center gap-1.5 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-2.5 text-[13px] font-bold text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50'

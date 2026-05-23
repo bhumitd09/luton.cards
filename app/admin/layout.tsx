@@ -277,6 +277,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             display: none !important;
           }
         }
+
+        /* ─── Global admin compact pass ─────────────────────────────────── */
+        /* Targets all admin pages — tightens any inline-styled tables and cards */
+        .admin-main-content table thead {
+          position: sticky !important;
+          top: 0 !important;
+          z-index: 5 !important;
+        }
+        .admin-main-content table th {
+          padding: 0.55rem 0.8rem !important;
+          font-size: 0.68rem !important;
+        }
+        .admin-main-content table td {
+          padding: 0.55rem 0.8rem !important;
+          font-size: 0.82rem !important;
+        }
+        /* Tighter card/section padding throughout */
+        .admin-main-content [style*="padding: 1.5rem"][style*="border-radius"] {
+          padding: 1rem 1.1rem !important;
+        }
+        .admin-main-content [style*="padding: 2rem"]:not(form) {
+          padding: 1.25rem !important;
+        }
+        /* Tighter top-level page padding */
+        .admin-main-content > div[style*="padding: 2rem"] {
+          padding: 1.5rem !important;
+        }
+        /* Make modal forms scroll instead of pushing the page */
+        .admin-main-content [role="dialog"] {
+          max-height: 90vh !important;
+          overflow-y: auto !important;
+        }
       `}</style>
 
       {/* Mobile overlay backdrop */}

@@ -11,8 +11,6 @@ type IGPost = {
   caption?: string
 }
 
-const CMS_KEYS = ['instagram_handle', 'instagram_posts'] as const
-
 export function InstagramSection() {
   const [handle, setHandle] = useState<string>('lutoncards')
   const [posts, setPosts] = useState<IGPost[]>([])
@@ -20,26 +18,21 @@ export function InstagramSection() {
   const isInView = useInView(ref, { once: true, margin: '-80px' })
 
   useEffect(() => {
-    fetch(`/api/content?keys=${CMS_KEYS.join(',')}`)
+    // Single endpoint — handles Graph API + manual fallback server-side.
+    fetch('/api/instagram')
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
         if (!data) return
-        if (typeof data.instagram_handle === 'string' && data.instagram_handle.trim()) {
-          setHandle(data.instagram_handle.replace(/^@/, '').trim())
-        }
-        if (typeof data.instagram_posts === 'string' && data.instagram_posts.trim()) {
-          try {
-            const parsed = JSON.parse(data.instagram_posts)
-            if (Array.isArray(parsed)) {
-              setPosts(
-                parsed
-                  .filter((p): p is IGPost => p && typeof p.url === 'string' && typeof p.image === 'string')
-                  .slice(0, 8)
-              )
-            }
-          } catch {
-            // ignore invalid JSON
-          }
+        if (typeof data.handle === 'string' && data.handle) setHandle(data.handle)
+        if (Array.isArray(data.posts)) {
+          setPosts(
+            data.posts
+              .filter((p: unknown): p is IGPost => {
+                const p2 = p as IGPost
+                return !!p2 && typeof p2.url === 'string' && typeof p2.image === 'string'
+              })
+              .slice(0, 8)
+          )
         }
       })
       .catch(() => {})
