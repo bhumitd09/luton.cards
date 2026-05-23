@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset that wins over Tailwind preflight where needed (Preflight is light, ours overrides). */
 * {
   margin: 0;
   padding: 0;
