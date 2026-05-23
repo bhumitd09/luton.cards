@@ -46,10 +46,10 @@ async function main() {
     {
       key: 'team_members',
       value: JSON.stringify([
-        { name: 'Bhumit', role: 'Co-Founder & Developer', tag: 'Tech & Operations', photo: '', bio: 'Builds and runs the tech behind Luton Cards. Keeps the site, stock and checkout running so the rest of the team can focus on the cards.' },
-        { name: 'Bash', role: 'Co-Founder & Buyer', tag: 'Sourcing & Buying', photo: '', bio: 'Sources the stock. Hunts singles, sealed product and graded slabs across the UK — if it goes on the site, Bash has held it first.' },
-        { name: 'Ramz', role: 'Co-Founder & Social Media', tag: 'Community & Content', photo: '', bio: 'Runs the socials and the community on Instagram, TikTok and YouTube — making sure collectors know what we have and what is dropping next.' },
-        { name: 'Allan', role: 'Co-Founder & Grading', tag: 'Grading Specialist', photo: '', bio: 'The grading specialist. Years of PSA, CGC and ACE submissions — every slab on the site has been through his hands.' },
+        { name: 'Bhumit', role: 'Vintage Pokémon Specialist', tag: 'Base Set & Beyond', photo: '', bio: 'The vintage hunter. Hand-picks pre-2003 Pokémon — Base Set holos, gold stars, sealed wax that\'s older than most of the customers.' },
+        { name: 'Bash', role: 'One Piece Specialist', tag: 'OP-01 to Now', photo: '', bio: 'Lives and breathes One Piece TCG. Knows every set, every alt art, every leader meta — if it\'s an OP card, Bash has an opinion on it.' },
+        { name: 'Ramz', role: 'Pokémon & One Piece Specialist', tag: 'Modern Sets Master', photo: '', bio: 'The all-rounder. Tracks modern Pokémon sets and One Piece releases side by side — the first to know what\'s about to spike.' },
+        { name: 'Allan', role: 'Grading & Sealed Specialist', tag: 'PSA · CGC · ACE', photo: '', bio: 'The grading specialist. Years of PSA, CGC and ACE submissions plus a sealed vault that\'s the envy of UK collectors.' },
       ]),
       type: 'json',
       label: 'Team Members',

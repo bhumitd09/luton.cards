@@ -23,27 +23,27 @@ type TeamMember = {
 const DEFAULT_TEAM: TeamMember[] = [
   {
     name: 'Bhumit',
-    role: 'Co-Founder & Developer',
-    bio: 'Builds and runs the tech. Keeps the site, stock and checkout running smooth.',
-    tag: 'Tech & Operations',
+    role: 'Vintage Pokémon Specialist',
+    bio: 'The vintage hunter. Hand-picks pre-2003 Pokémon — Base Set holos, gold stars, sealed wax that\'s older than most of the customers.',
+    tag: 'Base Set & Beyond',
   },
   {
     name: 'Bash',
-    role: 'Co-Founder & Buyer',
-    bio: 'Sources the stock. Hunts singles, sealed product and graded slabs across the UK.',
-    tag: 'Sourcing & Buying',
+    role: 'One Piece Specialist',
+    bio: 'Lives and breathes One Piece TCG. Knows every set, every alt art, every leader meta.',
+    tag: 'OP-01 to Now',
   },
   {
     name: 'Ramz',
-    role: 'Co-Founder & Social Media',
-    bio: 'Runs the socials and the community on Instagram, TikTok and YouTube.',
-    tag: 'Community & Content',
+    role: 'Pokémon & One Piece Specialist',
+    bio: 'The all-rounder. Tracks modern Pokémon sets and One Piece releases side by side.',
+    tag: 'Modern Sets Master',
   },
   {
     name: 'Allan',
-    role: 'Co-Founder & Grading',
-    bio: 'The grading specialist. Years of PSA, CGC and ACE submissions under his belt.',
-    tag: 'Grading Specialist',
+    role: 'Grading & Sealed Specialist',
+    bio: 'Years of PSA, CGC and ACE submissions plus a sealed vault that\'s the envy of UK collectors.',
+    tag: 'PSA · CGC · ACE',
   },
 ]
 
@@ -95,12 +95,15 @@ function TeamCard({ member, index }: { member: TeamMember; index: number }) {
           {member.name}
         </h3>
         {member.role && (
-          <p className="m-0 mb-3 mt-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
-            {member.role}
-          </p>
+          <div className="mb-3 mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#EC1E79]/25 bg-gradient-to-r from-[#fff0f7] to-white px-3 py-1">
+            <span className="size-1.5 rounded-full bg-[#EC1E79]" />
+            <span className="bg-gradient-to-r from-[#EC1E79] to-[#7e1247] bg-clip-text text-[10.5px] font-extrabold uppercase tracking-[0.1em] text-transparent">
+              {member.role}
+            </span>
+          </div>
         )}
         {member.tag && (
-          <div className="mb-4 inline-block rounded-full bg-[#fff0f7] px-3 py-1 text-[11px] font-bold text-[#7e1247]">
+          <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-400">
             {member.tag}
           </div>
         )}
@@ -224,7 +227,7 @@ export default function AboutPage() {
             {[
               { icon: MapPin, value: 'Luton, UK', label: 'Based in' },
               { icon: Trophy, value: '2025', label: 'Established' },
-              { icon: Users, value: String(team.length), label: team.length === 1 ? 'Founder' : 'Founders', isNumber: true },
+              { icon: Users, value: String(team.length), label: 'Specialists', isNumber: true },
             ].map((stat, i) => {
               const Icon = stat.icon
               return (
