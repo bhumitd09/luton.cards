@@ -11,5 +11,9 @@ cmds = [
 ]
 
 [start]
-# Use direct binary instead of npx — avoids package resolution overhead on every cold start
-cmd = "./node_modules/.bin/prisma migrate deploy && node node_modules/next/dist/bin/next start"
+# 1. Apply any pending migrations.
+# 2. Run the seed — admin user + CMS defaults always upsert (idempotent),
+#    sample products only insert on a truly empty DB. Failure here logs a
+#    warning but does NOT block the web server starting (|| true).
+# 3. Start Next.js. Direct binary skips npx resolution overhead on cold start.
+cmd = "./node_modules/.bin/prisma migrate deploy && (npm run db:seed || echo '[warn] seed step failed, continuing boot') && node node_modules/next/dist/bin/next start"

@@ -44,8 +44,15 @@ async function main() {
     })
   }
 
-  // Seed example products — placeholders to populate the storefront on first run.
-  // Replace via the admin panel once you've added your real stock.
+  // Seed example products — only on a truly empty product table.
+  // After the first run, never re-create them so admin deletions/edits stick.
+  const existingProductCount = await prisma.product.count()
+  if (existingProductCount > 0) {
+    console.log(`Skipping product seed — ${existingProductCount} products already in DB.`)
+    console.log('Seed complete.')
+    return
+  }
+
   const products = [
     // Pokémon — Graded
     { name: 'Charizard G LV.X Holo', slug: 'charizard-g-lvx-holo', game: 'pokemon', category: 'graded', price: 300, stock: 1, grader: 'PSA', grade: 'PSA 8', featured: true, images: [] },
