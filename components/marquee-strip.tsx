@@ -1,60 +1,27 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { Marquee } from '@/components/magicui/marquee'
 
 const DEFAULT_ITEMS = [
-  'PSA Graded', 'Rare Singles', 'CGC Certified',
-  'Same Day Dispatch', 'Graded Slabs', 'ACE Graded',
-  'Booster Boxes', 'Sealed Product', 'Free UK Shipping',
+  'PSA Graded',
+  'CGC Certified',
+  'ACE Graded',
+  'Pokémon TCG',
+  'One Piece TCG',
+  'Booster Boxes',
+  'Sealed Product',
+  'Same Day Dispatch',
+  'Free UK Shipping',
+  'Luton, UK',
 ]
 
 function Diamond() {
   return (
-    <motion.span
-      animate={{ opacity: [0.5, 1, 0.5], scale: [0.85, 1.1, 0.85] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', repeatType: 'loop' }}
-      style={{
-        display: 'inline-block',
-        margin: '0 0.9rem',
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: '0.45rem',
-        lineHeight: 1,
-        flexShrink: 0,
-      }}
-    >
-      ◆
-    </motion.span>
-  )
-}
-
-function Row({ items, direction = 1, duration = 45 }: { items: string[]; direction?: 1 | -1; duration?: number }) {
-  // Double items so the loop is seamless
-  const doubled = [...items, ...items]
-  return (
-    <div style={{ overflow: 'hidden' }}>
-      <motion.div
-        style={{ display: 'flex', alignItems: 'center', width: 'max-content' }}
-        animate={{ x: direction === 1 ? ['0%', '-50%'] : ['-50%', '0%'] }}
-        transition={{ duration, repeat: Infinity, ease: 'linear' }}
-      >
-        {doubled.map((item, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
-            <span style={{
-              fontSize: '0.6875rem',
-              fontWeight: item.includes('·') ? 500 : 800,
-              color: item.includes('·') ? 'rgba(255,255,255,0.85)' : '#fff',
-              letterSpacing: '0.07em',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-            }}>
-              {item}
-            </span>
-            <Diamond />
-          </span>
-        ))}
-      </motion.div>
-    </div>
+    <span
+      aria-hidden
+      className="inline-block size-1 rotate-45 bg-white/40"
+    />
   )
 }
 
@@ -63,7 +30,7 @@ export function MarqueeStrip() {
 
   useEffect(() => {
     fetch('/api/content?keys=marquee_items')
-      .then(r => r.ok ? r.json() : null)
+      .then(r => (r.ok ? r.json() : null))
       .then(data => {
         if (data?.marquee_items) {
           try {
@@ -78,15 +45,21 @@ export function MarqueeStrip() {
   }, [])
 
   return (
-    <div style={{
-      background: '#EC1E79',
-      padding: '0.55rem 0',
-      overflow: 'hidden',
-      position: 'relative',
-    }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '60px', background: 'linear-gradient(to right, #EC1E79, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '60px', background: 'linear-gradient(to left, #EC1E79, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-      <Row items={items} direction={1} duration={45} />
+    <div className="relative overflow-hidden bg-[#EC1E79] py-2.5">
+      {/* edge fades */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#EC1E79] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#EC1E79] to-transparent" />
+
+      <Marquee className="[--duration:38s] [--gap:1.75rem]" pauseOnHover repeat={3}>
+        {items.map((item, i) => (
+          <span key={i} className="flex shrink-0 items-center gap-7">
+            <span className="whitespace-nowrap text-[11px] font-extrabold uppercase tracking-[0.14em] text-white">
+              {item}
+            </span>
+            <Diamond />
+          </span>
+        ))}
+      </Marquee>
     </div>
   )
 }

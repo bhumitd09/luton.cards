@@ -2,41 +2,24 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { motion, useInView, useMotionValue, useMotionTemplate } from 'framer-motion'
-import { ShieldCheck, Zap, Package, Star } from 'lucide-react'
+import { ShieldCheck, Zap, Package, Star, LucideIcon } from 'lucide-react'
+import { NumberTicker } from '@/components/magicui/number-ticker'
 
-function CountUp({ target, suffix, isInView }: { target: number; suffix: string; isInView: boolean }) {
-  const [current, setCurrent] = useState(0)
-  useEffect(() => {
-    if (!isInView || target === 0) return
-    const steps = 60
-    const increment = target / steps
-    let step = 0
-    const timer = setInterval(() => {
-      step++
-      setCurrent(Math.min(Math.round(increment * step), target))
-      if (step >= steps) clearInterval(timer)
-    }, 1800 / steps)
-    return () => clearInterval(timer)
-  }, [isInView, target])
-  if (target === 0) return <span>0</span>
-  return <span>{current.toLocaleString()}{suffix}</span>
+type Card = {
+  icon: LucideIcon
+  stat: number
+  suffix?: string
+  label: string
+  description: string
 }
 
-function FeatureCard({
-  icon: Icon,
-  stat,
-  suffix,
-  label,
-  description,
+function StatCard({
+  card,
   index,
   isInView,
   loaded,
 }: {
-  icon: React.ElementType
-  stat: number
-  suffix: string
-  label: string
-  description: string
+  card: Card
   index: number
   isInView: boolean
   loaded: boolean
@@ -44,7 +27,7 @@ function FeatureCard({
   const cardRef = useRef<HTMLDivElement>(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
-  const spotlight = useMotionTemplate`radial-gradient(220px circle at ${mouseX}px ${mouseY}px, rgba(236,30,121,0.12), transparent 80%)`
+  const spotlight = useMotionTemplate`radial-gradient(220px circle at ${mouseX}px ${mouseY}px, rgba(236,30,121,0.13), transparent 75%)`
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!cardRef.current) return
@@ -53,85 +36,46 @@ function FeatureCard({
     mouseY.set(e.clientY - rect.top)
   }
 
+  const Icon = card.icon
+
   return (
     <motion.div
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 28 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.1, duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={{ y: -6, transition: { type: 'spring', stiffness: 280, damping: 18 } }}
-      style={{
-        position: 'relative',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '20px',
-        padding: '2rem 1.75rem',
-        cursor: 'default',
-        overflow: 'hidden',
-      }}
+      transition={{ delay: index * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -4 }}
+      className="group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.015] p-7 backdrop-blur-sm transition-shadow duration-300 hover:border-[#EC1E79]/30"
     >
-      {/* Spotlight */}
-      <motion.div style={{ background: spotlight, position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '20px' }} />
+      {/* spotlight */}
+      <motion.div style={{ background: spotlight }} className="pointer-events-none absolute inset-0" />
 
-      {/* Top glow line */}
-      <div style={{
-        position: 'absolute',
-        top: 0, left: '20%', right: '20%',
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(236,30,121,0.6), transparent)',
-      }} />
+      {/* top gradient line */}
+      <div className="absolute inset-x-[20%] top-0 h-px bg-gradient-to-r from-transparent via-[#EC1E79]/60 to-transparent" />
 
-      {/* Icon */}
-      <div style={{
-        width: '48px', height: '48px',
-        borderRadius: '14px',
-        background: 'rgba(236,30,121,0.1)',
-        border: '1px solid rgba(236,30,121,0.2)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        marginBottom: '1.5rem',
-      }}>
-        <Icon size={22} color="#EC1E79" strokeWidth={2} />
+      <div className="relative">
+        <div className="mb-6 inline-flex size-12 items-center justify-center rounded-xl border border-[#EC1E79]/20 bg-[#EC1E79]/10">
+          <Icon size={20} color="#EC1E79" strokeWidth={2} />
+        </div>
+
+        <div className="mb-1.5 text-[clamp(2.4rem,4vw,3.25rem)] font-black leading-none tracking-[-0.04em] text-white">
+          {loaded ? (
+            <>
+              <NumberTicker value={card.stat} />
+              {card.suffix && <span>{card.suffix}</span>}
+            </>
+          ) : (
+            <span className="opacity-15">0</span>
+          )}
+        </div>
+
+        <div className="mb-2 text-xs font-bold uppercase tracking-[0.1em] text-[#EC1E79]">
+          {card.label}
+        </div>
+
+        <p className="m-0 text-[13px] leading-[1.6] text-white/35">{card.description}</p>
       </div>
-
-      {/* Stat */}
-      <div style={{
-        fontSize: 'clamp(2.5rem, 4vw, 3.25rem)',
-        fontWeight: 900,
-        color: '#fff',
-        letterSpacing: '-0.04em',
-        lineHeight: 1,
-        marginBottom: '0.35rem',
-        fontVariantNumeric: 'tabular-nums',
-      }}>
-        {loaded ? (
-          <CountUp target={stat} suffix={suffix} isInView={isInView} />
-        ) : (
-          <span style={{ opacity: 0.15 }}>0</span>
-        )}
-      </div>
-
-      {/* Label */}
-      <div style={{
-        fontSize: '0.8125rem',
-        fontWeight: 700,
-        color: '#EC1E79',
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        marginBottom: '0.6rem',
-      }}>
-        {label}
-      </div>
-
-      {/* Description */}
-      <p style={{
-        fontSize: '0.8125rem',
-        color: 'rgba(255,255,255,0.3)',
-        lineHeight: 1.6,
-        margin: 0,
-      }}>
-        {description}
-      </p>
     </motion.div>
   )
 }
@@ -145,121 +89,85 @@ export function StatsSection() {
   useEffect(() => {
     fetch('/api/stats')
       .then(r => r.json())
-      .then(data => { setStats(data); setLoaded(true) })
+      .then(data => {
+        setStats(data)
+        setLoaded(true)
+      })
       .catch(() => setLoaded(true))
   }, [])
 
-  const cards = [
+  const cards: Card[] = [
     {
       icon: Package,
       stat: stats.totalStock,
       suffix: '+',
       label: 'Cards in stock',
-      description: 'Fresh inventory updated daily. Singles, slabs and sealed product ready to ship.',
+      description: 'Singles, slabs and sealed product ready to ship.',
     },
     {
       icon: ShieldCheck,
       stat: stats.totalProducts,
-      suffix: '',
       label: 'Active listings',
-      description: 'Every card individually checked and listed honestly. No bulk filler.',
+      description: 'Every card individually checked. No bulk filler.',
     },
     {
       icon: Star,
       stat: stats.totalOrders,
-      suffix: '',
       label: 'Orders shipped',
-      description: 'From UK collectors to worldwide. Packaged properly, every time.',
+      description: 'Packed properly. UK and worldwide.',
     },
     {
       icon: Zap,
       stat: 24,
       suffix: 'h',
       label: 'Dispatch time',
-      description: 'Order before midday and we ship same day. Fast tracked as standard.',
+      description: 'Order before midday, ships the same day.',
     },
   ]
 
   return (
-    <section
-      ref={ref}
-      style={{
-        padding: '6rem 0',
-        background: '#050505',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Background grid pattern */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: `
-          linear-gradient(rgba(236,30,121,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(236,30,121,0.03) 1px, transparent 1px)
-        `,
-        backgroundSize: '48px 48px',
-      }} />
+    <section ref={ref} className="relative overflow-hidden bg-[#050505] py-20 sm:py-24">
+      {/* background grid */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(236,30,121,0.03) 1px, transparent 1px),linear-gradient(90deg,rgba(236,30,121,0.03) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+      {/* centre glow */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 size-[600px] -translate-x-1/2 -translate-y-1/2"
+        style={{
+          background: 'radial-gradient(ellipse, rgba(236,30,121,0.06) 0%, transparent 70%)',
+        }}
+      />
 
-      {/* Radial glow centre */}
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '600px', height: '400px',
-        background: 'radial-gradient(ellipse, rgba(236,30,121,0.06) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
-
-      <div className="container" style={{ position: 'relative' }}>
-        {/* Heading */}
+      <div className="relative mx-auto max-w-[1180px] px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          style={{ marginBottom: '3.5rem' }}
+          transition={{ duration: 0.45 }}
+          className="mb-12"
         >
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-            background: 'rgba(236,30,121,0.08)',
-            border: '1px solid rgba(236,30,121,0.2)',
-            color: '#EC1E79',
-            padding: '0.3rem 0.875rem',
-            borderRadius: '9999px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            marginBottom: '1rem',
-          }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EC1E79', display: 'inline-block' }} />
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#EC1E79]/20 bg-[#EC1E79]/[0.07] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#EC1E79]">
+            <span className="size-1.5 animate-pulse rounded-full bg-[#EC1E79]" />
             Live numbers
           </div>
-          <h2 style={{
-            fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)',
-            fontWeight: 900,
-            color: '#fff',
-            letterSpacing: '-0.035em',
-            margin: 0,
-            lineHeight: 1.1,
-          }}>
-            Why collectors choose<br />
-            <span style={{ color: '#EC1E79' }}>Luton Cards</span>
+          <h2 className="m-0 text-[clamp(1.85rem,3.6vw,2.85rem)] font-black leading-[1.1] tracking-[-0.035em] text-white">
+            Why collectors choose
+            <br />
+            <span className="bg-gradient-to-r from-[#EC1E79] to-[#FF80B8] bg-clip-text text-transparent">
+              Luton Cards
+            </span>
+            <span className="text-white">.</span>
           </h2>
         </motion.div>
 
-        {/* Cards grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '1rem',
-        }}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((card, i) => (
-            <FeatureCard
-              key={card.label}
-              {...card}
-              index={i}
-              isInView={isInView}
-              loaded={loaded}
-            />
+            <StatCard key={card.label} card={card} index={i} isInView={isInView} loaded={loaded} />
           ))}
         </div>
       </div>

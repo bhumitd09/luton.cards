@@ -4,7 +4,10 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { Upload, X, Check, AlertCircle } from 'lucide-react'
+import { Upload, X, Check, AlertCircle, Banknote } from 'lucide-react'
+import { Particles } from '@/components/magicui/particles'
+import { ShimmerButton } from '@/components/magicui/shimmer-button'
+import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 
 const MAX_IMAGES = 5
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024
@@ -31,6 +34,7 @@ export default function SellPage() {
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -88,64 +92,64 @@ export default function SellPage() {
   return (
     <>
       <Header />
-      <main style={{ background: '#fff', minHeight: '100vh' }}>
-        <style>{`
-          .sell-hero { background: linear-gradient(135deg, #0a0a0a 0%, #1a0612 60%, #2b0a1f 100%); padding: 4.5rem 1.5rem 3rem; text-align: center; position: relative; overflow: hidden; }
-          .sell-hero::before { content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%); width: 700px; height: 700px; background: radial-gradient(circle, rgba(236,30,121,0.2) 0%, transparent 60%); pointer-events: none; }
-          .sell-form-wrap { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
-          .sell-field { display: flex; flex-direction: column; gap: 0.4rem; }
-          .sell-label { font-size: 0.75rem; font-weight: 700; color: #111; text-transform: uppercase; letter-spacing: 0.08em; }
-          .sell-input, .sell-textarea, .sell-select {
-            width: 100%; padding: 0.75rem 0.9rem;
-            border: 1.5px solid #e5e7eb; border-radius: 10px;
-            background: #fff; font-size: 0.95rem; outline: none;
-            font-family: inherit; transition: border-color 0.15s;
-            box-sizing: border-box;
-          }
-          .sell-input:focus, .sell-textarea:focus, .sell-select:focus { border-color: #EC1E79; }
-          .sell-textarea { min-height: 140px; resize: vertical; line-height: 1.6; }
-          .sell-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-          @media (max-width: 600px) { .sell-row { grid-template-columns: 1fr; } }
-          .sell-drop {
-            border: 2px dashed #e5e7eb; border-radius: 14px; padding: 1.75rem 1rem;
-            text-align: center; cursor: pointer; transition: all 0.15s;
-            background: #fafafa;
-          }
-          .sell-drop:hover { border-color: #EC1E79; background: #fff0f7; }
-          .sell-thumb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
-          .sell-thumb { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 1.5px solid #eee; }
-          .sell-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-          .sell-thumb-x {
-            position: absolute; top: 4px; right: 4px;
-            width: 22px; height: 22px; border-radius: 50%;
-            background: rgba(0,0,0,0.7); color: #fff;
-            border: none; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-          }
-        `}</style>
+      <main className="min-h-screen bg-white">
+        {/* hero */}
+        <section className="relative overflow-hidden bg-[#070708] py-20 sm:py-24">
+          <Particles
+            className="absolute inset-0"
+            quantity={60}
+            color="#EC1E79"
+            ease={70}
+            size={0.5}
+            staticity={40}
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(70% 50% at 50% 0%, rgba(236,30,121,0.22) 0%, rgba(236,30,121,0.05) 35%, transparent 70%)',
+            }}
+          />
+          <div className="relative mx-auto max-w-[720px] px-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mb-6 flex justify-center"
+            >
+              <AnimatedGradientText className="!bg-white/[0.04] !text-white">
+                <Banknote className="mr-1.5 size-3.5 text-[#EC1E79]" />
+                <span className="inline animate-gradient bg-gradient-to-r from-[#EC1E79] via-[#FF80B8] to-[#EC1E79] bg-[length:var(--bg-size)_100%] bg-clip-text text-xs font-bold uppercase tracking-[0.14em] text-transparent">
+                  Sell to Luton Cards
+                </span>
+              </AnimatedGradientText>
+            </motion.div>
 
-        <section className="sell-hero">
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: '720px', margin: '0 auto' }}>
-            <p style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EC1E79', margin: '0 0 0.85rem' }}>
-              Sell to Luton Cards
-            </p>
-            <h1 style={{
-              fontSize: 'clamp(2rem, 4.5vw, 3rem)',
-              fontWeight: 900,
-              color: '#fff',
-              letterSpacing: '-0.03em',
-              lineHeight: 1.05,
-              margin: '0 0 1rem',
-            }}>
-              Got cards to sell?<br />We&apos;re buying.
-            </h1>
-            <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, margin: '0 auto', maxWidth: '520px' }}>
-              Whether it&apos;s a single chase card, a vintage collection or a stack of sealed product &mdash; tell us what you&apos;ve got. We&apos;ll come back with a fair offer.
-            </p>
+            <motion.h1
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="m-0 text-[clamp(2.2rem,4.8vw,3.25rem)] font-black leading-[1.04] tracking-[-0.035em] text-white"
+            >
+              Got cards to sell?
+              <br />
+              <span className="bg-gradient-to-br from-[#EC1E79] to-[#FF4DA6] bg-clip-text text-transparent">
+                We&apos;re buying.
+              </span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mx-auto mt-5 max-w-[520px] text-base leading-[1.65] text-white/55"
+            >
+              Single chase card, vintage collection or sealed product &mdash; tell us what you&apos;ve got and we&apos;ll
+              come back with a fair offer.
+            </motion.p>
           </div>
         </section>
 
-        <div className="sell-form-wrap">
+        <div className="mx-auto max-w-[720px] px-6 py-12 sm:py-16">
           <AnimatePresence mode="wait">
             {success ? (
               <motion.div
@@ -153,88 +157,77 @@ export default function SellPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                style={{
-                  background: '#fff0f7',
-                  border: '1.5px solid #EC1E79',
-                  borderRadius: '16px',
-                  padding: '2.5rem 2rem',
-                  textAlign: 'center',
-                }}
+                className="rounded-2xl border-2 border-[#EC1E79] bg-[#fff0f7] p-10 text-center"
               >
-                <div style={{
-                  width: '56px', height: '56px', borderRadius: '50%',
-                  background: '#EC1E79', color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 1.25rem',
-                }}>
-                  <Check size={28} />
+                <div className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full bg-[#EC1E79] text-white shadow-[0_12px_30px_-10px_rgba(236,30,121,0.6)]">
+                  <Check size={26} />
                 </div>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#111', margin: '0 0 0.5rem', letterSpacing: '-0.02em' }}>
+                <h2 className="m-0 mb-2 text-[1.45rem] font-black tracking-[-0.02em] text-neutral-900">
                   Submission received.
                 </h2>
-                <p style={{ fontSize: '0.95rem', color: '#444', lineHeight: 1.6, margin: 0 }}>
-                  Thanks &mdash; we&apos;ll have a look at what you&apos;ve sent and come back to you within 48 hours with an offer or follow-up questions.
+                <p className="m-0 text-[0.95rem] leading-[1.65] text-neutral-600">
+                  Thanks &mdash; we&apos;ll have a look at what you&apos;ve sent and come back to you within 48 hours
+                  with an offer or follow-up questions.
                 </p>
               </motion.div>
             ) : (
               <motion.form
                 key="form"
                 onSubmit={handleSubmit}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                className="flex flex-col gap-5"
               >
-                <div className="sell-row">
-                  <div className="sell-field">
-                    <label className="sell-label">Your Name *</label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field label="Your Name *" htmlFor="name">
                     <input
-                      className="sell-input"
+                      id="name"
+                      className={inputCls}
                       required
                       maxLength={120}
                       value={form.name}
                       onChange={update('name')}
                       placeholder="Full name"
                     />
-                  </div>
-                  <div className="sell-field">
-                    <label className="sell-label">Email *</label>
+                  </Field>
+                  <Field label="Email *" htmlFor="email">
                     <input
-                      className="sell-input"
+                      id="email"
+                      className={inputCls}
                       type="email"
                       required
                       value={form.email}
                       onChange={update('email')}
                       placeholder="you@example.com"
                     />
-                  </div>
+                  </Field>
                 </div>
 
-                <div className="sell-row">
-                  <div className="sell-field">
-                    <label className="sell-label">Phone (optional)</label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field label="Phone (optional)" htmlFor="phone">
                     <input
-                      className="sell-input"
+                      id="phone"
+                      className={inputCls}
                       type="tel"
                       value={form.phone}
                       onChange={update('phone')}
                       placeholder="UK mobile number"
                     />
-                  </div>
-                  <div className="sell-field">
-                    <label className="sell-label">Game *</label>
-                    <select className="sell-select" value={form.game} onChange={update('game')}>
+                  </Field>
+                  <Field label="Game *" htmlFor="game">
+                    <select id="game" className={inputCls} value={form.game} onChange={update('game')}>
                       <option value="pokemon">Pokémon</option>
                       <option value="one-piece">One Piece</option>
                       <option value="mixed">Mixed / Both</option>
                     </select>
-                  </div>
+                  </Field>
                 </div>
 
-                <div className="sell-field">
-                  <label className="sell-label">What are you selling? *</label>
+                <Field label="What are you selling? *" htmlFor="details">
                   <textarea
-                    className="sell-textarea"
+                    id="details"
+                    className={`${inputCls} min-h-[140px] resize-y leading-[1.6]`}
                     required
                     minLength={10}
                     maxLength={4000}
@@ -242,91 +235,94 @@ export default function SellPage() {
                     onChange={update('details')}
                     placeholder="Tell us what you have — sets, conditions, whether it's sealed/graded/raw, quantities. The more detail the better."
                   />
-                </div>
+                </Field>
 
-                <div className="sell-field">
-                  <label className="sell-label">Estimated value (optional)</label>
+                <Field label="Estimated value (optional)" htmlFor="estimate">
                   <input
-                    className="sell-input"
+                    id="estimate"
+                    className={inputCls}
                     value={form.estimate}
                     onChange={update('estimate')}
                     placeholder="e.g. £500 — what you'd hope to get, or 'open to offers'"
                   />
-                </div>
+                </Field>
 
-                <div className="sell-field">
-                  <label className="sell-label">Photos (up to {MAX_IMAGES})</label>
+                <Field label={`Photos (up to ${MAX_IMAGES})`} htmlFor="">
                   <div
-                    className="sell-drop"
                     onClick={() => fileInputRef.current?.click()}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
+                    onDragOver={e => {
+                      e.preventDefault()
+                      setDragActive(true)
+                    }}
+                    onDragLeave={() => setDragActive(false)}
+                    onDrop={e => {
+                      e.preventDefault()
+                      setDragActive(false)
+                      handleFiles(e.dataTransfer.files)
+                    }}
+                    className={[
+                      'cursor-pointer rounded-2xl border-2 border-dashed px-4 py-7 text-center transition-all',
+                      dragActive
+                        ? 'border-[#EC1E79] bg-[#fff0f7]'
+                        : 'border-neutral-200 bg-neutral-50 hover:border-[#EC1E79] hover:bg-[#fff0f7]',
+                    ].join(' ')}
                   >
-                    <Upload size={26} color="#EC1E79" style={{ marginBottom: '0.5rem' }} />
-                    <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#111', margin: '0 0 0.25rem' }}>
+                    <Upload size={26} className="mx-auto mb-2 text-[#EC1E79]" />
+                    <p className="m-0 mb-0.5 text-sm font-extrabold text-neutral-900">
                       Click or drop images here
                     </p>
-                    <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: 0 }}>
-                      JPG or PNG, up to {MAX_IMAGE_BYTES / 1024 / 1024}MB each. Helps us give a faster, better offer.
+                    <p className="m-0 text-xs text-neutral-500">
+                      JPG or PNG, up to {MAX_IMAGE_BYTES / 1024 / 1024}MB each.
                     </p>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       multiple
-                      style={{ display: 'none' }}
+                      className="hidden"
                       onChange={e => handleFiles(e.target.files)}
                     />
                   </div>
                   {images.length > 0 && (
-                    <div className="sell-thumb-grid">
+                    <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-2">
                       {images.map((src, i) => (
-                        <div key={i} className="sell-thumb">
+                        <div
+                          key={i}
+                          className="relative aspect-square overflow-hidden rounded-xl border border-neutral-200"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={src} alt={`Upload ${i + 1}`} />
-                          <button type="button" className="sell-thumb-x" aria-label="Remove" onClick={() => removeImage(i)}>
-                            <X size={12} />
+                          <img src={src} alt={`Upload ${i + 1}`} className="size-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            aria-label="Remove"
+                            className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black"
+                          >
+                            <X size={11} />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
+                </Field>
 
                 {error && (
-                  <div style={{
-                    display: 'flex', alignItems: 'flex-start', gap: '0.6rem',
-                    background: '#fef2f2', border: '1.5px solid #fecaca',
-                    color: '#b91c1c', padding: '0.85rem 1rem', borderRadius: '10px',
-                    fontSize: '0.85rem',
-                  }}>
-                    <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <div className="flex items-start gap-2 rounded-xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
 
-                <button
+                <ShimmerButton
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    background: submitting ? '#c81c6b' : '#EC1E79',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '1rem 1.5rem',
-                    borderRadius: '12px',
-                    fontSize: '0.95rem',
-                    fontWeight: 800,
-                    cursor: submitting ? 'wait' : 'pointer',
-                    letterSpacing: '-0.01em',
-                    fontFamily: 'inherit',
-                    transition: 'background 0.15s, transform 0.1s',
-                    boxShadow: '0 8px 22px -8px rgba(236,30,121,0.55)',
-                  }}
+                  className="w-full px-6 py-4 text-sm"
+                  background="linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)"
                 >
                   {submitting ? 'Sending…' : 'Submit for offer'}
-                </button>
+                </ShimmerButton>
 
-                <p style={{ fontSize: '0.75rem', color: '#888', textAlign: 'center', margin: 0, lineHeight: 1.6 }}>
+                <p className="mx-auto m-0 max-w-[440px] text-center text-xs leading-[1.6] text-neutral-400">
                   We&apos;ll reply within 48 hours. By submitting, you agree to be contacted by Luton Cards about your sale.
                 </p>
               </motion.form>
@@ -336,5 +332,22 @@ export default function SellPage() {
       </main>
       <Footer />
     </>
+  )
+}
+
+const inputCls =
+  'box-border w-full rounded-xl border-[1.5px] border-neutral-200 bg-white px-3.5 py-3 text-sm font-medium text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 focus:border-[#EC1E79]'
+
+function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={htmlFor || undefined}
+        className="text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-900"
+      >
+        {label}
+      </label>
+      {children}
+    </div>
   )
 }

@@ -16,6 +16,8 @@ import {
   LayoutGrid,
   Edit3,
 } from 'lucide-react'
+import { BorderBeam } from '@/components/magicui/border-beam'
+import { NumberTicker } from '@/components/magicui/number-ticker'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -104,6 +106,8 @@ function StatCard({
   delay,
   loading,
   badge,
+  numericValue,
+  prefix,
 }: {
   icon: React.ElementType
   label: string
@@ -113,40 +117,45 @@ function StatCard({
   delay: number
   loading: boolean
   badge?: { text: string; color: string }
+  numericValue?: number
+  prefix?: string
 }) {
+  const [hovered, setHovered] = useState(false)
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.45, ease: 'easeOut' }}
       whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: '#111',
+        background: '#0f0f10',
         border: '1px solid #1f1f1f',
-        borderRadius: '14px',
+        borderRadius: '16px',
         padding: '1.5rem',
         cursor: 'default',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* Corner glow */}
+      {/* corner glow */}
       <div style={{
         position: 'absolute',
         top: 0,
         right: 0,
-        width: 100,
-        height: 100,
-        background: `radial-gradient(circle at top right, ${color}15 0%, transparent 70%)`,
+        width: 140,
+        height: 140,
+        background: `radial-gradient(circle at top right, ${color}1a 0%, transparent 70%)`,
         pointerEvents: 'none',
       }} />
 
-      {/* Icon */}
+      {/* icon */}
       <div style={{
         width: 44,
         height: 44,
         background: `${color}18`,
-        border: `1px solid ${color}28`,
+        border: `1px solid ${color}30`,
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
@@ -164,11 +173,18 @@ function StatCard({
         </div>
       ) : (
         <>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '0.375rem' }}>
-            {value}
+          <div style={{ fontSize: '2.1rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.035em', lineHeight: 1.05, marginBottom: '0.45rem' }}>
+            {typeof numericValue === 'number' ? (
+              <>
+                {prefix}
+                <NumberTicker value={numericValue} />
+              </>
+            ) : (
+              value
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#9ca3af' }}>{label}</span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af' }}>{label}</span>
             {badge && (
               <span style={{
                 background: `${badge.color}18`,
@@ -185,6 +201,10 @@ function StatCard({
           </div>
           {sub && <div style={{ fontSize: '0.75rem', color: '#4b5563', marginTop: '0.2rem' }}>{sub}</div>}
         </>
+      )}
+
+      {hovered && !loading && (
+        <BorderBeam size={260} duration={11} colorFrom={color} colorTo="#FF80B8" borderWidth={1.5} />
       )}
     </motion.div>
   )
@@ -350,7 +370,9 @@ export default function AdminDashboard() {
         <StatCard
           icon={DollarSign}
           label="Total Revenue"
-          value={analytics?.totalRevenue != null ? `£${analytics.totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '£0.00'}
+          value="—"
+          numericValue={analytics?.totalRevenue ?? 0}
+          prefix="£"
           sub="All time"
           color="#EC1E79"
           delay={0.05}
@@ -360,6 +382,7 @@ export default function AdminDashboard() {
           icon={ShoppingBag}
           label="Orders Today"
           value={ordersToday}
+          numericValue={ordersToday}
           sub="From recent orders"
           color="#818cf8"
           delay={0.1}
@@ -370,6 +393,7 @@ export default function AdminDashboard() {
           icon={TrendingUp}
           label="Active Listings"
           value={analytics?.activeProducts ?? 0}
+          numericValue={analytics?.activeProducts ?? 0}
           sub="Live products"
           color="#f59e0b"
           delay={0.15}
@@ -379,6 +403,7 @@ export default function AdminDashboard() {
           icon={AlertTriangle}
           label="Out of Stock"
           value={analytics?.outOfStockProducts ?? 0}
+          numericValue={analytics?.outOfStockProducts ?? 0}
           sub="Need restocking"
           color="#ef4444"
           delay={0.2}

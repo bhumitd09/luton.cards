@@ -3,9 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { AlertCircle, LogIn } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { AlertCircle } from 'lucide-react'
+import { Particles } from '@/components/magicui/particles'
+import { ShimmerButton } from '@/components/magicui/shimmer-button'
+import { BorderBeam } from '@/components/magicui/border-beam'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -40,70 +44,98 @@ export default function LoginPage() {
   return (
     <>
       <Header />
-      <main style={{ background: '#fafafa', minHeight: '100vh', padding: '4rem 1.5rem' }}>
-        <div style={{ maxWidth: '420px', margin: '0 auto', background: '#fff', borderRadius: '20px', border: '1.5px solid #eee', padding: '2.5rem 2rem' }}>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#111', letterSpacing: '-0.025em', margin: '0 0 0.5rem' }}>
-            Sign in
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: '#666', margin: '0 0 2rem' }}>
-            Welcome back to Luton Cards.
-          </p>
+      <main className="relative min-h-screen overflow-hidden bg-[#070708] py-16 sm:py-20">
+        <Particles className="absolute inset-0" quantity={50} color="#EC1E79" ease={70} size={0.5} staticity={50} />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(50% 60% at 50% 0%, rgba(236,30,121,0.22) 0%, rgba(236,30,121,0.05) 35%, transparent 70%)',
+          }}
+        />
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label style={lbl}>Email</label>
-              <input
-                style={inp}
-                type="email"
-                required
-                autoFocus
-                value={form.email}
-                onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label style={lbl}>Password</label>
-              <input
-                style={inp}
-                type="password"
-                required
-                value={form.password}
-                onChange={e => setForm(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="Your password"
-              />
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative mx-auto max-w-[420px] px-6"
+        >
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] p-7 backdrop-blur-xl sm:p-9">
+            <BorderBeam size={300} duration={12} colorFrom="#EC1E79" colorTo="#FF80B8" borderWidth={1.5} />
 
-            {error && (
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', background: '#fef2f2', border: '1.5px solid #fecaca', color: '#b91c1c', padding: '0.75rem 0.9rem', borderRadius: '10px', fontSize: '0.85rem' }}>
-                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>{error}</span>
+            <div className="mb-6 flex flex-col items-center text-center">
+              <div className="mb-4 flex size-12 items-center justify-center rounded-2xl border border-[#EC1E79]/20 bg-[#EC1E79]/10">
+                <LogIn size={18} className="text-[#EC1E79]" />
               </div>
-            )}
+              <h1 className="m-0 text-[1.6rem] font-black tracking-[-0.025em] text-white">Welcome back</h1>
+              <p className="m-0 mt-1 text-sm text-white/45">Sign in to your Luton Cards account.</p>
+            </div>
 
-            <button type="submit" disabled={submitting} style={btn(submitting)}>
-              {submitting ? 'Signing in…' : 'Sign in'}
-            </button>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <Field label="Email">
+                <input
+                  className={darkInput}
+                  type="email"
+                  required
+                  autoFocus
+                  value={form.email}
+                  onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="you@example.com"
+                />
+              </Field>
+              <Field label="Password">
+                <input
+                  className={darkInput}
+                  type="password"
+                  required
+                  value={form.password}
+                  onChange={e => setForm(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="••••••••"
+                />
+              </Field>
 
-            <p style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', margin: '0.5rem 0 0' }}>
-              New here?{' '}
-              <Link href="/register" style={{ color: '#EC1E79', fontWeight: 700, textDecoration: 'none' }}>Create an account</Link>
-            </p>
-          </form>
-        </div>
+              {error && (
+                <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-3 text-[13px] text-red-300">
+                  <AlertCircle size={15} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <ShimmerButton
+                type="submit"
+                disabled={submitting}
+                className="mt-1 w-full px-6 py-3.5 text-sm"
+                background="linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)"
+              >
+                {submitting ? 'Signing in…' : 'Sign in'}
+              </ShimmerButton>
+
+              <p className="m-0 mt-2 text-center text-sm text-white/55">
+                New here?{' '}
+                <Link
+                  href="/register"
+                  className="font-bold text-[#EC1E79] underline-offset-4 hover:underline"
+                >
+                  Create an account
+                </Link>
+              </p>
+            </form>
+          </div>
+        </motion.div>
       </main>
       <Footer />
     </>
   )
 }
 
-const lbl: React.CSSProperties = { fontSize: '0.75rem', fontWeight: 700, color: '#111', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.4rem' }
-const inp: React.CSSProperties = { width: '100%', padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1.5px solid #e5e7eb', fontSize: '0.95rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
-const btn = (loading: boolean): React.CSSProperties => ({
-  background: loading ? '#c81c6b' : '#EC1E79',
-  color: '#fff', border: 'none',
-  padding: '0.9rem 1.4rem', borderRadius: '12px',
-  fontSize: '0.95rem', fontWeight: 800, letterSpacing: '-0.01em',
-  cursor: loading ? 'wait' : 'pointer', fontFamily: 'inherit',
-  marginTop: '0.5rem',
-})
+const darkInput =
+  'box-border w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-3 text-sm font-medium text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#EC1E79] focus:bg-white/[0.06]'
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/60">{label}</label>
+      {children}
+    </div>
+  )
+}
