@@ -13,6 +13,22 @@ type IGPost = {
 type Status = 'idle' | 'saving' | 'saved' | 'error'
 type Source = 'graph' | 'manual' | 'empty'
 
+type Diagnostic = {
+  ok: boolean
+  step: 'no-token' | 'profile' | 'media' | 'success'
+  message?: string
+  profile?: {
+    id?: string
+    username?: string
+    account_type?: string
+    media_count?: number
+    name?: string
+  }
+  postsReturned?: number
+  rawProfileResponse?: unknown
+  rawMediaResponse?: unknown
+}
+
 const MAX_POSTS = 12
 
 export default function AdminInstagramPage() {
@@ -26,6 +42,7 @@ export default function AdminInstagramPage() {
   const [previewPosts, setPreviewPosts] = useState<IGPost[] | null>(null)
   const [previewSource, setPreviewSource] = useState<Source | null>(null)
   const [testing, setTesting] = useState(false)
+  const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -54,12 +71,22 @@ export default function AdminInstagramPage() {
     setError(null)
     setPreviewPosts(null)
     setPreviewSource(null)
+    setDiagnostic(null)
     try {
-      const res = await fetch('/api/instagram', { cache: 'no-store' })
-      if (!res.ok) throw new Error('Fetch failed')
-      const data = await res.json()
-      setPreviewPosts(Array.isArray(data.posts) ? data.posts : [])
-      setPreviewSource(data.source as Source)
+      // Run both in parallel: public feed + admin diagnostic
+      const [feedRes, diagRes] = await Promise.all([
+        fetch('/api/instagram', { cache: 'no-store' }),
+        fetch('/api/admin/instagram/diagnose', { cache: 'no-store' }),
+      ])
+      if (feedRes.ok) {
+        const data = await feedRes.json()
+        setPreviewPosts(Array.isArray(data.posts) ? data.posts : [])
+        setPreviewSource(data.source as Source)
+      }
+      if (diagRes.ok) {
+        const diag = await diagRes.json() as Diagnostic
+        setDiagnostic(diag)
+      }
     } catch {
       setError('Could not reach /api/instagram')
     } finally {
@@ -265,6 +292,84 @@ export default function AdminInstagramPage() {
                             className="aspect-square w-full rounded-md border border-neutral-800 object-cover"
                           />
                         ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Diagnostic panel — shows what Meta's API actually says */}
+              <AnimatePresence>
+                {diagnostic && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-3 rounded-xl border border-neutral-800 bg-neutral-950 p-3"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                        Meta Graph API diagnostic
+                      </span>
+                      <span
+                        className={[
+                          'rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                          diagnostic.ok
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : 'bg-amber-500/15 text-amber-300',
+                        ].join(' ')}
+                      >
+                        {diagnostic.step}
+                      </span>
+                    </div>
+
+                    {diagnostic.profile && (
+                      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[12px]">
+                        <dt className="text-neutral-500">Connected account</dt>
+                        <dd className="font-mono font-bold text-white">@{diagnostic.profile.username || '—'}</dd>
+
+                        <dt className="text-neutral-500">Account type</dt>
+                        <dd className={`font-bold ${diagnostic.profile.account_type === 'PERSONAL' ? 'text-red-400' : 'text-emerald-400'}`}>
+                          {diagnostic.profile.account_type || '—'}
+                        </dd>
+
+                        <dt className="text-neutral-500">Total posts on account</dt>
+                        <dd className="font-mono font-bold text-white">
+                          {diagnostic.profile.media_count ?? '—'}
+                        </dd>
+
+                        <dt className="text-neutral-500">Posts returned by API</dt>
+                        <dd className="font-mono font-bold text-white">{diagnostic.postsReturned ?? 0}</dd>
+                      </dl>
+                    )}
+
+                    {diagnostic.message && (
+                      <p className="mt-2 text-[12px] text-amber-300">{diagnostic.message}</p>
+                    )}
+
+                    {/* Smart hints */}
+                    {diagnostic.profile?.account_type === 'PERSONAL' && (
+                      <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-[1.5] text-amber-200">
+                        <strong>This is a Personal account.</strong> Meta&apos;s Graph API does not return media for
+                        Personal accounts. Convert <span className="font-mono">@{diagnostic.profile.username}</span> to
+                        a Business or Creator account in Instagram (Settings &rarr; Account type and tools), then
+                        click <em>Add account</em> in the Meta dashboard to get a fresh token.
+                      </div>
+                    )}
+
+                    {diagnostic.ok && diagnostic.postsReturned === 0 && (diagnostic.profile?.media_count ?? 0) === 0 && (
+                      <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-[1.5] text-amber-200">
+                        <strong>Account has 0 posts.</strong> Publish something on Instagram, wait a minute, then click
+                        Test live feed again.
+                      </div>
+                    )}
+
+                    {diagnostic.ok && diagnostic.postsReturned === 0 && (diagnostic.profile?.media_count ?? 0) > 0 && (
+                      <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] leading-[1.5] text-amber-200">
+                        <strong>Account has {diagnostic.profile?.media_count} posts but the API returned 0.</strong>{' '}
+                        This usually means the account was converted to Business <em>after</em> the existing posts
+                        were published — Meta sometimes doesn&apos;t backfill old posts to the Graph API. Publishing
+                        one new post should make all posts appear.
                       </div>
                     )}
                   </motion.div>
