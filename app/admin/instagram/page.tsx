@@ -143,7 +143,6 @@ export default function AdminInstagramPage() {
             body: JSON.stringify({ value: token.trim(), type: 'text', label: 'Instagram Access Token' }),
           }),
         )
-        // Mark "refreshed now" so the auto-refresh waits 50 days
         writes.push(
           fetch('/api/admin/content/instagram_token_refreshed_at', {
             method: 'PUT',
@@ -152,12 +151,20 @@ export default function AdminInstagramPage() {
           }),
         )
       }
-      await Promise.all(writes)
+      const responses = await Promise.all(writes)
+      const failed = responses.filter(r => !r.ok)
+      if (failed.length > 0) {
+        const first = failed[0]
+        const body = await first.json().catch(() => ({}))
+        setError(`Save failed (HTTP ${first.status}): ${body?.error || 'unknown error'}`)
+        setStatus('error')
+        return
+      }
       setStatus('saved')
       setTokenRefreshedAt(token.trim() ? new Date().toISOString() : tokenRefreshedAt)
       setTimeout(() => setStatus('idle'), 1800)
     } catch {
-      setError('Save failed. Try again.')
+      setError('Save failed. Network error.')
       setStatus('error')
     }
   }

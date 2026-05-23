@@ -29,11 +29,6 @@ export async function PUT(req: NextRequest, { params }: { params: { key: string 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const existing = await db.content.findUnique({ where: { key: params.key } })
-    if (!existing) {
-      return NextResponse.json({ error: 'Content not found' }, { status: 404 })
-    }
-
     const body = await req.json()
     const { value, type, label } = body
 
@@ -41,12 +36,22 @@ export async function PUT(req: NextRequest, { params }: { params: { key: string 
       return NextResponse.json({ error: 'value is required' }, { status: 400 })
     }
 
-    const content = await db.content.update({
+    // Upsert semantics: PUT means "put this at this key" — create if missing,
+    // update if present. Previously this returned 404 on missing rows, which
+    // silently broke saves for any never-seeded key (e.g. instagram_access_token).
+    const content = await db.content.upsert({
       where: { key: params.key },
-      data: {
+      update: {
         value,
-        type: type ?? existing.type,
-        label: label !== undefined ? label : existing.label,
+        ...(type !== undefined ? { type } : {}),
+        ...(label !== undefined ? { label } : {}),
+      },
+      create: {
+        key: params.key,
+        value,
+        type: type ?? 'text',
+        label: label ?? params.key,
+        updatedAt: new Date(),
       },
     })
 
