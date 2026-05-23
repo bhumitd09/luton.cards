@@ -325,47 +325,98 @@ export default function AdminDashboard() {
     { label: 'Sealed',   key: 'sealed',  color: '#34d399' },
   ]
 
+  // ── Derived data for the sidebar/aggregates ─────────────────────────────
+  const recentOrdersAll = analytics?.recentOrders ?? []
+  const now = new Date()
+  const last30: { date: string; revenue: number }[] = []
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(now.getDate() - i)
+    last30.push({ date: d.toISOString().slice(0, 10), revenue: 0 })
+  }
+  recentOrdersAll.forEach(order => {
+    const key = new Date(order.createdAt).toISOString().slice(0, 10)
+    const entry = last30.find(e => e.date === key)
+    if (entry) entry.revenue += order.total
+  })
+  const maxRev = Math.max(...last30.map(e => e.revenue), 1)
+  const monthRevenue = last30
+    .filter(e => {
+      const d = new Date(e.date)
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+    .reduce((sum, e) => sum + e.revenue, 0)
+  const allZeroRev = last30.every(e => e.revenue === 0)
+
   return (
-    <div className="dash-padding" style={{ padding: '2rem', color: '#fff', maxWidth: '1400px' }}>
+    <div className="dash-padding" style={{ padding: '1.5rem', color: '#fff', maxWidth: '1500px', margin: '0 auto' }}>
       <style>{`
         @keyframes shimmer {
           0%   { background-position: 200% 0; }
           100% { background-position: -200% 0; }
         }
+        .dash-card { background: #0f0f10; border: 1px solid #1f1f1f; border-radius: 14px; }
         .order-row:hover { background: #161616 !important; cursor: pointer; }
         .order-row { transition: background 0.15s ease; }
-        .action-card:hover { border-color: #EC1E79 !important; box-shadow: 0 0 16px rgba(236,30,121,0.12); }
-        .action-card { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .action-card:hover { border-color: #EC1E79 !important; transform: translateY(-1px); }
+        .action-card { transition: all 0.15s ease; }
         .stock-row:hover { background: #161616 !important; }
         .stock-row { transition: background 0.15s ease; }
-        @media (max-width: 768px) {
+        .dash-main-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 320px; gap: 1rem; align-items: stretch; }
+        @media (max-width: 1280px) {
+          .dash-main-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+          .dash-sidebar { grid-column: 1 / -1; }
+          .dash-sidebar-inner { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 900px) {
+          .dash-main-grid { grid-template-columns: 1fr; }
+          .dash-sidebar-inner { grid-template-columns: 1fr !important; }
           .dash-stats { grid-template-columns: repeat(2, 1fr) !important; }
-          .dash-actions { grid-template-columns: repeat(2, 1fr) !important; }
-          .dash-padding { padding: 1.25rem !important; }
+          .dash-padding { padding: 1rem !important; }
         }
       `}</style>
 
-      {/* ── Page Header ── */}
+      {/* ── Compact Header ── */}
       <motion.div
-        initial={{ opacity: 0, y: -16 }}
+        initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        style={{ marginBottom: '2rem' }}
+        style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}
       >
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '0.3rem' }}>
-          {getGreeting()}, Admin
-        </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-          Here&apos;s what&apos;s happening at Luton Cards today.
-        </p>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>
+            {getGreeting()}, Admin
+          </h1>
+          <p style={{ color: '#6b7280', fontSize: '0.8125rem', margin: '0.2rem 0 0' }}>
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Link href="/" target="_blank" style={{ textDecoration: 'none' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.5rem 0.9rem', borderRadius: '8px',
+              border: '1px solid #1f1f1f', background: '#111',
+              fontSize: '0.8125rem', fontWeight: 700, color: '#9ca3af',
+            }}>View Site →</span>
+          </Link>
+          <Link href="/admin/products" style={{ textDecoration: 'none' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.5rem 0.9rem', borderRadius: '8px',
+              background: '#EC1E79',
+              fontSize: '0.8125rem', fontWeight: 800, color: '#fff',
+            }}><PlusCircle size={13} /> Add Product</span>
+          </Link>
+        </div>
       </motion.div>
 
       {/* ── Top Stats Row ── */}
       <div className="dash-stats" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '1rem',
-        marginBottom: '1.75rem',
+        gap: '0.875rem',
+        marginBottom: '1rem',
       }}>
         <StatCard
           icon={DollarSign}
@@ -412,14 +463,250 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {/* ── Quick Actions Row ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.22, duration: 0.45 }}
-        style={{ marginBottom: '1.75rem' }}
-      >
-        <h2 style={{ fontWeight: 700, fontSize: '1rem', color: '#fff', marginBottom: '0.875rem' }}>Quick Actions</h2>
+      {/* ── Main 3-column grid: Orders | Stock | Sidebar (chart + categories + actions) ── */}
+      <div className="dash-main-grid" style={{ marginBottom: '1rem' }}>
+        {/* COLUMN 1 — Recent Orders (compact) */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
+          className="dash-card"
+          style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', minHeight: 0 }}
+        >
+          <SectionHeader title="Recent Orders" linkHref="/admin/orders" linkLabel="All orders" />
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {[...Array(5)].map((_, i) => <Skeleton key={i} height="32px" radius="6px" />)}
+            </div>
+          ) : last5Orders.length === 0 ? (
+            <div style={{ padding: '1.5rem 0.5rem', textAlign: 'center', color: '#4b5563' }}>
+              <ShoppingBag size={26} style={{ opacity: 0.4, marginBottom: 6 }} />
+              <p style={{ fontSize: '0.825rem', color: '#9ca3af', fontWeight: 600, margin: 0 }}>No orders yet</p>
+              <p style={{ fontSize: '0.7rem', margin: '2px 0 0' }}>Orders appear here when they come in</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {last5Orders.map((order, idx) => (
+                <Link key={order.id} href="/admin/orders" style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    className="order-row"
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + idx * 0.04 }}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '90px 1fr auto auto',
+                      gap: '0.6rem',
+                      alignItems: 'center',
+                      padding: '0.55rem 0.5rem',
+                      borderBottom: idx < last5Orders.length - 1 ? '1px solid #161616' : 'none',
+                    }}
+                  >
+                    <span style={{
+                      fontFamily: 'monospace', fontSize: '0.72rem', color: '#EC1E79',
+                      fontWeight: 700, padding: '1px 6px', borderRadius: '5px',
+                      background: 'rgba(236,30,121,0.08)', border: '1px solid rgba(236,30,121,0.15)',
+                      textAlign: 'center',
+                    }}>
+                      #{order.id.slice(0, 6).toUpperCase()}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.825rem', color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {order.name}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: 1, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Clock size={9} /> {timeAgo(order.createdAt)}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.825rem', fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>
+                      £{order.total.toFixed(0)}
+                    </span>
+                    <StatusBadge status={order.status} />
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* COLUMN 2 — Stock Alerts (compact) */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="dash-card"
+          style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', minHeight: 0 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <AlertTriangle size={14} color="#f59e0b" /> Stock Alerts
+            </h2>
+            <Link href="/admin/products" style={{ textDecoration: 'none' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#EC1E79', fontSize: '0.75rem', fontWeight: 700 }}>
+                Manage <ArrowRight size={11} />
+              </span>
+            </Link>
+          </div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {[...Array(5)].map((_, i) => <Skeleton key={i} height="42px" radius="8px" />)}
+            </div>
+          ) : stockAlerts.length === 0 ? (
+            <div style={{ padding: '1.5rem 0.5rem', textAlign: 'center', color: '#4b5563' }}>
+              <Package size={26} style={{ opacity: 0.4, marginBottom: 6, color: '#34d399' }} />
+              <p style={{ fontSize: '0.825rem', color: '#34d399', fontWeight: 700, margin: 0 }}>All well stocked</p>
+              <p style={{ fontSize: '0.7rem', margin: '2px 0 0' }}>No critical stock issues</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {stockAlerts.slice(0, 5).map((product, idx) => (
+                <Link key={product.id} href={`/admin/products/${product.id}`} style={{ textDecoration: 'none' }}>
+                  <motion.div
+                    initial={{ opacity: 0, x: 6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + idx * 0.04 }}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.55rem 0.7rem',
+                      background: '#0a0a0a',
+                      border: `1px solid ${product.stock === 0 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.2)'}`,
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8125rem', color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {product.name}
+                      </div>
+                      <CategoryPill category={product.category} />
+                    </div>
+                    <div style={{
+                      fontSize: '0.95rem', fontWeight: 900, lineHeight: 1,
+                      color: product.stock === 0 ? '#ef4444' : product.stock <= 2 ? '#f59e0b' : '#9ca3af',
+                      padding: '4px 9px',
+                      background: product.stock === 0 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.08)',
+                      borderRadius: '6px',
+                      minWidth: 28,
+                      textAlign: 'center',
+                    }}>
+                      {product.stock}
+                    </div>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* COLUMN 3 — Sidebar (Revenue + Categories + Quick Actions) */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
+          className="dash-sidebar"
+        >
+          <div className="dash-sidebar-inner" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.875rem', height: '100%' }}>
+            {/* Revenue mini chart */}
+            <div className="dash-card" style={{ padding: '1rem 1.1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  This month
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#4b5563' }}>30d</span>
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#EC1E79', letterSpacing: '-0.025em', lineHeight: 1, marginBottom: '0.5rem' }}>
+                {loading ? '—' : `£${monthRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+              </div>
+              {loading ? (
+                <div style={{ height: 38, background: '#1a1a1a', borderRadius: 6 }} />
+              ) : allZeroRev ? (
+                <div style={{ height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#4b5563' }}>
+                  No sales yet
+                </div>
+              ) : (
+                <svg viewBox="0 0 300 40" preserveAspectRatio="none" style={{ width: '100%', height: 38, display: 'block' }}>
+                  {last30.map((entry, i) => {
+                    const barH = entry.revenue > 0 ? Math.max((entry.revenue / maxRev) * 34, 3) : 2
+                    const BAR_W = 300 / 30
+                    return (
+                      <rect
+                        key={entry.date}
+                        x={i * BAR_W + 1}
+                        y={40 - barH - 2}
+                        width={Math.max(BAR_W - 2, 1)}
+                        height={barH}
+                        rx={1.5}
+                        fill={entry.revenue > 0 ? '#EC1E79' : '#1f1f1f'}
+                        opacity={entry.revenue > 0 ? 0.9 : 0.4}
+                      />
+                    )
+                  })}
+                </svg>
+              )}
+            </div>
+
+            {/* Category breakdown */}
+            <div className="dash-card" style={{ padding: '1rem 1.1rem' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>
+                By Category
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                {catPills.map(cat => {
+                  const count = catCounts[cat.key] ?? 0
+                  return (
+                    <div key={cat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.3rem 0' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: cat.color }} />
+                        <span style={{ fontSize: '0.78rem', color: '#d1d5db', fontWeight: 600 }}>{cat.label}</span>
+                      </span>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: cat.color }}>{count}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Quick Actions (compact) */}
+            <div className="dash-card" style={{ padding: '1rem 1.1rem' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>
+                Quick Actions
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                {[
+                  { label: 'Add Product',  href: '/admin/products',           icon: PlusCircle,  color: '#EC1E79' },
+                  { label: 'Bulk Import',  href: '/admin/import',             icon: FileText,    color: '#EC1E79' },
+                  { label: 'Orders',       href: '/admin/orders?status=pending', icon: ShoppingBag, color: '#f59e0b' },
+                  { label: 'Buy-back',     href: '/admin/sell',               icon: Package,     color: '#818cf8' },
+                ].map((a) => (
+                  <Link key={a.label} href={a.href} style={{ textDecoration: 'none' }}>
+                    <div
+                      className="action-card"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.45rem',
+                        padding: '0.6rem 0.7rem',
+                        background: '#0a0a0a',
+                        border: '1px solid #1f1f1f',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <a.icon size={13} color={a.color} />
+                      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#d1d5db', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {a.label}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ── Hidden legacy sections below — collapsed into the grid above ── */}
+      <div style={{ display: 'none' }}>
         <div className="dash-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem' }}>
           {[
             { label: 'Add Product',         href: '/admin/products',           icon: PlusCircle,  color: '#EC1E79', brand: true  },
@@ -469,7 +756,6 @@ export default function AdminDashboard() {
             </Link>
           ))}
         </div>
-      </motion.div>
 
       {/* ── Revenue Sparkline ── */}
       {(() => {
@@ -994,6 +1280,7 @@ export default function AdminDashboard() {
           </div>
         )}
       </motion.div>
+      </div>{/* /hidden legacy block */}
     </div>
   )
 }
