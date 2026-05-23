@@ -422,10 +422,10 @@ export default function AdminDashboard() {
         <h2 style={{ fontWeight: 700, fontSize: '1rem', color: '#fff', marginBottom: '0.875rem' }}>Quick Actions</h2>
         <div className="dash-actions" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem' }}>
           {[
-            { label: 'Add Product',         href: '/admin/products',          icon: PlusCircle,  color: '#EC1E79', brand: true  },
-            { label: 'Create Discount',     href: '/admin/discounts',          icon: FileText,    color: '#818cf8', brand: false },
+            { label: 'Add Product',         href: '/admin/products',           icon: PlusCircle,  color: '#EC1E79', brand: true  },
+            { label: 'Bulk Import',         href: '/admin/import',             icon: FileText,    color: '#EC1E79', brand: true  },
             { label: 'View Pending Orders', href: '/admin/orders?status=pending', icon: ShoppingBag, color: '#f59e0b', brand: false },
-            { label: 'Manage Shipping',     href: '/admin/shipping',           icon: Package,     color: '#34d399', brand: false },
+            { label: 'Buy-back Submissions', href: '/admin/sell',              icon: Package,     color: '#818cf8', brand: false },
           ].map((action, i) => (
             <Link key={action.label} href={action.href} style={{ textDecoration: 'none' }}>
               <motion.div

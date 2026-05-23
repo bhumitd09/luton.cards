@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Pencil, Trash2, Search, X, Check, AlertTriangle,
   Package, Star, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight,
-  Image as ImageIcon, Tag,
+  Image as ImageIcon, Tag, Copy,
 } from 'lucide-react'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -19,6 +19,7 @@ interface Product {
   comparePrice: number | null
   stock: number
   category: string
+  game?: string
   images: string[]
   grade: string | null
   grader: string | null
@@ -30,6 +31,7 @@ interface Product {
 }
 
 type CategoryFilter = 'all' | 'single' | 'graded' | 'booster' | 'sealed'
+type GameFilter = 'all' | 'pokemon' | 'one-piece'
 type StockFilter = 'all' | 'in' | 'low' | 'out'
 
 const CATEGORY_COLORS: Record<string, { bg: string; color: string; label: string }> = {
@@ -594,6 +596,7 @@ export default function AdminProductsPage() {
   // Filters
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [gameFilter, setGameFilter] = useState<GameFilter>('all')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [stockFilter, setStockFilter] = useState<StockFilter>('all')
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all')
@@ -621,6 +624,7 @@ export default function AdminProductsPage() {
     const params = new URLSearchParams()
     if (debouncedSearch) params.set('search', debouncedSearch)
     if (categoryFilter !== 'all') params.set('category', categoryFilter)
+    if (gameFilter !== 'all') params.set('game', gameFilter)
     if (stockFilter === 'in') params.set('stockMin', '3')
     if (stockFilter === 'low') { params.set('stockMin', '1'); params.set('stockMax', '2') }
     if (stockFilter === 'out') params.set('stockMax', '0')
@@ -629,7 +633,7 @@ export default function AdminProductsPage() {
     params.set('page', String(page))
     params.set('limit', String(LIMIT))
     return `/api/admin/products?${params.toString()}`
-  }, [debouncedSearch, categoryFilter, stockFilter, activeFilter, page])
+  }, [debouncedSearch, categoryFilter, gameFilter, stockFilter, activeFilter, page])
 
   const loadProducts = useCallback(async () => {
     setLoading(true)
@@ -657,7 +661,7 @@ export default function AdminProductsPage() {
   useEffect(() => { loadProducts() }, [loadProducts])
 
   // Reset page when filters change
-  useEffect(() => { setPage(1) }, [categoryFilter, stockFilter, activeFilter])
+  useEffect(() => { setPage(1) }, [categoryFilter, gameFilter, stockFilter, activeFilter])
 
   const handleToggleFeatured = async (product: Product) => {
     try {
@@ -695,6 +699,20 @@ export default function AdminProductsPage() {
     }
   }
 
+  const handleDuplicate = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/products/${id}/duplicate`, { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data?.error || 'Failed to duplicate product.')
+        return
+      }
+      loadProducts()
+    } catch {
+      setError('Failed to duplicate product.')
+    }
+  }
+
   const totalPages = Math.ceil(total / LIMIT)
 
   const CATEGORY_PILLS: { label: string; value: CategoryFilter }[] = [
@@ -703,6 +721,12 @@ export default function AdminProductsPage() {
     { label: 'Graded', value: 'graded' },
     { label: 'Boosters', value: 'booster' },
     { label: 'Sealed', value: 'sealed' },
+  ]
+
+  const GAME_PILLS: { label: string; value: GameFilter }[] = [
+    { label: 'All Games', value: 'all' },
+    { label: 'Pokémon', value: 'pokemon' },
+    { label: 'One Piece', value: 'one-piece' },
   ]
 
   const STOCK_OPTIONS: { label: string; value: StockFilter }[] = [
@@ -847,6 +871,31 @@ export default function AdminProductsPage() {
           {/* Divider */}
           <div style={{ width: '1px', height: '28px', background: '#1f1f1f', flexShrink: 0 }} />
 
+          {/* Game Pills */}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {GAME_PILLS.map(pill => (
+              <button
+                key={pill.value}
+                className="pill-btn"
+                onClick={() => setGameFilter(pill.value)}
+                style={{
+                  padding: '0.35rem 0.8rem', borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: gameFilter === pill.value ? 'rgba(236,30,121,0.5)' : '#1f1f1f',
+                  background: gameFilter === pill.value ? '#EC1E79' : 'transparent',
+                  color: gameFilter === pill.value ? '#fff' : '#9ca3af',
+                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: '1px', height: '28px', background: '#1f1f1f', flexShrink: 0 }} />
+
           {/* Category Pills */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {CATEGORY_PILLS.map(pill => (
@@ -857,9 +906,9 @@ export default function AdminProductsPage() {
                 style={{
                   padding: '0.35rem 0.8rem', borderRadius: '8px',
                   border: '1px solid',
-                  borderColor: categoryFilter === pill.value ? 'rgba(236,30,121,0.35)' : '#1f1f1f',
-                  background: categoryFilter === pill.value ? 'rgba(236,30,121,0.1)' : 'transparent',
-                  color: categoryFilter === pill.value ? '#EC1E79' : '#9ca3af',
+                  borderColor: categoryFilter === pill.value ? 'rgba(255,255,255,0.25)' : '#1f1f1f',
+                  background: categoryFilter === pill.value ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  color: categoryFilter === pill.value ? '#fff' : '#9ca3af',
                   cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600,
                   transition: 'all 0.15s ease',
                 }}
@@ -1164,6 +1213,19 @@ export default function AdminProductsPage() {
                           title="Edit product"
                         >
                           <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDuplicate(product.id)}
+                          style={{
+                            background: 'rgba(236,30,121,0.08)',
+                            border: '1px solid rgba(236,30,121,0.15)',
+                            borderRadius: '8px', padding: '6px',
+                            cursor: 'pointer', display: 'flex',
+                            color: '#EC1E79', transition: 'all 0.15s ease',
+                          }}
+                          title="Duplicate product"
+                        >
+                          <Copy size={14} />
                         </button>
                         <button
                           className="delete-hover"
