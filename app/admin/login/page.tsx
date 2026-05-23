@@ -89,9 +89,10 @@ export default function AdminLogin() {
               src="/logo/luton-cards.png"
               alt="Luton Cards"
               style={{
-                height: '64px',
+                height: '120px',
+                width: 'auto',
                 objectFit: 'contain',
-                filter: 'brightness(0) invert(1)',
+                filter: 'drop-shadow(0 8px 24px rgba(236,30,121,0.35))',
               }}
             />
           </div>

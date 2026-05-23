@@ -6,18 +6,25 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding database...')
 
-  // Admin user
+  // Admin user — always sync to current env vars so rotating ADMIN_PASSWORD
+  // (or changing ADMIN_EMAIL) works by just redeploying. update path resets
+  // the password hash and role; create path is identical for new DBs.
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@lutoncards.co.uk'
   const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'luton2025', 12)
   await prisma.adminUser.upsert({
-    where: { email: process.env.ADMIN_EMAIL || 'admin@lutoncards.co.uk' },
-    update: {},
+    where: { email: adminEmail },
+    update: {
+      passwordHash,
+      role: 'superadmin',
+    },
     create: {
-      email: process.env.ADMIN_EMAIL || 'admin@lutoncards.co.uk',
+      email: adminEmail,
       passwordHash,
       name: 'Admin',
       role: 'superadmin',
     },
   })
+  console.log(`Admin user synced for ${adminEmail}`)
 
   // Default content (matches new Luton hero / marquee in components)
   const contents = [
