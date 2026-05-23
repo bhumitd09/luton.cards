@@ -4,7 +4,7 @@ import { MarqueeStrip } from '../components/marquee-strip'
 import { FeaturedProducts } from '../components/featured-products'
 import { BuiltByBanner } from '../components/built-by-banner'
 import { EthosStrip } from '../components/ethos-strip'
-import { YouTubeSection } from '../components/youtube-section'
+import { InstagramSection } from '../components/instagram-section'
 import { Footer } from '../components/footer'
 
 export default function Home() {
@@ -18,7 +18,7 @@ export default function Home() {
         <FeaturedProducts />
         <BuiltByBanner />
         <EthosStrip />
-        <YouTubeSection />
+        <InstagramSection />
       </main>
       <Footer />
     </div>

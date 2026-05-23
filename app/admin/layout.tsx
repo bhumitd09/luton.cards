@@ -22,6 +22,7 @@ import {
   Star,
   Plug,
   Upload,
+  Instagram,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -221,6 +222,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/inventory', icon: Boxes, label: 'Inventory' },
     { href: '/admin/content', icon: FileText, label: 'Content' },
     { href: '/admin/pages', icon: Globe, label: 'Pages' },
+    { href: '/admin/instagram', icon: Instagram, label: 'Instagram' },
     { href: '/admin/media', icon: Image, label: 'Media' },
     { href: '/admin/integrations', icon: Plug, label: 'Integrations' },
     { href: '/admin/shipping', icon: Truck, label: 'Shipping' },

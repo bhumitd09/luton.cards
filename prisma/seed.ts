@@ -41,6 +41,8 @@ async function main() {
     ]), type: 'json', label: 'Marquee Ticker Items' },
     { key: 'site_tagline', value: 'Pokémon & One Piece TCG, Luton UK', type: 'text', label: 'Site Tagline' },
     { key: 'footer_tagline', value: 'Pokémon and One Piece trading cards from Luton, UK. Properly sourced, properly priced.', type: 'text', label: 'Footer Tagline' },
+    { key: 'instagram_handle', value: 'lutoncards', type: 'text', label: 'Instagram Handle' },
+    { key: 'instagram_posts', value: '[]', type: 'json', label: 'Instagram Posts' },
   ]
 
   for (const content of contents) {
