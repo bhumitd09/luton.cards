@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { Search, Package, Loader2, ArrowLeft } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { formatGrade } from '@/lib/utils'
 
 type SearchHit = {
   id: string
@@ -17,6 +18,7 @@ type SearchHit = {
   category: string
   game: string
   grade: string | null
+  grader: string | null
   image: string
 }
 
@@ -140,9 +142,9 @@ function SearchContent() {
                         ) : (
                           <Package size={32} className="text-neutral-300" />
                         )}
-                        {r.grade && (
+                        {formatGrade(r.grade, r.grader) && (
                           <span className="absolute left-2 top-2 rounded-md bg-black px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#EC1E79]">
-                            {r.grade}
+                            {formatGrade(r.grade, r.grader)}
                           </span>
                         )}
                         {r.stock === 0 && (

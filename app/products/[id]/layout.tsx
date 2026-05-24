@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { db } from '@/lib/db'
+import { formatGrade } from '@/lib/utils'
 
 /**
  * Server-side metadata + structured data for individual product pages.
@@ -18,7 +19,7 @@ async function getProduct(id: string) {
       where: { id },
       select: {
         id: true, name: true, slug: true, description: true,
-        price: true, stock: true, images: true, grade: true,
+        price: true, stock: true, images: true, grade: true, grader: true,
         category: true, game: true, active: true,
       },
     })
@@ -39,11 +40,12 @@ export async function generateMetadata(
   }
 
   const gameLabel = product.game === 'one-piece' ? 'One Piece' : 'Pokémon'
-  const gradeBit = product.grade ? ` · ${product.grade}` : ''
+  const gradeLabel = formatGrade(product.grade, product.grader)
+  const gradeBit = gradeLabel ? ` · ${gradeLabel}` : ''
   const title = `${product.name}${gradeBit} — £${product.price.toLocaleString('en-GB')}`
   const description = product.description
     ? product.description.slice(0, 155)
-    : `${gameLabel} ${product.category}${product.grade ? ` (${product.grade})` : ''} for sale at Luton Cards. £${product.price.toLocaleString('en-GB')}. Properly checked, properly priced.`
+    : `${gameLabel} ${product.category}${gradeLabel ? ` (${gradeLabel})` : ''} for sale at Luton Cards. £${product.price.toLocaleString('en-GB')}. Properly checked, properly priced.`
   const image = product.images?.[0]
   const url = `${APP_URL}/products/${product.id}`
 

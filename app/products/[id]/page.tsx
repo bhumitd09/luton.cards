@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, ArrowLeft, Tag, Package } from 'lucide-react'
+import { formatGrade } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { WishlistButton } from '@/components/wishlist-button'
@@ -68,14 +69,14 @@ function RelatedProductCard({ product, index }: { product: Product; index: numbe
           }}>
             {product.category}
           </span>
-          {product.grade && (
+          {formatGrade(product.grade, product.grader) && (
             <span style={{
               position: 'absolute', top: '10px', right: '10px',
               background: '#000', color: '#EC1E79',
               padding: '0.2rem 0.6rem', borderRadius: '6px',
               fontSize: '0.6875rem', fontWeight: 700,
             }}>
-              {product.grade}
+              {formatGrade(product.grade, product.grader)}
             </span>
           )}
         </div>

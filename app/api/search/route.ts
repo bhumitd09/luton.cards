@@ -27,6 +27,7 @@ type SearchHit = {
   category: string
   game: string
   grade: string | null
+  grader: string | null
   image: string
 }
 
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
         take: limit,
         select: {
           id: true, name: true, slug: true, price: true, stock: true,
-          category: true, game: true, grade: true, images: true,
+          category: true, game: true, grade: true, grader: true, images: true,
         },
       })
       return NextResponse.json({
@@ -69,7 +70,7 @@ export async function GET(request: Request) {
       take: limit * 2, // overfetch so client-side ranking has options
       select: {
         id: true, name: true, slug: true, price: true, stock: true,
-        category: true, game: true, grade: true, images: true,
+        category: true, game: true, grade: true, grader: true, images: true,
       },
     })
 
@@ -111,6 +112,7 @@ function toHit(p: {
   category: string
   game: string
   grade: string | null
+  grader: string | null
   images: string[]
 }): SearchHit {
   return {
@@ -122,6 +124,7 @@ function toHit(p: {
     category: p.category,
     game: p.game,
     grade: p.grade,
+    grader: p.grader,
     image: p.images?.[0] || '',
   }
 }

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Search, SlidersHorizontal, Star, Tag, X } from 'lucide-react'
+import { formatGrade } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
@@ -82,14 +83,14 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                 {product.category}
               </span>
             </div>
-            {product.grade && (
+            {formatGrade(product.grade, product.grader) && (
               <span style={{
                 position: 'absolute', top: '10px', right: '10px',
                 background: '#000', color: '#EC1E79',
                 padding: '0.2rem 0.6rem', borderRadius: '6px',
                 fontSize: '0.6875rem', fontWeight: 700,
               }}>
-                {product.grade}
+                {formatGrade(product.grade, product.grader)}
               </span>
             )}
             {product.stock <= 2 && !product.grade && (
@@ -110,13 +111,13 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
           <Tag size={11} color="#9ca3af" />
           <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'capitalize' }}>{product.category}</span>
-          {product.grade && (
+          {formatGrade(product.grade, product.grader) && (
             <span style={{
               background: '#fef3c7', color: '#92400e',
               padding: '0.1rem 0.45rem', borderRadius: '4px',
               fontSize: '0.6875rem', fontWeight: 700, marginLeft: 'auto',
             }}>
-              {product.grade}
+              {formatGrade(product.grade, product.grader)}
             </span>
           )}
         </div>

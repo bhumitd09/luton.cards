@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Package, LogOut, MapPin, Mail, Check, ArrowRight, Heart, Trash2 } from 'lucide-react'
+import { formatGrade } from '@/lib/utils'
 
 interface Profile {
   id: string
@@ -53,6 +54,7 @@ interface WishlistItem {
     category: string
     game: string
     grade: string | null
+    grader: string | null
     image: string
     active: boolean
   }
@@ -242,7 +244,7 @@ export default function AccountPage() {
                             </Link>
                             <p className="m-0 mt-0.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-neutral-400">
                               {item.product.game === 'one-piece' ? 'One Piece' : 'Pokémon'}
-                              {item.product.grade ? ` · ${item.product.grade}` : ''}
+                              {formatGrade(item.product.grade, item.product.grader) ? ` · ${formatGrade(item.product.grade, item.product.grader)}` : ''}
                             </p>
                             <div className="mt-1.5 flex items-center justify-between gap-2">
                               <span className="text-[15px] font-extrabold tracking-tight text-[#EC1E79]">

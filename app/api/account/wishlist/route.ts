@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
           category: product.category,
           game: product.game,
           grade: product.grade,
+          grader: product.grader,
           image: product.images?.[0] || '',
           active: product.active,
         },

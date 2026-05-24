@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Loader2, Package } from 'lucide-react'
+import { formatGrade } from '@/lib/utils'
 
 type SearchHit = {
   id: string
@@ -15,6 +16,7 @@ type SearchHit = {
   category: string
   game: string
   grade: string | null
+  grader: string | null
   image: string
 }
 
@@ -183,7 +185,7 @@ export function SearchBar({ variant = 'header', onNavigate }: { variant?: Varian
                         <p className="m-0 truncate text-[13px] font-bold text-neutral-900">{r.name}</p>
                         <p className="m-0 mt-0.5 text-[11px] text-neutral-500">
                           {r.game === 'one-piece' ? 'One Piece' : 'Pokémon'} · {r.category}
-                          {r.grade ? ` · ${r.grade}` : ''}
+                          {formatGrade(r.grade, r.grader) ? ` · ${formatGrade(r.grade, r.grader)}` : ''}
                         </p>
                       </div>
                       <div className="text-right">

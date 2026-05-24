@@ -7,6 +7,7 @@ import { ShoppingCart, ArrowRight, Package } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { BorderBeam } from '@/components/magicui/border-beam'
 import { WishlistButton } from '@/components/wishlist-button'
+import { formatGrade } from '@/lib/utils'
 import type { Product } from '@/lib/products'
 
 const TABS = [
@@ -79,9 +80,9 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
           )}
 
           {/* corner badges */}
-          {product.grade && (
+          {formatGrade(product.grade, product.grader) && (
             <span className="absolute left-2.5 top-2.5 rounded-md bg-black px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-[#EC1E79]">
-              {product.grade}
+              {formatGrade(product.grade, product.grader)}
             </span>
           )}
           {product.stock === 0 ? (
