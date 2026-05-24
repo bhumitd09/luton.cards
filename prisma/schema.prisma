@@ -79,6 +79,9 @@ model Order {
   shippingCost     Float?      @default(0)
   trackingNumber   String?
   trackingCarrier  String?
+  // Discount applied at checkout (snapshot — preserves history if discount edited later)
+  discountCode     String?
+  discountAmount   Float?      @default(0)
   // Optional link to registered customer (guest orders leave this null)
   userId           String?
   user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)

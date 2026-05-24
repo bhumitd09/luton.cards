@@ -54,7 +54,7 @@ const COUNTRIES = [
 ]
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart()
+  const { items, totalPrice, clearCart, discount: cartDiscount } = useCart()
   const router = useRouter()
 
   // Contact
@@ -130,6 +130,22 @@ export default function CheckoutPage() {
       fetchRates(country, subtotal)
     }
   }, [country, subtotal, fetchRates])
+
+  // Pre-populate the discount from the cart context (set on the cart page)
+  // so the user doesn't have to re-enter it at checkout
+  useEffect(() => {
+    if (cartDiscount && !discountApplied) {
+      setDiscountApplied({
+        code: cartDiscount.code,
+        type: cartDiscount.type,
+        value: cartDiscount.value,
+        savings: cartDiscount.savings,
+      })
+      setDiscountOpen(true)
+      setDiscountCode(cartDiscount.code)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartDiscount])
 
   const validateField = (field: keyof FieldErrors, value: string): string | undefined => {
     switch (field) {

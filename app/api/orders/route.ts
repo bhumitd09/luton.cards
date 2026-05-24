@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     // Server-side discount validation
     let finalTotal = total
-    let appliedDiscount: { id: string; type: string; value: number } | null = null
+    let appliedDiscount: { id: string; code: string; type: string; value: number; savings: number } | null = null
 
     if (discountCode) {
       const discount = await db.discount.findUnique({
@@ -96,7 +96,13 @@ export async function POST(req: NextRequest) {
           }
           const resolvedShippingCost = typeof shippingCost === 'number' ? shippingCost : 0
           finalTotal = Math.max(0, subtotal + resolvedShippingCost - savings)
-          appliedDiscount = { id: discount.id, type: discount.type, value: discount.value }
+          appliedDiscount = {
+            id: discount.id,
+            code: discount.code,
+            type: discount.type,
+            value: discount.value,
+            savings,
+          }
         }
       }
     }
@@ -141,6 +147,8 @@ export async function POST(req: NextRequest) {
         status: 'pending',
         total: finalTotal,
         userId: customer?.userId ?? null,
+        discountCode: appliedDiscount?.code ?? null,
+        discountAmount: appliedDiscount?.savings ?? 0,
         items: {
           create: items.map((item) => ({
             productId: item.productId,
@@ -154,6 +162,13 @@ export async function POST(req: NextRequest) {
         items: true,
       },
     })
+
+    // Increment discount usage count (fire-and-forget — won't block order success)
+    if (appliedDiscount?.id) {
+      db.discount
+        .update({ where: { id: appliedDiscount.id }, data: { uses: { increment: 1 } } })
+        .catch(err => console.error('Discount usage increment failed:', err))
+    }
 
     // Send order confirmation and admin notification emails
     const subtotalForEmail = items.reduce((s, i) => s + i.price * i.quantity, 0)

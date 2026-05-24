@@ -8,6 +8,19 @@ export interface CartItem {
   quantity: number
 }
 
+export interface AppliedDiscount {
+  code: string
+  savings: number     // absolute £ amount deducted from subtotal
+  type: 'percentage' | 'fixed'
+  value: number       // raw percent or £ amount of the discount
+  reason?: string
+}
+
+interface ApplyResult {
+  ok: boolean
+  reason?: string
+}
+
 interface CartContextType {
   items: CartItem[]
   addToCart: (product: Product) => void
@@ -15,11 +28,16 @@ interface CartContextType {
   updateQuantity: (productId: string, quantity: number) => void
   clearCart: () => void
   totalItems: number
-  totalPrice: number
+  totalPrice: number              // subtotal (before discount)
+  discountedTotal: number         // subtotal − discount.savings
   cartQuantity: (productId: string) => number
   canAddMore: (product: Product) => boolean
   liveStock: Record<string, number>
   refreshStock: () => Promise<void>
+  // Discount
+  discount: AppliedDiscount | null
+  applyDiscount: (code: string) => Promise<ApplyResult>
+  removeDiscount: () => void
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -28,6 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [liveStock, setLiveStock] = useState<Record<string, number>>({})
   const [hydrated, setHydrated] = useState(false)
+  const [discount, setDiscount] = useState<AppliedDiscount | null>(null)
 
   // Fetch fresh stock from the API for all items currently in the cart
   const refreshStock = useCallback(async (cartItems?: CartItem[]) => {
@@ -45,13 +64,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems(prev =>
         prev.map(item => {
           const maxStock = data[item.product.id] ?? 0
-          if (maxStock === 0) return item // keep in cart, just disabled
+          if (maxStock === 0) return item
           if (item.quantity > maxStock) return { ...item, quantity: maxStock }
           return item
         })
       )
     } catch {
-      // fail silently — fall back to cached stock
+      // fail silently
     }
   }, [items])
 
@@ -63,14 +82,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const parsed: CartItem[] = JSON.parse(saved)
         setItems(parsed)
         setHydrated(true)
-        // Fetch live stock for everything in the cart
         const ids = parsed.map(i => i.product.id).filter(Boolean)
         if (ids.length > 0) {
           fetch(`/api/products/stock?ids=${ids.join(',')}`)
             .then(r => r.ok ? r.json() : {})
             .then((data: Record<string, number>) => {
               setLiveStock(data)
-              // Clamp quantities to live stock
               setItems(prev =>
                 prev.map(item => {
                   const maxStock = data[item.product.id] ?? item.product.stock
@@ -88,16 +105,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } else {
       setHydrated(true)
     }
+
+    // Hydrate saved discount (if any)
+    const savedDiscount = localStorage.getItem('luton-discount')
+    if (savedDiscount) {
+      try {
+        const parsed = JSON.parse(savedDiscount) as AppliedDiscount
+        if (parsed && parsed.code) setDiscount(parsed)
+      } catch {}
+    }
   }, [])
 
-  // Persist to localStorage whenever items change (after hydration)
+  // Persist cart
   useEffect(() => {
     if (hydrated) {
       localStorage.setItem('luton-cart', JSON.stringify(items))
     }
   }, [items, hydrated])
 
-  // Get the live stock for a product, falling back to the cached value
+  // Persist discount
+  useEffect(() => {
+    if (!hydrated) return
+    if (discount) {
+      localStorage.setItem('luton-discount', JSON.stringify(discount))
+    } else {
+      localStorage.removeItem('luton-discount')
+    }
+  }, [discount, hydrated])
+
   const getStock = (product: Product) =>
     liveStock[product.id] !== undefined ? liveStock[product.id] : product.stock
 
@@ -138,10 +173,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     )
   }
 
-  const clearCart = () => setItems([])
+  const clearCart = () => {
+    setItems([])
+    setDiscount(null)
+  }
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const discountedTotal = Math.max(0, totalPrice - (discount?.savings ?? 0))
 
   const cartQuantity = (productId: string) =>
     items.find(i => i.product.id === productId)?.quantity ?? 0
@@ -150,6 +189,56 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const maxStock = getStock(product)
     return maxStock > 0 && cartQuantity(product.id) < maxStock
   }
+
+  // ── Discount handlers ────────────────────────────────────────────────────
+
+  const applyDiscount = useCallback(async (code: string): Promise<ApplyResult> => {
+    const trimmed = code.trim()
+    if (!trimmed) return { ok: false, reason: 'Enter a code' }
+    try {
+      const res = await fetch(
+        `/api/discounts/validate?code=${encodeURIComponent(trimmed)}&total=${totalPrice.toFixed(2)}`,
+      )
+      const data = await res.json()
+      if (!data.valid) {
+        return { ok: false, reason: data.reason || 'Invalid code' }
+      }
+      setDiscount({
+        code: trimmed.toUpperCase(),
+        savings: Number(data.savings) || 0,
+        type: data.type,
+        value: Number(data.value) || 0,
+      })
+      return { ok: true }
+    } catch {
+      return { ok: false, reason: 'Could not validate code. Try again.' }
+    }
+  }, [totalPrice])
+
+  const removeDiscount = () => setDiscount(null)
+
+  // Re-validate discount when cart totals change (in case minOrder no longer met)
+  useEffect(() => {
+    if (!discount) return
+    // If the cart is empty, drop the discount
+    if (totalPrice === 0) {
+      setDiscount(null)
+      return
+    }
+    // Re-check from server side. If invalid, drop silently.
+    fetch(`/api/discounts/validate?code=${encodeURIComponent(discount.code)}&total=${totalPrice.toFixed(2)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.valid) {
+          setDiscount(null)
+        } else if (Math.abs(Number(data.savings) - discount.savings) > 0.01) {
+          // Recalc savings if e.g. percent discount now applies to different total
+          setDiscount(prev => prev ? { ...prev, savings: Number(data.savings) || 0 } : null)
+        }
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPrice])
 
   return (
     <CartContext.Provider value={{
@@ -160,10 +249,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       clearCart,
       totalItems,
       totalPrice,
+      discountedTotal,
       cartQuantity,
       canAddMore,
       liveStock,
       refreshStock,
+      discount,
+      applyDiscount,
+      removeDiscount,
     }}>
       {children}
     </CartContext.Provider>

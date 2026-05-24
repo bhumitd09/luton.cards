@@ -1,12 +1,31 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
+import { Tag, X, Check, AlertCircle } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, totalPrice, totalItems, cartQuantity, liveStock } = useCart()
+  const {
+    items, updateQuantity, removeFromCart, totalPrice, totalItems,
+    cartQuantity, liveStock, discount, applyDiscount, removeDiscount, discountedTotal,
+  } = useCart()
+  const [codeInput, setCodeInput] = useState('')
+  const [applying, setApplying] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleApply = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!codeInput.trim()) return
+    setApplying(true)
+    setError(null)
+    const result = await applyDiscount(codeInput)
+    if (!result.ok) setError(result.reason || 'Invalid code')
+    else setCodeInput('')
+    setApplying(false)
+  }
 
   // Helper: get the real current stock for an item (live > cached)
   const getStock = (productId: string, fallback: number) =>
@@ -244,15 +263,123 @@ export default function CartPage() {
               Order Summary
             </h2>
 
+            {/* Subtotal */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                {totalItems} item{totalItems !== 1 ? 's' : ''}
+                Subtotal · {totalItems} item{totalItems !== 1 ? 's' : ''}
               </span>
               <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#111' }}>
                 £{totalPrice.toFixed(2)}
               </span>
             </div>
 
+            {/* Discount code section */}
+            <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f0f0f0' }}>
+              {discount ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#f0fdf4',
+                    border: '1.5px solid #86efac',
+                    borderRadius: 10,
+                    padding: '0.6rem 0.85rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Check size={14} style={{ color: '#15803d' }} />
+                    <div>
+                      <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 800, color: '#15803d' }}>
+                        {discount.code} applied
+                      </p>
+                      <p style={{ margin: 0, fontSize: '0.7rem', color: '#15803d' }}>
+                        {discount.type === 'percentage' ? `${discount.value}% off` : `£${discount.value} off`} · saving £{discount.savings.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeDiscount}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#15803d', padding: 4, display: 'flex',
+                    }}
+                    title="Remove discount"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleApply}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.45rem' }}>
+                    Discount code
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      background: '#fff',
+                      border: `1.5px solid ${error ? '#fca5a5' : '#e5e7eb'}`,
+                      borderRadius: 9,
+                      padding: '0.45rem 0.7rem',
+                    }}>
+                      <Tag size={13} style={{ color: '#9ca3af', flexShrink: 0 }} />
+                      <input
+                        type="text"
+                        value={codeInput}
+                        onChange={e => { setCodeInput(e.target.value.toUpperCase()); setError(null) }}
+                        placeholder="ENTER CODE"
+                        style={{
+                          flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                          fontSize: '0.85rem', fontFamily: 'inherit', fontWeight: 700,
+                          letterSpacing: '0.05em', color: '#111',
+                          textTransform: 'uppercase',
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={applying || !codeInput.trim()}
+                      style={{
+                        background: '#111', color: '#fff', border: 'none',
+                        padding: '0.45rem 1rem', borderRadius: 9,
+                        fontSize: '0.8rem', fontWeight: 800,
+                        cursor: applying || !codeInput.trim() ? 'not-allowed' : 'pointer',
+                        opacity: applying || !codeInput.trim() ? 0.5 : 1,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {applying ? '…' : 'Apply'}
+                    </button>
+                  </div>
+                  {error && (
+                    <p style={{
+                      margin: '0.5rem 0 0', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                      fontSize: '0.75rem', color: '#dc2626',
+                    }}>
+                      <AlertCircle size={11} /> {error}
+                    </p>
+                  )}
+                </form>
+              )}
+            </div>
+
+            {/* Discount line */}
+            {discount && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#15803d', fontWeight: 600 }}>
+                  Discount ({discount.code})
+                </span>
+                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#15803d' }}>
+                  −£{discount.savings.toFixed(2)}
+                </span>
+              </div>
+            )}
+
+            {/* Total */}
             <div style={{
               borderTop: '1.5px solid #e5e7eb',
               paddingTop: '1rem',
@@ -269,7 +396,7 @@ export default function CartPage() {
               }}>
                 <span style={{ fontSize: '1rem', fontWeight: 800, color: '#111' }}>Total</span>
                 <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#EC1E79' }}>
-                  £{totalPrice.toFixed(2)}
+                  £{discountedTotal.toFixed(2)}
                 </span>
               </div>
             </div>
