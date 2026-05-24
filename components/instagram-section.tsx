@@ -52,29 +52,43 @@ export function InstagramSection() {
       />
 
       <div className="relative mx-auto max-w-[1180px] px-6">
-        {/* heading */}
+        {/* heading — tight horizontal layout with handle pill on the title line */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.45 }}
-          className="mb-9 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end"
+          className="mb-6 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div>
-            <p className="m-0 mb-2 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
-              <Instagram size={11} /> Instagram
-            </p>
-            <h2 className="m-0 text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-white">
+          <div className="min-w-0">
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EC1E79]/25 bg-[#EC1E79]/[0.08] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
+                <Instagram size={10} /> Instagram
+              </span>
+              <a
+                href={profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-bold tracking-tight text-white/40 transition-colors hover:text-white"
+              >
+                @{handle}
+              </a>
+              {posts.length > 0 && (
+                <span className="text-[11px] text-white/30">· {posts.length} latest</span>
+              )}
+            </div>
+            <h2 className="m-0 text-[clamp(1.5rem,3vw,2.25rem)] font-black leading-[1.05] tracking-[-0.03em] text-white">
               Follow the drop.
             </h2>
-            <p className="m-0 mt-1 text-sm text-white/45">@{handle}</p>
           </div>
           <a
             href={profileUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-sm font-extrabold text-black transition-transform hover:-translate-y-0.5"
+            className="group inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-4 py-2 text-[12.5px] font-extrabold text-black transition-all hover:bg-[#EC1E79] hover:text-white sm:self-auto"
           >
-            <ExternalLink size={14} /> Follow on Instagram
+            <Instagram size={13} className="transition-colors" />
+            Follow
+            <ExternalLink size={11} className="opacity-50 transition-opacity group-hover:opacity-100" />
           </a>
         </motion.div>
 
