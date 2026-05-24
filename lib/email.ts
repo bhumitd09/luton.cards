@@ -275,3 +275,49 @@ export async function sendShippingNotification(data: OrderEmailData): Promise<vo
     html: buildShippingNotificationHtml(data),
   })
 }
+
+// ─── Back-in-stock notification ────────────────────────────────────────────
+
+export interface BackInStockEmailData {
+  customerEmail: string
+  productId: string
+  productName: string
+  productPrice: number
+  productImage?: string
+}
+
+function buildBackInStockHtml(data: BackInStockEmailData): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lutoncards.com'
+  const productUrl = `${appUrl}/products/${data.productId}`
+
+  return `<!DOCTYPE html>
+<html><body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f5f5f5;padding:24px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+    <tr><td style="background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);padding:28px 32px;text-align:center;">
+      <p style="margin:0 0 6px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;">Back in stock</p>
+      <h1 style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.02em;">It&rsquo;s back. Get it quick.</h1>
+    </td></tr>
+    <tr><td style="padding:28px 32px;text-align:center;">
+      ${data.productImage ? `<img src="${data.productImage}" alt="${data.productName.replace(/"/g, '&quot;')}" style="max-width:240px;width:100%;height:auto;border-radius:8px;margin-bottom:18px;" />` : ''}
+      <h2 style="margin:0 0 8px;color:#111;font-size:18px;font-weight:800;letter-spacing:-0.01em;">${data.productName}</h2>
+      <p style="margin:0 0 22px;color:#EC1E79;font-size:24px;font-weight:900;letter-spacing:-0.02em;">£${data.productPrice.toLocaleString('en-GB')}</p>
+      <a href="${productUrl}" style="display:inline-block;background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);color:#fff;font-weight:800;font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;">View product</a>
+      <p style="margin:18px 0 0;color:#666;font-size:13px;line-height:1.6;">You asked us to let you know when this came back. Stock can move fast — first to checkout wins.</p>
+    </td></tr>
+    <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
+      You’re receiving this because you subscribed to stock alerts on Luton Cards.<br/>
+      Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK
+    </td></tr>
+  </table>
+</body></html>`
+}
+
+export async function sendBackInStockNotification(data: BackInStockEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: FROM,
+    to: data.customerEmail,
+    subject: `Back in stock: ${data.productName}`,
+    html: buildBackInStockHtml(data),
+  })
+}
