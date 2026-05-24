@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAdminFromRequest } from '@/lib/admin-auth'
+import { productListScope, isSuperadmin } from '@/lib/vendor-auth'
 
 function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -19,11 +20,19 @@ export async function GET(req: NextRequest) {
     const featured = searchParams.get('featured')
     const active = searchParams.get('active')
     const search = searchParams.get('search')
+    const vendorFilter = searchParams.get('vendor') // 'mine' | adminUserId | null
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const skip = (page - 1) * limit
 
-    const where: Record<string, unknown> = {}
+    // Start from ownership-scoped where: vendors see only own; superadmin
+    // sees all. Then layer the other filters.
+    const where: Record<string, unknown> = { ...productListScope(admin) }
+
+    // Superadmin can additionally narrow by vendor via ?vendor=mine or =<id>
+    if (isSuperadmin(admin) && vendorFilter) {
+      where.vendorId = vendorFilter === 'mine' ? admin.userId : vendorFilter
+    }
 
     if (category) where.category = category
     if (game && (game === 'pokemon' || game === 'one-piece')) where.game = game
@@ -42,6 +51,9 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
+        include: {
+          vendor: { select: { id: true, name: true, email: true } },
+        },
       }),
       db.product.count({ where }),
     ])
@@ -84,6 +96,7 @@ export async function POST(req: NextRequest) {
       featured,
       active,
       tags,
+      vendorId, // optional override; only superadmin can assign to someone else
     } = body
 
     if (!name || price === undefined || !category) {
@@ -92,6 +105,13 @@ export async function POST(req: NextRequest) {
 
     const resolvedSlug = slug || generateSlug(name)
     const resolvedGame = game === 'one-piece' || game === 'pokemon' ? game : 'pokemon'
+
+    // Vendor assignment: superadmin can assign to another admin via vendorId;
+    // everyone else owns what they create.
+    const resolvedVendorId =
+      isSuperadmin(admin) && typeof vendorId === 'string' && vendorId.length > 0
+        ? vendorId
+        : admin.userId
 
     const product = await db.product.create({
       data: {
@@ -109,6 +129,7 @@ export async function POST(req: NextRequest) {
         featured: featured ?? false,
         active: active !== undefined ? active : true,
         tags: tags ?? [],
+        vendorId: resolvedVendorId,
       },
     })
 

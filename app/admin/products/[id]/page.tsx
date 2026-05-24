@@ -123,6 +123,9 @@ export default function ProductEditPage() {
   const productId = params?.id as string
 
   const [product, setProduct] = useState<Product | null>(null)
+  // Ownership flag from the API. False when viewing another vendor's product
+  // as superadmin — locks the form and hides save/delete buttons.
+  const [canEdit, setCanEdit] = useState(true)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -152,11 +155,20 @@ export default function ProductEditPage() {
     setFetchError('')
     fetch(`/api/admin/products/${productId}`)
       .then(async res => {
-        if (!res.ok) throw new Error(res.status === 404 ? 'Product not found' : 'Failed to load product')
+        if (!res.ok) {
+          if (res.status === 403) throw new Error('You do not have access to this product.')
+          throw new Error(res.status === 404 ? 'Product not found' : 'Failed to load product')
+        }
         return res.json()
       })
-      .then((data: Product) => {
+      .then((payload: { product: Product; canEdit?: boolean } | Product) => {
+        // API now returns { product, canEdit }. Tolerate the legacy bare-object
+        // shape too in case something stale hits this code path.
+        const data: Product =
+          (payload as { product?: Product })?.product ?? (payload as Product)
+        const editable = (payload as { canEdit?: boolean })?.canEdit
         setProduct(data)
+        if (typeof editable === 'boolean') setCanEdit(editable)
         setName(data.name)
         setGame((data.game === 'one-piece' ? 'one-piece' : 'pokemon'))
         setCategory(data.category)
@@ -322,20 +334,36 @@ export default function ProductEditPage() {
               )}
             </AnimatePresence>
 
-            <button
-              onClick={() => setConfirmDelete(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.65rem 1.1rem', borderRadius: '9px',
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-                color: '#ef4444', cursor: 'pointer', fontWeight: 600,
-                fontSize: '0.875rem', transition: 'all 0.15s ease',
+            {/* Read-only badge — superadmin viewing another vendor's product */}
+            {!canEdit && (
+              <span style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.45rem 0.85rem', borderRadius: '9px',
+                background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
+                color: '#f59e0b', fontSize: '0.78rem', fontWeight: 700,
+                letterSpacing: '0.02em',
               }}
-            >
-              <Trash2 size={14} /> Delete
-            </button>
+              title="Only the owning vendor can edit this product">
+                View only
+              </span>
+            )}
 
-            <motion.button
+            {canEdit && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.65rem 1.1rem', borderRadius: '9px',
+                  background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                  color: '#ef4444', cursor: 'pointer', fontWeight: 600,
+                  fontSize: '0.875rem', transition: 'all 0.15s ease',
+                }}
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            )}
+
+            {canEdit && <motion.button
               onClick={handleSave}
               disabled={saving}
               whileHover={{ scale: saving ? 1 : 1.02 }}
@@ -362,7 +390,7 @@ export default function ProductEditPage() {
               ) : (
                 <><Save size={14} /> Save Changes</>
               )}
-            </motion.button>
+            </motion.button>}
           </div>
         </div>
 
@@ -615,8 +643,8 @@ export default function ProductEditPage() {
               </div>
             )}
 
-            {/* Quick Save */}
-            <motion.button
+            {/* Quick Save — hidden when product is read-only for current user */}
+            {canEdit && <motion.button
               onClick={handleSave}
               disabled={saving}
               whileHover={{ scale: saving ? 1 : 1.02 }}
@@ -644,7 +672,7 @@ export default function ProductEditPage() {
               ) : (
                 <><Save size={16} /> Save Changes</>
               )}
-            </motion.button>
+            </motion.button>}
           </div>
         </div>
       </div>

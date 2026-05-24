@@ -207,12 +207,26 @@ export async function POST(req: NextRequest) {
       active: r.active === undefined ? true : asBool(r.active),
       images,
       tags,
+      // Bulk-imported products are owned by whoever ran the import. Lets
+      // each vendor build their catalogue via CSV without superadmin help.
+      vendorId: admin.userId,
     }
 
     try {
       if (mode === 'upsert') {
         const existing = await db.product.findUnique({ where: { slug } })
         if (existing) {
+          // Only overwrite if the importer owns the existing row. Otherwise
+          // skip with a clear error so vendors can't accidentally hijack each
+          // other's stock via CSV slug collisions.
+          if (existing.vendorId && existing.vendorId !== admin.userId) {
+            result.errors.push({
+              row: rowNum, name,
+              message: `Slug "${slug}" is owned by another vendor — skipped.`,
+            })
+            result.skipped++
+            continue
+          }
           await db.product.update({ where: { slug }, data })
           result.updated++
         } else {

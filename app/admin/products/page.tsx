@@ -27,6 +27,8 @@ interface Product {
   featured: boolean
   active: boolean
   tags: string[]
+  vendorId?: string | null
+  vendor?: { id: string; name: string | null; email: string } | null
   createdAt: string
   updatedAt: string
 }
@@ -595,6 +597,10 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // Current user — drives ownership UI (lock edit/delete on products
+  // owned by other vendors, hide vendor column for non-superadmins).
+  const [me, setMe] = useState<{ id: string; role: string } | null>(null)
+
   // Filters
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -662,10 +668,27 @@ export default function AdminProductsPage() {
 
   useEffect(() => { loadProducts() }, [loadProducts])
 
+  // Load current admin once for ownership UI gates.
+  useEffect(() => {
+    fetch('/api/admin/auth')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.user) setMe({ id: d.user.id, role: d.user.role }) })
+      .catch(() => {})
+  }, [])
+
+  const isSuper = me?.role === 'superadmin'
+  const canEditOwned = (p: Product) => {
+    if (!me) return false
+    if (p.vendorId === me.id) return true
+    if (!p.vendorId && isSuper) return true // orphan products: superadmin can adopt
+    return false
+  }
+
   // Reset page when filters change
   useEffect(() => { setPage(1) }, [categoryFilter, gameFilter, stockFilter, activeFilter])
 
   const handleToggleFeatured = async (product: Product) => {
+    if (!canEditOwned(product)) return // API would 403; bail early
     try {
       await fetch(`/api/admin/products/${product.id}`, {
         method: 'PUT',
@@ -679,6 +702,7 @@ export default function AdminProductsPage() {
   }
 
   const handleToggleActive = async (product: Product) => {
+    if (!canEditOwned(product)) return // ownership check — API would 403
     try {
       await fetch(`/api/admin/products/${product.id}`, {
         method: 'PUT',
@@ -967,10 +991,15 @@ export default function AdminProductsPage() {
           background: '#111', border: '1px solid #1f1f1f',
           borderRadius: '16px', overflow: 'hidden',
         }}>
-          {/* Table Header */}
+          {/* Table Header
+              Superadmin gets an extra "Vendor" column so they can see at a
+              glance which member owns each product. Vendors don't need it
+              (everything they see is their own). */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '48px 1fr 120px 100px 90px 90px 52px 60px 96px',
+            gridTemplateColumns: isSuper
+              ? '48px 1fr 120px 100px 90px 90px 110px 52px 60px 96px'
+              : '48px 1fr 120px 100px 90px 90px 52px 60px 96px',
             gap: '0.75rem', alignItems: 'center',
             padding: '0.75rem 1.25rem',
             borderBottom: '1px solid #1a1a1a',
@@ -983,6 +1012,7 @@ export default function AdminProductsPage() {
             <span>Price</span>
             <span>Stock</span>
             <span>Grade</span>
+            {isSuper && <span>Vendor</span>}
             <span style={{ textAlign: 'center' }}>Star</span>
             <span style={{ textAlign: 'center' }}>Active</span>
             <span style={{ textAlign: 'right' }}>Actions</span>
@@ -1043,7 +1073,9 @@ export default function AdminProductsPage() {
                   className="product-row"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '48px 1fr 120px 100px 90px 90px 52px 60px 96px',
+                    gridTemplateColumns: isSuper
+                      ? '48px 1fr 120px 100px 90px 90px 110px 52px 60px 96px'
+                      : '48px 1fr 120px 100px 90px 90px 52px 60px 96px',
                     gap: '0.75rem', alignItems: 'center',
                     padding: '0.875rem 1.25rem',
                     borderBottom: '1px solid #161616',
@@ -1123,6 +1155,9 @@ export default function AdminProductsPage() {
                   {/* Stock Badge */}
                   <StockBadge stock={product.stock} />
 
+                  {/* Vendor column — superadmin only */}
+                  {/* Rendered between Grade and Star to keep the layout
+                      readable. Shows initials chip + name. */}
                   {/* Grade */}
                   <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
                     {product.grade ? (
@@ -1137,6 +1172,34 @@ export default function AdminProductsPage() {
                       <span style={{ color: '#2a2a2a' }}>—</span>
                     )}
                   </div>
+
+                  {/* Vendor cell — superadmin only */}
+                  {isSuper && (
+                    <div style={{ minWidth: 0, fontSize: '0.75rem', color: '#9ca3af' }}>
+                      {product.vendor ? (
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                          background: product.vendorId === me?.id ? 'rgba(236,30,121,0.12)' : '#1a1a1a',
+                          border: '1px solid', borderColor: product.vendorId === me?.id ? 'rgba(236,30,121,0.25)' : '#262626',
+                          padding: '0.2rem 0.5rem', borderRadius: '999px',
+                          color: product.vendorId === me?.id ? '#FF80B8' : '#9ca3af',
+                          fontWeight: 700,
+                          maxWidth: '100%',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }} title={product.vendor.email}>
+                          {product.vendor.name || product.vendor.email.split('@')[0]}
+                        </div>
+                      ) : (
+                        <span style={{
+                          fontSize: '0.65rem', color: '#6b7280',
+                          background: '#1a1a1a', padding: '0.15rem 0.45rem', borderRadius: '999px',
+                          border: '1px dashed #2a2a2a', fontWeight: 700,
+                        }}>
+                          Unassigned
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Featured Star */}
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1200,7 +1263,7 @@ export default function AdminProductsPage() {
                           </button>
                         </motion.div>
                       </AnimatePresence>
-                    ) : (
+                    ) : canEditOwned(product) ? (
                       <>
                         <button
                           className="edit-hover"
@@ -1244,6 +1307,22 @@ export default function AdminProductsPage() {
                           <Trash2 size={14} />
                         </button>
                       </>
+                    ) : (
+                      <span
+                        title={`Owned by ${product.vendor?.name || product.vendor?.email || 'another vendor'} — only they can edit`}
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          color: '#6b7280',
+                          background: '#1a1a1a',
+                          border: '1px solid #2a2a2a',
+                          borderRadius: '8px',
+                          padding: '4px 8px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        View only
+                      </span>
                     )}
                   </div>
                 </motion.div>

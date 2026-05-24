@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAdminFromRequest } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
 
 function slugify(name: string): string {
   return name
@@ -16,6 +17,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const source = await db.product.findUnique({ where: { id: params.id } })
   if (!source) {
     return NextResponse.json({ error: 'Source product not found' }, { status: 404 })
+  }
+
+  // Vendors can only duplicate their own products. Superadmin can duplicate
+  // anything (the copy will be owned by the duplicator either way).
+  if (source.vendorId !== admin.userId && !isSuperadmin(admin)) {
+    return NextResponse.json(
+      { error: 'You can only duplicate your own products' },
+      { status: 403 }
+    )
   }
 
   // Find a free slug: original-copy, original-copy-2, original-copy-3...
@@ -50,6 +60,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       featured: false,
       active: false,
       tags: source.tags,
+      // The duplicate is owned by whoever clicked Duplicate, not the original
+      // vendor. Lets a superadmin clone an orphan / legacy product into their
+      // own catalogue cleanly.
+      vendorId: admin.userId,
     },
   })
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { splitLineTotal } from '@/lib/vendor-auth'
 
 interface OrderItemInput {
   productId: string
@@ -107,12 +108,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Validate stock for all items
+    // Validate stock + collect vendor snapshot for each line. Snapshot is
+    // critical: payout math is frozen at sale time so future changes to a
+    // vendor's commissionRate don't affect historical orders.
+    const vendorByProduct = new Map<string, { vendorId: string | null; commissionRate: number }>()
+
     for (const item of items) {
       if (!item.productId) continue
       const product = await db.product.findUnique({
         where: { id: item.productId },
-        select: { stock: true, name: true, active: true },
+        select: {
+          stock: true, name: true, active: true,
+          vendorId: true,
+          vendor: { select: { commissionRate: true } },
+        },
       })
       if (!product || !product.active) {
         return NextResponse.json(
@@ -126,6 +135,10 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         )
       }
+      vendorByProduct.set(item.productId, {
+        vendorId: product.vendorId ?? null,
+        commissionRate: product.vendor?.commissionRate ?? 0,
+      })
     }
 
     // Link order to logged-in customer (null for guest checkout)
@@ -150,12 +163,23 @@ export async function POST(req: NextRequest) {
         discountCode: appliedDiscount?.code ?? null,
         discountAmount: appliedDiscount?.savings ?? 0,
         items: {
-          create: items.map((item) => ({
-            productId: item.productId,
-            productName: item.productName,
-            price: item.price,
-            quantity: item.quantity,
-          })),
+          create: items.map((item) => {
+            const v = vendorByProduct.get(item.productId)
+            const lineTotal = item.price * item.quantity
+            const { vendorPayout, platformFee } = splitLineTotal(
+              lineTotal,
+              v?.commissionRate ?? 0
+            )
+            return {
+              productId: item.productId,
+              productName: item.productName,
+              price: item.price,
+              quantity: item.quantity,
+              vendorId: v?.vendorId ?? null,
+              vendorPayout,
+              platformFee,
+            }
+          }),
         },
       },
       include: {

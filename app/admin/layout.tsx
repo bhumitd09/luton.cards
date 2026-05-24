@@ -23,6 +23,8 @@ import {
   Plug,
   Upload,
   Instagram,
+  UserCog,
+  Wallet,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -170,6 +172,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router = useRouter()
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
+  const [role, setRole] = useState<string>('vendor')
   const [badges, setBadges] = useState<AnalyticsBadges>({ outOfStockProducts: 0, pendingOrders: 0 })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -178,9 +181,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     // Auth check — block rendering until resolved
     fetch('/api/admin/auth')
-      .then(r => {
-        if (r.ok) {
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (data?.user) {
           setAuthenticated(true)
+          setRole(data.user.role || 'vendor')
         } else {
           setAuthenticated(false)
           router.replace('/admin/login')
@@ -237,6 +242,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/reviews', icon: Star, label: 'Reviews' },
     { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   ]
+
+  // Crew section — only visible to superadmin. Vendors don't see member
+  // management or payout breakdowns for everyone (they see their own payouts
+  // via the same /admin/payouts page, scoped server-side).
+  const isSuper = role === 'superadmin'
+  const navCrew = isSuper
+    ? [
+        { href: '/admin/members', icon: UserCog, label: 'Team Members' },
+        { href: '/admin/payouts', icon: Wallet, label: 'Payouts' },
+      ]
+    : [
+        { href: '/admin/payouts', icon: Wallet, label: 'My Payouts' },
+      ]
 
   const navSystem = [
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
@@ -417,6 +435,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 isActive={isActive}
                 badge={badge}
                 badgeColor={item.badgeColor}
+              />
+            )
+          })}
+
+          <NavSeparator />
+          <SectionLabel>Crew</SectionLabel>
+          {navCrew.map(item => {
+            const isActive = pathname.startsWith(item.href)
+            return (
+              <NavItem
+                key={item.href}
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                isActive={isActive}
               />
             )
           })}

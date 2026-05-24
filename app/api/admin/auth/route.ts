@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
+    // Soft-deleted / disabled members can't sign in. Their products stay live
+    // until a superadmin reassigns or deactivates them.
+    if (adminUser.active === false) {
+      return NextResponse.json({ error: 'This account is disabled' }, { status: 403 })
+    }
+
     const passwordValid = await bcrypt.compare(password, adminUser.passwordHash)
 
     if (!passwordValid) {

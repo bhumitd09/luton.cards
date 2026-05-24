@@ -23,6 +23,11 @@ model Product {
   featured     Boolean  @default(false)
   active       Boolean  @default(true)
   tags         String[]
+  // Vendor ownership — which team member owns this stock. Nullable for
+  // legacy/imported items but new products always assigned via API.
+  // Only the owning vendor can edit/delete. Superadmin can view all.
+  vendorId     String?
+  vendor       AdminUser? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -30,6 +35,7 @@ model Product {
   @@index([game])
   @@index([featured])
   @@index([active])
+  @@index([vendorId])
 }
 
 model Content {
@@ -52,13 +58,27 @@ model Media {
 }
 
 model AdminUser {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  name         String?
-  role         String    @default("admin")
-  createdAt    DateTime  @default(now())
-  lastLogin    DateTime?
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  name           String?
+  // 'superadmin' = full access (Bhumit); 'vendor' = sees only own products + payouts
+  role           String    @default("vendor")
+  // Platform's cut as a percent of vendor sales (0-100). Only relevant for
+  // role='vendor'. Set to 0 for free consignment, 10 for standard, etc.
+  commissionRate Float     @default(0)
+  // Free-form text for payout details — "PayPal: foo@bar.com", "Bank: 12-34-56
+  // / 12345678", "Cash". Superadmin reads this on the payouts page.
+  payoutNotes    String?   @db.Text
+  // Optional avatar shown in admin sidebar + member list.
+  avatarUrl      String?
+  // Disable a member without deleting — their products stay live but they
+  // can't log in or create new stock.
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  lastLogin      DateTime?
+  products       Product[]
+  orderItems     OrderItem[]
 }
 
 model Order {
@@ -95,13 +115,27 @@ model Order {
 }
 
 model OrderItem {
-  id          String @id @default(cuid())
-  orderId     String
-  order       Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   String
-  productName String
-  price       Float
-  quantity    Int
+  id           String @id @default(cuid())
+  orderId      String
+  order        Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  productName  String
+  price        Float
+  quantity     Int
+  // Snapshot of who owned the product at sale time, plus the payout math.
+  // Kept on the line item (not derived) so historical payouts don't shift
+  // if a product is later reassigned or a commission rate changes.
+  vendorId     String?
+  vendor       AdminUser? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  vendorPayout Float      @default(0)   // what the vendor is owed for this line
+  platformFee  Float      @default(0)   // what the platform retained
+  // Payout lifecycle for the per-vendor totals page. Null until superadmin
+  // marks it paid; payoutPaidAt records when, payoutNote captures method.
+  payoutPaidAt DateTime?
+  payoutNote   String?
+
+  @@index([vendorId])
+  @@index([payoutPaidAt])
 }
 
 model ShippingZone {
