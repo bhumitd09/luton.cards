@@ -295,7 +295,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           font-size: 0.82rem !important;
         }
         /* Tighter card/section padding throughout */
-        .admin-main-content [style*="padding: 1.5rem"][style*="border-radius"] {
+        .admin-main-content [style*="padding: 1.5rem"] {
           padding: 1rem 1.1rem !important;
         }
         .admin-main-content [style*="padding: 2rem"]:not(form) {
@@ -304,6 +304,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         /* Tighter top-level page padding */
         .admin-main-content > div[style*="padding: 2rem"] {
           padding: 1.5rem !important;
+        }
+        /* Tighter section spacing within long admin forms */
+        .admin-main-content [style*="marginBottom: '2rem'"],
+        .admin-main-content [style*="margin-bottom: 2rem"] {
+          margin-bottom: 1.25rem !important;
         }
         /* Make modal forms scroll instead of pushing the page */
         .admin-main-content [role="dialog"] {

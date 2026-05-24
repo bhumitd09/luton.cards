@@ -236,58 +236,80 @@ function SectionCard({
   children,
   onSave,
   saveState,
+  twoColumn = true,
 }: {
   title: string
   children: React.ReactNode
   onSave: () => void
   saveState: SaveState
+  twoColumn?: boolean
 }) {
   return (
     <div style={{
       background: '#111',
       borderRadius: '12px',
-      padding: '1.5rem',
+      padding: '1rem 1.1rem',
       border: '1px solid #1f1f1f',
-      marginBottom: '1.25rem',
+      marginBottom: '0.875rem',
     }}>
-      <h3 style={{
-        fontSize: '0.9375rem',
-        fontWeight: 700,
-        color: '#fff',
-        paddingBottom: '0.875rem',
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingBottom: '0.65rem',
         borderBottom: '1px solid #1f1f1f',
-        margin: '0 0 1.25rem 0',
+        marginBottom: '0.875rem',
+        gap: '0.75rem',
       }}>
-        {title}
-      </h3>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {children}
-      </div>
-
-      <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <h3 style={{
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          color: '#fff',
+          margin: 0,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}>
+          {title}
+        </h3>
         <button
           onClick={onSave}
           disabled={saveState === 'saving'}
           style={{
             background: saveState === 'saved' ? '#059669' : saveState === 'error' ? '#dc2626' : '#EC1E79',
-            color: '#000',
+            color: '#fff',
             border: 'none',
-            borderRadius: '8px',
-            padding: '0.5rem 1.25rem',
-            fontSize: '0.875rem',
+            borderRadius: '7px',
+            padding: '0.35rem 0.85rem',
+            fontSize: '0.75rem',
             fontWeight: 700,
             cursor: saveState === 'saving' ? 'not-allowed' : 'pointer',
             opacity: saveState === 'saving' ? 0.7 : 1,
             transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
-          {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved ✓' : saveState === 'error' ? 'Error — Retry' : 'Save'}
+          {saveState === 'saving' ? 'Saving…' : saveState === 'saved' ? 'Saved ✓' : saveState === 'error' ? 'Retry' : 'Save'}
         </button>
-        {saveState === 'error' && (
-          <span style={{ fontSize: '0.8125rem', color: '#f87171' }}>Failed to save. Please try again.</span>
-        )}
       </div>
+
+      {/* Children: responsive 2-col grid by default, single col if twoColumn=false.
+         Children that need full width can wrap themselves with className="full". */}
+      <div
+        className="section-fields"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: twoColumn ? 'repeat(auto-fit, minmax(260px, 1fr))' : '1fr',
+          gap: '0.75rem 1rem',
+        }}
+      >
+        {children}
+      </div>
+
+      {saveState === 'error' && (
+        <div style={{ marginTop: '0.6rem', fontSize: '0.75rem', color: '#f87171' }}>
+          Failed to save. Please try again.
+        </div>
+      )}
     </div>
   )
 }
@@ -381,7 +403,7 @@ export default function PagesEditorPage() {
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '860px' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1100px' }}>
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -389,41 +411,50 @@ export default function PagesEditorPage() {
         }
       `}</style>
 
-      {/* Page Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: 0 }}>Page Editor</h1>
-        <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '0.375rem' }}>
-          Edit content for every section of your site.
-        </p>
-      </div>
-
-      {/* Tab Bar */}
+      {/* Page Header + Tabs in one row */}
       <div style={{
         display: 'flex',
-        gap: '0.5rem',
-        marginBottom: '1.75rem',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
         flexWrap: 'wrap',
+        marginBottom: '1.25rem',
+        paddingBottom: '0.75rem',
+        borderBottom: '1px solid #1f1f1f',
       }}>
-        {TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              background: activeTab === tab ? '#EC1E79' : '#111',
-              color: activeTab === tab ? '#000' : '#9ca3af',
-              border: '1px solid',
-              borderColor: activeTab === tab ? '#EC1E79' : '#2a2a2a',
-              borderRadius: '999px',
-              padding: '0.4375rem 1.125rem',
-              fontSize: '0.875rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        <div>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.025em' }}>Page Editor</h1>
+          <p style={{ color: '#6b7280', fontSize: '0.8125rem', margin: '0.2rem 0 0' }}>
+            Edit copy for every section of the public site.
+          </p>
+        </div>
+        {/* Tab Bar */}
+        <div style={{
+          display: 'flex',
+          gap: '0.3rem',
+          flexWrap: 'wrap',
+        }}>
+          {TABS.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                background: activeTab === tab ? '#EC1E79' : 'transparent',
+                color: activeTab === tab ? '#fff' : '#9ca3af',
+                border: '1px solid',
+                borderColor: activeTab === tab ? '#EC1E79' : '#1f1f1f',
+                borderRadius: '8px',
+                padding: '0.35rem 0.85rem',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Loading state */}

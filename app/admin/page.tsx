@@ -537,15 +537,18 @@ export default function AdminDashboard() {
           className="dash-card"
           style={{ padding: '1.1rem 1.25rem', display: 'flex', flexDirection: 'column', minHeight: 0 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.9rem', gap: '0.5rem' }}>
             <h2 style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <AlertTriangle size={14} color="#f59e0b" /> Stock Alerts
             </h2>
-            <Link href="/admin/products" style={{ textDecoration: 'none' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#EC1E79', fontSize: '0.75rem', fontWeight: 700 }}>
-                Manage <ArrowRight size={11} />
-              </span>
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <LowStockEmailButton enabled={stockAlerts.length > 0} />
+              <Link href="/admin/products" style={{ textDecoration: 'none' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#EC1E79', fontSize: '0.75rem', fontWeight: 700 }}>
+                  Manage <ArrowRight size={11} />
+                </span>
+              </Link>
+            </div>
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -1281,6 +1284,68 @@ export default function AdminDashboard() {
         )}
       </motion.div>
       </div>{/* /hidden legacy block */}
+    </div>
+  )
+}
+
+// ─── Low-stock email button ────────────────────────────────────────────────────
+
+function LowStockEmailButton({ enabled }: { enabled: boolean }) {
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [message, setMessage] = useState<string | null>(null)
+
+  const send = async () => {
+    if (!enabled || status === 'sending') return
+    setStatus('sending')
+    setMessage(null)
+    try {
+      const res = await fetch('/api/admin/alerts/low-stock', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (data?.sent) {
+        setStatus('sent')
+        setMessage(`Sent to ${data.to}`)
+      } else {
+        setStatus('error')
+        setMessage(data?.reason || 'Could not send.')
+      }
+      setTimeout(() => { setStatus('idle'); setMessage(null) }, 4000)
+    } catch {
+      setStatus('error')
+      setMessage('Network error')
+      setTimeout(() => { setStatus('idle'); setMessage(null) }, 4000)
+    }
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={send}
+        disabled={!enabled || status === 'sending'}
+        title={enabled ? 'Email this list to ADMIN_EMAIL' : 'No low-stock items to alert about'}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+          padding: '0.3rem 0.6rem', borderRadius: '6px',
+          background: status === 'sent' ? 'rgba(52,211,153,0.15)' : status === 'error' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.1)',
+          border: `1px solid ${status === 'sent' ? 'rgba(52,211,153,0.3)' : status === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.25)'}`,
+          color: status === 'sent' ? '#34d399' : status === 'error' ? '#f87171' : '#f59e0b',
+          fontSize: '0.7rem', fontWeight: 700,
+          cursor: enabled && status !== 'sending' ? 'pointer' : 'not-allowed',
+          opacity: enabled ? 1 : 0.4,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {status === 'sending' ? 'Sending…' : status === 'sent' ? 'Sent ✓' : status === 'error' ? 'Failed' : '✉ Email me'}
+      </button>
+      {message && (
+        <div style={{
+          position: 'absolute', top: '100%', right: 0, marginTop: 4,
+          padding: '4px 8px', borderRadius: 6,
+          background: '#0a0a0a', border: '1px solid #2a2a2a',
+          fontSize: '0.65rem', color: status === 'sent' ? '#34d399' : '#f87171',
+          whiteSpace: 'nowrap', zIndex: 5,
+        }}>{message}</div>
+      )}
     </div>
   )
 }
