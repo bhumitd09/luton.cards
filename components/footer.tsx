@@ -33,32 +33,75 @@ function NewsletterSection() {
   }
 
   return (
-    <div style={{ background: '#EC1E79', padding: '1.75rem 1.5rem' }}>
+    <div style={{ background: '#0a0a0a', padding: '2.5rem 1.5rem', position: 'relative', overflow: 'hidden', borderTop: '1px solid #1a1a1a' }}>
+      {/* subtle pink glow up the left */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '-40%',
+          left: '-10%',
+          width: 380,
+          height: 380,
+          background: 'radial-gradient(circle, rgba(236,30,121,0.10) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }}
+      />
       <style>{`
-        .newsletter-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
-        @media (max-width: 600px) {
-          .newsletter-inner { flex-direction: column; align-items: stretch; padding: 0; }
+        .newsletter-card {
+          max-width: 920px;
+          margin: 0 auto;
+          background: linear-gradient(135deg, rgba(236,30,121,0.06), rgba(255,255,255,0.015));
+          border: 1px solid rgba(236,30,121,0.18);
+          border-radius: 14px;
+          padding: 1.5rem 1.75rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1.75rem;
+          flex-wrap: wrap;
+          position: relative;
+          z-index: 1;
+        }
+        @media (max-width: 640px) {
+          .newsletter-card { flex-direction: column; align-items: stretch; padding: 1.25rem 1.25rem; }
           .newsletter-form { width: 100%; }
           .newsletter-form input { width: 100% !important; box-sizing: border-box !important; }
           .newsletter-form button { width: 100% !important; justify-content: center !important; }
         }
       `}</style>
-      <div className="newsletter-inner">
+      <div className="newsletter-card">
         <div>
-          <p style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(0,0,0,0.45)', margin: '0 0 0.2rem' }}>
-            Stay in the loop
+          <p style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EC1E79', margin: '0 0 0.4rem' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#EC1E79' }} />
+            Newsletter
           </p>
-          <p style={{ fontSize: '1.1rem', fontWeight: 900, color: '#000', letterSpacing: '-0.02em', margin: 0 }}>
-            First to know. First to cop.
+          <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.3 }}>
+            New drops, restocks, early access.
+          </p>
+          <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', margin: '0.3rem 0 0' }}>
+            One email when something good lands. Unsubscribe anytime.
           </p>
         </div>
+
         {submitted ? (
           <motion.div
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{ background: '#000', color: '#EC1E79', padding: '0.65rem 1.25rem', borderRadius: '8px', fontWeight: 700, fontSize: '0.875rem' }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'rgba(52,211,153,0.1)',
+              color: '#34d399',
+              padding: '0.65rem 1.1rem',
+              borderRadius: 10,
+              border: '1px solid rgba(52,211,153,0.25)',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+            }}
           >
-            You&apos;re in. Stay tuned.
+            ✓ You&apos;re in. Stay tuned.
           </motion.div>
         ) : (
           <form className="newsletter-form" onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.4rem' }}>
@@ -69,35 +112,45 @@ function NewsletterSection() {
               onChange={e => setEmail(e.target.value)}
               placeholder="your@email.com"
               style={{
-                padding: '0.65rem 1rem',
-                borderRadius: '7px',
-                border: '2px solid rgba(0,0,0,0.15)',
-                background: 'rgba(255,255,255,0.7)',
+                padding: '0.65rem 0.95rem',
+                borderRadius: 9,
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.04)',
                 fontSize: '0.875rem',
-                color: '#000',
+                color: '#fff',
                 outline: 'none',
                 fontFamily: 'inherit',
-                width: '220px',
+                width: 240,
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
+              onFocus={e => {
+                ;(e.target as HTMLInputElement).style.borderColor = '#EC1E79'
+                ;(e.target as HTMLInputElement).style.background = 'rgba(255,255,255,0.06)'
+              }}
+              onBlur={e => {
+                ;(e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'
+                ;(e.target as HTMLInputElement).style.background = 'rgba(255,255,255,0.04)'
               }}
             />
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
               style={{
-                background: '#000',
-                color: '#EC1E79',
+                background: 'linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)',
+                color: '#fff',
                 border: 'none',
-                padding: '0.65rem 1rem',
-                borderRadius: '7px',
+                padding: '0.65rem 1.1rem',
+                borderRadius: 9,
                 fontWeight: 800,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.3rem',
+                gap: '0.35rem',
                 whiteSpace: 'nowrap',
                 fontFamily: 'inherit',
+                boxShadow: '0 6px 18px -6px rgba(236,30,121,0.55)',
               }}
             >
               Subscribe <ArrowRight size={13} />
