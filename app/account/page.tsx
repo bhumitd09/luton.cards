@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { Package, LogOut, MapPin, Mail, Check, ArrowRight } from 'lucide-react'
+import { Package, LogOut, MapPin, Mail, Check, ArrowRight, Heart, Trash2 } from 'lucide-react'
 
 interface Profile {
   id: string
@@ -38,28 +38,54 @@ interface Order {
   createdAt: string
 }
 
-type Tab = 'orders' | 'profile' | 'address'
+type Tab = 'orders' | 'wishlist' | 'profile' | 'address'
+
+interface WishlistItem {
+  id: string
+  productId: string
+  createdAt: string
+  product: {
+    id: string
+    name: string
+    slug: string
+    price: number
+    stock: number
+    category: string
+    game: string
+    grade: string | null
+    image: string
+    active: boolean
+  }
+}
 
 export default function AccountPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('orders')
   const [saved, setSaved] = useState(false)
+
+  const removeFromWishlist = async (productId: string) => {
+    await fetch(`/api/account/wishlist/${productId}`, { method: 'DELETE' })
+    setWishlist(prev => prev.filter(w => w.productId !== productId))
+  }
 
   useEffect(() => {
     Promise.all([
       fetch('/api/account').then(r => (r.ok ? r.json() : null)),
       fetch('/api/account/orders').then(r => (r.ok ? r.json() : { orders: [] })),
+      fetch('/api/account/wishlist').then(r => (r.ok ? r.json() : { items: [] })),
     ])
-      .then(([profileData, ordersData]) => {
+      .then(([profileData, ordersData, wishlistData]) => {
         if (!profileData?.user) {
           router.replace('/login')
           return
         }
         setProfile(profileData.user)
         setOrders(ordersData?.orders || [])
+        setWishlist(wishlistData?.items || [])
         setLoading(false)
       })
       .catch(() => router.replace('/login'))
@@ -123,6 +149,12 @@ export default function AccountPage() {
                 onClick={() => setTab('orders')}
               />
               <TabButton
+                icon={Heart}
+                label={`Wishlist (${wishlist.length})`}
+                active={tab === 'wishlist'}
+                onClick={() => setTab('wishlist')}
+              />
+              <TabButton
                 icon={Mail}
                 label="Profile"
                 active={tab === 'profile'}
@@ -160,6 +192,85 @@ export default function AccountPage() {
                     <div className="flex flex-col gap-3">
                       {orders.map(order => (
                         <OrderCard key={order.id} order={order} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {tab === 'wishlist' && (
+                <>
+                  <h2 className="m-0 mb-6 text-[1.15rem] font-black tracking-[-0.02em] text-neutral-900">
+                    Your wishlist
+                  </h2>
+                  {wishlist.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-neutral-200 px-6 py-14 text-center">
+                      <Heart size={32} className="mx-auto mb-3 text-neutral-300" />
+                      <p className="m-0 text-sm font-bold text-neutral-600">No saved products yet.</p>
+                      <p className="m-0 mt-1 text-xs text-neutral-500">Tap the heart on any product to save it for later.</p>
+                      <Link
+                        href="/products"
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#EC1E79] hover:underline"
+                      >
+                        Browse products <ArrowRight size={13} />
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {wishlist.map(item => (
+                        <div
+                          key={item.id}
+                          className="group flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 transition-colors hover:border-[#EC1E79]"
+                        >
+                          <Link
+                            href={`/products/${item.product.id}`}
+                            className="flex aspect-square size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white"
+                          >
+                            {item.product.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={item.product.image} alt={item.product.name} className="size-full object-contain p-1" />
+                            ) : (
+                              <Package size={20} className="text-neutral-300" />
+                            )}
+                          </Link>
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              href={`/products/${item.product.id}`}
+                              className="m-0 line-clamp-2 text-[13.5px] font-bold leading-snug text-neutral-900 hover:text-[#EC1E79]"
+                            >
+                              {item.product.name}
+                            </Link>
+                            <p className="m-0 mt-0.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-neutral-400">
+                              {item.product.game === 'one-piece' ? 'One Piece' : 'Pokémon'}
+                              {item.product.grade ? ` · ${item.product.grade}` : ''}
+                            </p>
+                            <div className="mt-1.5 flex items-center justify-between gap-2">
+                              <span className="text-[15px] font-extrabold tracking-tight text-[#EC1E79]">
+                                £{item.product.price.toLocaleString()}
+                              </span>
+                              <span
+                                className={[
+                                  'text-[10px] font-bold uppercase tracking-wider',
+                                  item.product.stock === 0
+                                    ? 'text-red-500'
+                                    : item.product.stock <= 2
+                                    ? 'text-amber-500'
+                                    : 'text-emerald-500',
+                                ].join(' ')}
+                              >
+                                {item.product.stock === 0 ? 'Sold out' : item.product.stock <= 2 ? `${item.product.stock} left` : 'In stock'}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFromWishlist(item.productId)}
+                            title="Remove from wishlist"
+                            className="shrink-0 rounded-md bg-white p-1.5 text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}

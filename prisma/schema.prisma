@@ -194,4 +194,31 @@ model User {
   createdAt     DateTime  @default(now())
   lastLogin     DateTime?
   orders        Order[]
+  wishlist      Wishlist[]
+  stockNotifications StockNotification[]
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model StockNotification {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String
+  email      String    // Snapshot of user's email at subscribe time (in case account is deleted)
+  createdAt  DateTime  @default(now())
+  notifiedAt DateTime?
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([notifiedAt])
 }

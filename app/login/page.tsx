@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, LogIn } from 'lucide-react'
@@ -11,8 +11,10 @@ import { Particles } from '@/components/magicui/particles'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { BorderBeam } from '@/components/magicui/border-beam'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
+  const params = useSearchParams()
+  const nextUrl = params.get('next')
   const [form, setForm] = useState({ email: '', password: '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,9 @@ export default function LoginPage() {
         setSubmitting(false)
         return
       }
-      router.replace('/account')
+      // Honour ?next=... if it's a safe internal path
+      const dest = nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//') ? nextUrl : '/account'
+      router.replace(dest)
       router.refresh()
     } catch {
       setError('Network error. Please try again.')
@@ -125,6 +129,14 @@ export default function LoginPage() {
       </main>
       <Footer />
     </>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   )
 }
 

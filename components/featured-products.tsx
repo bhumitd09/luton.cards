@@ -6,6 +6,7 @@ import { motion, useInView, useMotionValue, useMotionTemplate } from 'framer-mot
 import { ShoppingCart, ArrowRight, Package } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { BorderBeam } from '@/components/magicui/border-beam'
+import { WishlistButton } from '@/components/wishlist-button'
 import type { Product } from '@/lib/products'
 
 const TABS = [
@@ -92,6 +93,14 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
               {product.stock} left
             </span>
           ) : null}
+
+          {/* Wishlist heart — top-right when no stock badge, otherwise just below it */}
+          <div
+            className="absolute z-10"
+            style={{ top: product.stock <= 2 ? '36px' : '10px', right: '10px' }}
+          >
+            <WishlistButton productId={product.id} size="sm" />
+          </div>
         </div>
 
         {/* body */}

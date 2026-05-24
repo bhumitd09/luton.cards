@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, ArrowLeft, Tag, Package } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { WishlistButton } from '@/components/wishlist-button'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
 
@@ -618,6 +619,11 @@ export default function ProductDetailPage() {
                         ? 'Max in Cart'
                         : 'Add to Cart'}
                 </motion.button>
+
+                {/* Save to wishlist */}
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <WishlistButton productId={product.id} variant="inline" />
+                </div>
                 {product.stock > 0 && product.stock <= 10 && (
                   <p style={{ fontSize: '0.8125rem', color: '#f59e0b', marginTop: '0.5rem', fontWeight: 600, marginBottom: '0.75rem' }}>
                     Only {product.stock} in stock
