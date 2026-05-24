@@ -140,15 +140,23 @@ model Discount {
 }
 
 model Review {
-  id         String   @id @default(cuid())
-  name       String
-  location   String?
-  rating     Int      @default(5)   // 1-5
-  body       String   @db.Text
-  productRef String?  // optional product name reference
-  approved   Boolean  @default(false)
-  featured   Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id                String   @id @default(cuid())
+  name              String
+  location          String?
+  rating            Int      @default(5)   // 1-5
+  title             String?  // optional short headline
+  body              String   @db.Text
+  productRef        String?  // legacy free-text product name reference
+  productId         String?  // proper FK link to Product (preferred)
+  userId            String?  // who wrote it (nullable for legacy + admin-seeded)
+  verifiedPurchase  Boolean  @default(false)
+  approved          Boolean  @default(false)
+  featured          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([productId])
+  @@index([userId])
+  @@index([approved])
 }
 
 model SyncLog {

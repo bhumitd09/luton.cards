@@ -9,6 +9,7 @@ import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { WishlistButton } from '@/components/wishlist-button'
 import { BackInStockButton } from '@/components/back-in-stock-button'
+import { ProductReviews } from '@/components/reviews'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
 
@@ -657,6 +658,13 @@ export default function ProductDetailPage() {
             </motion.div>
           ) : null}
         </div>
+
+        {/* Reviews — shown when product is loaded */}
+        {product && (
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1.5rem' }}>
+            <ProductReviews productId={product.id} />
+          </div>
+        )}
 
         {/* Related products — only shown when the current product is loaded */}
         {product && (
