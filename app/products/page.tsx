@@ -226,6 +226,10 @@ function ProductsContent() {
           .products-sort { margin-left: 0 !important; width: 100%; }
           .products-sort select { width: 100% !important; }
           .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
+          /* Drop sticky on mobile — the filter bar stacks into a tall column
+             and the 73px desktop offset doesn't match the real mobile header
+             height. Static lets it scroll naturally with the page. */
+          .products-filter-wrap { position: static !important; padding: 0.75rem 0 !important; }
         }
       `}</style>
       <Header />
@@ -263,7 +267,7 @@ function ProductsContent() {
         </div>
 
         {/* Filters */}
-        <div style={{
+        <div className="products-filter-wrap" style={{
           background: '#fff', borderBottom: '1px solid #e5e7eb',
           position: 'sticky', top: '73px', zIndex: 50, padding: '1rem 0',
         }}>

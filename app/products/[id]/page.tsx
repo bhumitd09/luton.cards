@@ -216,22 +216,23 @@ function SkeletonBlock({ width, height, radius = 8 }: { width: string | number; 
 
 function LoadingSkeleton() {
   return (
-    <div style={{ display: 'flex', gap: '3rem', padding: '3rem 0', flexWrap: 'wrap' }}>
+    <div className="product-layout" style={{ display: 'flex', gap: '3rem', padding: '3rem 0', flexWrap: 'wrap' }}>
       <style>{`
         @keyframes shimmer {
           0% { background-position: 200% 0 }
           100% { background-position: -200% 0 }
         }
       `}</style>
-      {/* Left */}
-      <div style={{ flex: '0 0 60%', minWidth: '280px' }}>
+      {/* Left — reuse .product-left so the global <768 media query collapses
+          this to full-width and prevents the 588px+ min-width overflow on phones. */}
+      <div className="product-left" style={{ flex: '0 0 60%', minWidth: 0 }}>
         <SkeletonBlock width="100%" height={440} radius={18} />
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
           {[...Array(4)].map((_, i) => <SkeletonBlock key={i} width={80} height={80} radius={10} />)}
         </div>
       </div>
       {/* Right */}
-      <div style={{ flex: 1, minWidth: '260px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="product-right" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <SkeletonBlock width={90} height={26} radius={9999} />
         <SkeletonBlock width="80%" height={40} />
         <SkeletonBlock width={120} height={36} />

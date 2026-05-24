@@ -105,10 +105,10 @@ export default function TestimonialsSection() {
           Don&rsquo;t take our word for it.
         </h2>
 
-        {/* Grid */}
+        {/* Grid — 240px floor so it doesn't overflow on 320px viewports */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
           gap: '1.5rem',
         }}>
           {reviews.map((review, i) => (

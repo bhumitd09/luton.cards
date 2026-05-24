@@ -117,7 +117,7 @@ export default function CartPage() {
           <div className="cart-items">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {items.map((item) => (
-                <div key={item.product.id} style={{
+                <div key={item.product.id} className="cart-item" style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '1rem',
@@ -125,6 +125,7 @@ export default function CartPage() {
                   background: '#f9fafb',
                   borderRadius: '14px',
                   border: '1.5px solid #f0f0f0',
+                  flexWrap: 'wrap',
                 }}>
                   {/* Product image */}
                   <div className="cart-item-img" style={{
@@ -149,8 +150,8 @@ export default function CartPage() {
                   </div>
 
                   {/* Product info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{
+                  <div className="cart-item-info" style={{ flex: 1, minWidth: 0 }}>
+                    <p className="cart-item-name" style={{
                       fontWeight: 700, fontSize: '0.9375rem', color: '#111',
                       margin: '0 0 0.2rem', lineHeight: 1.3,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -162,34 +163,14 @@ export default function CartPage() {
                     </p>
                   </div>
 
-                  {/* Qty controls */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      className="cart-qty-btn"
-                      style={{
-                        width: '30px', height: '30px', borderRadius: '8px',
-                        border: '1.5px solid #e5e7eb', background: '#fff',
-                        cursor: 'pointer', fontSize: '1rem', fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#374151',
-                      }}
-                    >
-                      -
-                    </button>
-                    <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111', minWidth: '20px', textAlign: 'center' }}>
-                      {item.quantity}
-                    </span>
-                    {item.quantity >= getStock(item.product.id, item.product.stock) ? (
-                      <span style={{
-                        fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af',
-                        minWidth: '30px', textAlign: 'center',
-                      }}>
-                        Max
-                      </span>
-                    ) : (
+                  {/* Actions group: qty + price + remove (wraps below info on narrow screens) */}
+                  <div className="cart-item-actions" style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  }}>
+                    {/* Qty controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                         className="cart-qty-btn"
                         style={{
                           width: '30px', height: '30px', borderRadius: '8px',
@@ -199,40 +180,65 @@ export default function CartPage() {
                           color: '#374151',
                         }}
                       >
-                        +
+                        -
                       </button>
-                    )}
+                      <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111', minWidth: '20px', textAlign: 'center' }}>
+                        {item.quantity}
+                      </span>
+                      {item.quantity >= getStock(item.product.id, item.product.stock) ? (
+                        <span style={{
+                          fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af',
+                          minWidth: '30px', textAlign: 'center',
+                        }}>
+                          Max
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="cart-qty-btn"
+                          style={{
+                            width: '30px', height: '30px', borderRadius: '8px',
+                            border: '1.5px solid #e5e7eb', background: '#fff',
+                            cursor: 'pointer', fontSize: '1rem', fontWeight: 700,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#374151',
+                          }}
+                        >
+                          +
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Price */}
+                    <span style={{
+                      fontWeight: 800, fontSize: '1rem', color: '#EC1E79',
+                      minWidth: '70px', textAlign: 'right',
+                    }}>
+                      £{(item.product.price * item.quantity).toFixed(2)}
+                    </span>
+
+                    {/* Remove */}
+                    <button
+                      onClick={() => removeFromCart(item.product.id)}
+                      title="Remove"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#d1d5db', padding: '4px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: '6px',
+                        transition: 'color 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      </svg>
+                    </button>
                   </div>
-
-                  {/* Price */}
-                  <span style={{
-                    fontWeight: 800, fontSize: '1rem', color: '#EC1E79',
-                    minWidth: '70px', textAlign: 'right',
-                  }}>
-                    £{(item.product.price * item.quantity).toFixed(2)}
-                  </span>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => removeFromCart(item.product.id)}
-                    title="Remove"
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#d1d5db', padding: '4px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      borderRadius: '6px',
-                      transition: 'color 0.15s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6M14 11v6" />
-                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                    </svg>
-                  </button>
                 </div>
               ))}
             </div>
@@ -453,6 +459,26 @@ export default function CartPage() {
           .cart-qty-btn {
             width: 36px !important;
             height: 36px !important;
+          }
+        }
+        /* Reflow the action group below the image + name on phones to
+           prevent crushing the product name and overflowing the row. */
+        @media (max-width: 520px) {
+          .cart-item {
+            gap: 0.75rem !important;
+            padding: 0.85rem !important;
+          }
+          .cart-item-name {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+          }
+          .cart-item-actions {
+            flex: 1 0 100% !important;
+            justify-content: space-between !important;
+            margin-top: 0.25rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #e5e7eb;
           }
         }
       `}</style>
