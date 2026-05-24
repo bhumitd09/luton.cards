@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Menu, X, ChevronDown, User } from 'lucide-react'
+import { ShoppingCart, Menu, X, ChevronDown, ChevronRight, User } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { SearchBar } from '@/components/search-bar'
 
@@ -83,9 +83,13 @@ export function Header() {
       }}
     >
       <style>{`
-        @media (max-width: 768px) {
-          .header-content { height: auto !important; padding: 0.75rem 1rem !important; }
-          .header-logo-img { height: 64px !important; }
+        /* Phone + tablet: shrink the header so the hamburger drawer is the
+           star. Desktop nav doesn't render here so we don't reserve space
+           for it. */
+        @media (max-width: 1023px) {
+          .header-content { height: auto !important; padding: 0.65rem 1rem !important; }
+          .header-logo-img { height: 56px !important; }
+          .header-actions { gap: 0.15rem !important; }
         }
         .lc-nav-trigger {
           background: none;
@@ -160,7 +164,9 @@ export function Header() {
             />
           </Link>
 
-          <nav className="nav-desktop" style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
+          {/* nav-desktop visibility + layout lives in globals.css so the inline
+              style can't override `display: none` at mobile widths. */}
+          <nav className="nav-desktop">
             {MEGA_MENUS.map((menu, i) => (
               <div
                 key={menu.id}
@@ -228,7 +234,7 @@ export function Header() {
           </nav>
 
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <SearchBar />
             </div>
             <Link href="/account" style={{ textDecoration: 'none' }} aria-label="Account">
@@ -298,10 +304,20 @@ export function Header() {
               transition={{ duration: 0.2 }}
               style={{ overflow: 'hidden', borderTop: '1px solid #f0f0f0' }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0 1rem' }}>
-                <div className="md:hidden" style={{ padding: '0.5rem 0 0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 1rem 1rem' }}>
+                <div className="lg:hidden" style={{ padding: '0.5rem 0 1rem' }}>
                   <SearchBar variant="mobile" onNavigate={() => setIsMenuOpen(false)} />
                 </div>
+
+                {/* Shop section label */}
+                <div style={{
+                  fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af',
+                  textTransform: 'uppercase', letterSpacing: '0.14em',
+                  padding: '0.5rem 0 0.25rem',
+                }}>
+                  Shop
+                </div>
+
                 {MEGA_MENUS.map((menu, i) => {
                   const isOpen = openMobileMega === menu.id
                   return (
@@ -310,6 +326,7 @@ export function Header() {
                       initial={{ x: -12, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ delay: i * 0.04 }}
+                      style={{ borderBottom: '1px solid #f5f5f5' }}
                     >
                       <button
                         type="button"
@@ -322,9 +339,9 @@ export function Header() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '0.7rem 0',
+                          padding: '0.85rem 0',
                           color: '#111',
-                          fontSize: '1rem',
+                          fontSize: '1.05rem',
                           fontWeight: 700,
                           cursor: 'pointer',
                           letterSpacing: '-0.01em',
@@ -333,7 +350,11 @@ export function Header() {
                         {menu.label}
                         <ChevronDown
                           size={16}
-                          style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          style={{
+                            transition: 'transform 0.2s',
+                            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            color: isOpen ? '#EC1E79' : '#9ca3af',
+                          }}
                         />
                       </button>
                       <AnimatePresence>
@@ -343,45 +364,69 @@ export function Header() {
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.15 }}
-                            style={{ overflow: 'hidden', paddingLeft: '0.75rem' }}
+                            style={{ overflow: 'hidden' }}
                           >
-                            {menu.items.map(item => (
-                              <Link
-                                key={item.href}
-                                href={item.href}
-                                style={{
-                                  display: 'block',
-                                  padding: '0.55rem 0',
-                                  color: '#444',
-                                  fontSize: '0.95rem',
-                                  fontWeight: 500,
-                                  textDecoration: 'none',
-                                }}
-                                onClick={() => { setIsMenuOpen(false); setOpenMobileMega(null) }}
-                              >
-                                {item.label}
-                              </Link>
-                            ))}
+                            <div style={{ paddingBottom: '0.5rem' }}>
+                              {menu.items.map(item => (
+                                <Link
+                                  key={item.href}
+                                  href={item.href}
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    padding: '0.6rem 0.75rem',
+                                    margin: '0.15rem 0',
+                                    color: '#374151',
+                                    textDecoration: 'none',
+                                    borderRadius: '8px',
+                                    background: '#fafafa',
+                                  }}
+                                  onClick={() => { setIsMenuOpen(false); setOpenMobileMega(null) }}
+                                >
+                                  <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111' }}>
+                                    {item.label}
+                                  </span>
+                                  {item.description && (
+                                    <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '2px' }}>
+                                      {item.description}
+                                    </span>
+                                  )}
+                                </Link>
+                              ))}
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </motion.div>
                   )
                 })}
+
+                {/* More section label */}
+                <div style={{
+                  fontSize: '0.65rem', fontWeight: 800, color: '#9ca3af',
+                  textTransform: 'uppercase', letterSpacing: '0.14em',
+                  padding: '1.25rem 0 0.25rem',
+                }}>
+                  More
+                </div>
+
                 {SIMPLE_LINKS.map((link, i) => (
                   <motion.div
                     key={link.href}
                     initial={{ x: -12, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: (MEGA_MENUS.length + i) * 0.04 }}
+                    style={{ borderBottom: '1px solid #f5f5f5' }}
                   >
                     <Link
                       href={link.href}
                       style={{
-                        display: 'block',
-                        padding: '0.7rem 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.85rem 0',
                         color: '#111',
-                        fontSize: '1rem',
+                        fontSize: '1.05rem',
                         fontWeight: 700,
                         textDecoration: 'none',
                         letterSpacing: '-0.01em',
@@ -389,9 +434,41 @@ export function Header() {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {link.label}
+                      <ChevronRight size={16} style={{ color: '#d1d5db' }} />
                     </Link>
                   </motion.div>
                 ))}
+
+                {/* Account quick link at bottom */}
+                <motion.div
+                  initial={{ x: -12, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: (MEGA_MENUS.length + SIMPLE_LINKS.length) * 0.04 }}
+                  style={{ marginTop: '1rem' }}
+                >
+                  <Link
+                    href="/account"
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      padding: '0.85rem 1rem',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)',
+                      color: '#fff',
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
+                      textDecoration: 'none',
+                      letterSpacing: '-0.01em',
+                      boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
+                    }}
+                  >
+                    <User size={16} />
+                    My Account
+                  </Link>
+                </motion.div>
               </div>
             </motion.nav>
           )}

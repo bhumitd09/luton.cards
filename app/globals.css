@@ -98,16 +98,19 @@ header {
   transform: rotate(-45deg);
 }
 
-/* Navigation */
+/* Navigation
+   Hamburger kicks in below 1024px — the desktop nav has 5 items + dropdowns
+   and needs the full laptop width to lay out without crushing or wrapping
+   text inside the buttons. Tablets get the same drawer phones do. */
 .nav-desktop {
   display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .nav-desktop {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 }
 
@@ -186,7 +189,7 @@ header {
   display: flex !important;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .btn-menu {
     display: none !important;
   }
