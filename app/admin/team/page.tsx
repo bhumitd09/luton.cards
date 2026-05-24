@@ -18,19 +18,22 @@ type Status = 'idle' | 'saving' | 'saved' | 'error'
 const MAX_MEMBERS = 8
 
 const DEFAULT_MEMBERS: Member[] = [
-  { name: 'Bhumit', role: 'Co-Founder & Developer', tag: 'Tech & Operations', photo: '', bio: 'Builds and runs the tech behind Luton Cards. Keeps the site, stock and checkout running so the rest of the team can focus on the cards.' },
-  { name: 'Bash', role: 'Co-Founder & Buyer', tag: 'Sourcing & Buying', photo: '', bio: 'Sources the stock. Hunts singles, sealed product and graded slabs across the UK — if it goes on the site, Bash has held it first.' },
-  { name: 'Ramz', role: 'Co-Founder & Social Media', tag: 'Community & Content', photo: '', bio: 'Runs the socials and the community on Instagram, TikTok and YouTube — making sure collectors know what we have and what is dropping next.' },
-  { name: 'Allan', role: 'Co-Founder & Grading', tag: 'Grading Specialist', photo: '', bio: 'The grading specialist. Years of PSA, CGC and ACE submissions — every slab on the site has been through his hands.' },
+  { name: 'Bhumit', role: 'Vintage Pokémon Specialist', tag: 'Base Set & Beyond', photo: '', bio: 'The vintage hunter. Hand picks pre-2003 Pokémon, Base Set holos, gold stars and sealed wax that\'s older than most of the people buying it.' },
+  { name: 'Bash', role: 'One Piece Specialist', tag: 'OP-01 to Now', photo: '', bio: 'Lives and breathes One Piece TCG. Knows every set, every alt art, every leader meta. If it\'s an OP card, Bash has an opinion on it.' },
+  { name: 'Ramz', role: 'Pokémon & One Piece Specialist', tag: 'Modern Sets Master', photo: '', bio: 'The all rounder. Tracks modern Pokémon sets and One Piece releases side by side. First to know what\'s about to spike.' },
+  { name: 'Allan', role: 'Grading & Sealed Specialist', tag: 'PSA · CGC · ACE', photo: '', bio: 'Years of PSA, CGC and ACE submissions plus a sealed vault that\'s the envy of UK collectors. Every slab on the site has been through his hands.' },
 ]
 
 export default function AdminTeamPage() {
   const [members, setMembers] = useState<Member[]>(DEFAULT_MEMBERS)
+  const [groupPhoto, setGroupPhoto] = useState<string>('')
+  const [groupStatus, setGroupStatus] = useState<Status>('idle')
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Load team members
     fetch('/api/admin/content/team_members')
       .then(r => (r.ok ? r.json() : null))
       .catch(() => null)
@@ -48,7 +51,41 @@ export default function AdminTeamPage() {
         }
         setLoading(false)
       })
+
+    // Load group photo (separate fetch, non-blocking)
+    fetch('/api/admin/content/about_group_photo')
+      .then(r => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then(data => {
+        if (data?.content?.value) {
+          setGroupPhoto(String(data.content.value).trim())
+        }
+      })
   }, [])
+
+  const saveGroupPhoto = async (url: string) => {
+    setGroupPhoto(url)
+    setGroupStatus('saving')
+    try {
+      const res = await fetch('/api/admin/content/about_group_photo', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          value: url,
+          type: 'text',
+          label: 'About: Group Photo',
+        }),
+      })
+      if (!res.ok) {
+        setGroupStatus('error')
+        return
+      }
+      setGroupStatus('saved')
+      setTimeout(() => setGroupStatus('idle'), 1500)
+    } catch {
+      setGroupStatus('error')
+    }
+  }
 
   const update = (i: number, patch: Partial<Member>) =>
     setMembers(prev => prev.map((m, idx) => (idx === i ? { ...m, ...patch } : m)))
@@ -159,6 +196,73 @@ export default function AdminTeamPage() {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Group photo card (separate from member grid) */}
+        <div className="mb-6 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <p className="m-0 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
+                <ImageIcon size={11} /> About Page
+              </p>
+              <h2 className="m-0 mt-1 text-[1.05rem] font-black tracking-[-0.02em]">Group Photo</h2>
+              <p className="m-0 mt-1 text-[12.5px] text-neutral-500">
+                Shown in the About hero. Landscape 5:4 works best. Replace any time.
+              </p>
+            </div>
+            {groupStatus === 'saved' && (
+              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-400">
+                <Check size={13} /> Saved
+              </span>
+            )}
+            {groupStatus === 'saving' && (
+              <span className="text-[12px] font-bold text-neutral-400">Saving…</span>
+            )}
+            {groupStatus === 'error' && (
+              <span className="text-[12px] font-bold text-red-400">Save failed</span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[280px_1fr]">
+            <div>
+              {groupPhoto ? (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={groupPhoto}
+                    alt="Group"
+                    className="aspect-[5/4] w-full rounded-xl border border-neutral-800 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => saveGroupPhoto('')}
+                    className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-red-500 text-white"
+                    title="Remove photo"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-neutral-800 bg-neutral-950">
+                  <ImageUploader
+                    images={[]}
+                    onChange={imgs => imgs[0] && saveGroupPhoto(imgs[0])}
+                    max={1}
+                    label=""
+                  />
+                </div>
+              )}
+            </div>
+            <div className="text-[13px] leading-[1.6] text-neutral-400">
+              <p className="m-0 mb-2 font-bold text-neutral-200">Tips</p>
+              <ul className="m-0 space-y-1.5 pl-4">
+                <li>Use a landscape shot of all four together if you can.</li>
+                <li>Aspect ratio: roughly 5:4 (e.g. 1400×1120). Anything wider crops top/bottom.</li>
+                <li>Front-lit, bright, decent resolution. JPG or PNG up to 5 MB.</li>
+                <li>This image is public the moment you upload it.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
 
         {loading ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, MapPin, Trophy, Users } from 'lucide-react'
+import { ArrowRight, MapPin, Calendar, Users, Sparkles, Gamepad2, UserPlus, Tent, Store } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -24,25 +24,25 @@ const DEFAULT_TEAM: TeamMember[] = [
   {
     name: 'Bhumit',
     role: 'Vintage Pokémon Specialist',
-    bio: 'The vintage hunter. Hand-picks pre-2003 Pokémon — Base Set holos, gold stars, sealed wax that\'s older than most of the customers.',
+    bio: 'The vintage hunter. Hand picks pre-2003 Pokémon, Base Set holos, gold stars and sealed wax that\'s older than most of the people buying it.',
     tag: 'Base Set & Beyond',
   },
   {
     name: 'Bash',
     role: 'One Piece Specialist',
-    bio: 'Lives and breathes One Piece TCG. Knows every set, every alt art, every leader meta.',
+    bio: 'Lives and breathes One Piece TCG. Knows every set, every alt art, every leader meta. If it\'s an OP card, Bash has an opinion on it.',
     tag: 'OP-01 to Now',
   },
   {
     name: 'Ramz',
     role: 'Pokémon & One Piece Specialist',
-    bio: 'The all-rounder. Tracks modern Pokémon sets and One Piece releases side by side.',
+    bio: 'The all rounder. Tracks modern Pokémon sets and One Piece releases side by side. First to know what\'s about to spike.',
     tag: 'Modern Sets Master',
   },
   {
     name: 'Allan',
     role: 'Grading & Sealed Specialist',
-    bio: 'Years of PSA, CGC and ACE submissions plus a sealed vault that\'s the envy of UK collectors.',
+    bio: 'Years of PSA, CGC and ACE submissions plus a sealed vault that\'s the envy of UK collectors. Every slab on the site has been through his hands.',
     tag: 'PSA · CGC · ACE',
   },
 ]
@@ -56,9 +56,7 @@ function initialsOf(name: string): string {
 function Avatar({ name, photo }: { name: string; photo?: string }) {
   return (
     <div className="relative mb-6 size-[120px]">
-      {/* outer glow ring */}
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#EC1E79] via-[#FF4DA6] to-[#7e1247] opacity-90 blur-[2px]" />
-      {/* inner — photo if available, else gradient with initials */}
       {photo ? (
         <div className="absolute inset-[3px] overflow-hidden rounded-full bg-neutral-900">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -71,7 +69,6 @@ function Avatar({ name, photo }: { name: string; photo?: string }) {
           </span>
         </div>
       )}
-      {/* tiny accent dot */}
       <div className="absolute -right-1 bottom-1 size-3 rounded-full border-2 border-white bg-[#EC1E79]" />
     </div>
   )
@@ -116,24 +113,104 @@ function TeamCard({ member, index }: { member: TeamMember; index: number }) {
   )
 }
 
+type TimelineMoment = {
+  icon: typeof Gamepad2
+  year: string
+  title: string
+  body: string
+}
+
+const TIMELINE: TimelineMoment[] = [
+  {
+    icon: Gamepad2,
+    year: '2020',
+    title: 'Warzone lobbies, late nights',
+    body: 'Bash, Ramz and Bhumit linked up during lockdown. Endless Warzone, endless chat, nothing else to do. The crew was formed before any of it was about cards.',
+  },
+  {
+    icon: Sparkles,
+    year: '2022',
+    title: 'The card obsession hit',
+    body: 'Pokémon pulled us back in, One Piece TCG dropped, and suddenly group chats were 90% cards. Singles, slabs, sealed product. We were hooked.',
+  },
+  {
+    icon: UserPlus,
+    year: '2024',
+    title: 'Met Allan in Milton Keynes',
+    body: 'We were vending at an event in MK when Allan rocked up to talk grading and sealed product. Knew his stuff instantly. Four became the lineup and it has stayed that way ever since.',
+  },
+  {
+    icon: Tent,
+    year: 'Now',
+    title: 'Vending crew, properly',
+    body: 'Catch us at events around the UK with raw singles, graded slabs and sealed product you can actually trust. Online shop is open 24/7 too.',
+  },
+  {
+    icon: Store,
+    year: 'Soon',
+    title: 'A proper Luton shop',
+    body: 'The long game is a bricks and mortar spot in Luton. Doors, shelves, a glass case full of slabs. When the timing is right, we open. Not a day before.',
+  },
+]
+
+function TimelineItem({ moment, index }: { moment: TimelineMoment; index: number }) {
+  const Icon = moment.icon
+  return (
+    <motion.li
+      initial={{ opacity: 0, x: -12 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.45, delay: index * 0.06 }}
+      className="relative pl-14 pb-9 last:pb-0"
+    >
+      {/* dot */}
+      <span
+        className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-full border border-[#EC1E79]/30 bg-gradient-to-br from-[#190614] to-[#2a0a20] shadow-[0_8px_24px_-10px_rgba(236,30,121,0.6)]"
+      >
+        <Icon size={16} className="text-[#FF80B8]" />
+      </span>
+      {/* connector */}
+      <span
+        aria-hidden
+        className="absolute left-[19px] top-10 h-[calc(100%-2rem)] w-px bg-gradient-to-b from-[#EC1E79]/40 via-[#EC1E79]/10 to-transparent"
+      />
+      <div className="text-[10.5px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
+        {moment.year}
+      </div>
+      <div className="mt-1 text-[1.1rem] font-black tracking-[-0.02em] text-white sm:text-[1.2rem]">
+        {moment.title}
+      </div>
+      <p className="m-0 mt-2 max-w-[560px] text-[14.5px] leading-[1.7] text-neutral-400">
+        {moment.body}
+      </p>
+    </motion.li>
+  )
+}
+
 export default function AboutPage() {
   const particlesRef = useRef<HTMLDivElement>(null)
   const [team, setTeam] = useState<TeamMember[]>(DEFAULT_TEAM)
+  const [groupPhoto, setGroupPhoto] = useState<string>('')
 
   useEffect(() => {
-    fetch('/api/content?keys=team_members')
+    fetch('/api/content?keys=team_members,about_group_photo')
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
-        if (!data?.team_members) return
-        try {
-          const parsed = JSON.parse(String(data.team_members))
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setTeam(parsed.filter((m: unknown): m is TeamMember => {
-              const x = m as TeamMember
-              return !!x && typeof x.name === 'string' && x.name.length > 0
-            }))
-          }
-        } catch {}
+        if (!data) return
+        if (typeof data.about_group_photo === 'string') {
+          setGroupPhoto(data.about_group_photo.trim())
+        }
+        if (data.team_members) {
+          try {
+            const parsed = JSON.parse(String(data.team_members))
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTeam(parsed.filter((m: unknown): m is TeamMember => {
+                const x = m as TeamMember
+                return !!x && typeof x.name === 'string' && x.name.length > 0
+              }))
+            }
+          } catch {}
+        }
       })
       .catch(() => {})
   }, [])
@@ -142,10 +219,10 @@ export default function AboutPage() {
     <>
       <Header />
       <main className="bg-white">
-        {/* hero */}
+        {/* ─── HERO ───────────────────────────────────────────────────────── */}
         <section
           ref={particlesRef}
-          className="relative overflow-hidden bg-[#070708] py-24 sm:py-28"
+          className="relative overflow-hidden bg-[#070708] pt-20 pb-16 sm:pt-24 sm:pb-20"
         >
           <Particles
             className="absolute inset-0"
@@ -163,71 +240,122 @@ export default function AboutPage() {
             }}
           />
 
-          <div className="relative z-10 mx-auto max-w-[760px] px-6 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="mb-6 flex justify-center"
-            >
-              <AnimatedGradientText className="!bg-white/[0.04] !text-white">
-                <Users className="mr-1.5 size-3.5 text-[#EC1E79]" />
-                <span className="inline animate-gradient bg-gradient-to-r from-[#EC1E79] via-[#FF80B8] to-[#EC1E79] bg-[length:var(--bg-size)_100%] bg-clip-text text-xs font-bold uppercase tracking-[0.14em] text-transparent">
-                  Who we are
+          <div className="relative z-10 mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
+            {/* Left: copy */}
+            <div className="text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="mb-6 flex justify-center lg:justify-start"
+              >
+                <AnimatedGradientText className="!bg-white/[0.04] !text-white">
+                  <Users className="mr-1.5 size-3.5 text-[#EC1E79]" />
+                  <span className="inline animate-gradient bg-gradient-to-r from-[#EC1E79] via-[#FF80B8] to-[#EC1E79] bg-[length:var(--bg-size)_100%] bg-clip-text text-xs font-bold uppercase tracking-[0.14em] text-transparent">
+                    Meet the crew
+                  </span>
+                </AnimatedGradientText>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="m-0 text-[clamp(2.1rem,5vw,3.4rem)] font-black leading-[1.02] tracking-[-0.04em] text-white"
+              >
+                Four mates from{' '}
+                <span className="bg-gradient-to-br from-[#EC1E79] to-[#FF4DA6] bg-clip-text text-transparent">
+                  Luton
                 </span>
-              </AnimatedGradientText>
-            </motion.div>
+                <br className="hidden sm:block" />
+                who turned a card obsession into a crew.
+              </motion.h1>
 
-            <motion.img
-              src="/logo/luton-cards.png"
-              alt="Luton Cards"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="mx-auto mb-8 h-[140px] w-auto drop-shadow-[0_18px_40px_rgba(236,30,121,0.35)]"
-            />
+              <motion.p
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.18 }}
+                className="m-0 mt-6 max-w-[520px] text-[1.05rem] leading-[1.7] text-neutral-400 lg:max-w-[480px]"
+              >
+                We vend at events across the UK. Pokémon, One Piece, raw singles, graded slabs, sealed product.
+                A proper shop is on the way. Until then, find us at the next event or shop online.
+              </motion.p>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="m-0 text-[clamp(2rem,4.5vw,3rem)] font-black leading-[1.05] tracking-[-0.035em] text-white"
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.26 }}
+                className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
+              >
+                <Link href="/products?game=pokemon">
+                  <ShimmerButton className="px-7 py-3 text-sm" background="linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)">
+                    <span className="flex items-center gap-1.5 text-white">
+                      Shop the drop <ArrowRight size={14} />
+                    </span>
+                  </ShimmerButton>
+                </Link>
+                <Link
+                  href="#our-story"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-extrabold text-white transition-colors hover:bg-white/[0.08]"
+                >
+                  Our story
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Right: group photo / fallback */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.15 }}
+              className="relative mx-auto w-full max-w-[520px]"
             >
-              Four collectors from{' '}
-              <span className="bg-gradient-to-br from-[#EC1E79] to-[#FF4DA6] bg-clip-text text-transparent">
-                Luton
-              </span>{' '}
-              with one obsession — cards.
-            </motion.h1>
+              {/* Outer glow */}
+              <div
+                aria-hidden
+                className="absolute -inset-3 rounded-[28px] bg-gradient-to-br from-[#EC1E79]/40 via-[#7e1247]/30 to-transparent blur-2xl"
+              />
+              <div className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#160512] via-[#0d0b0e] to-[#070708] shadow-[0_28px_70px_-20px_rgba(236,30,121,0.55)]">
+                {groupPhoto ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={groupPhoto}
+                    alt="The Luton Cards crew"
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="flex size-full flex-col items-center justify-center px-8 text-center">
+                    <div className="mb-4 flex size-14 items-center justify-center rounded-full border border-[#EC1E79]/30 bg-[#190614]">
+                      <Users size={22} className="text-[#FF80B8]" />
+                    </div>
+                    <p className="m-0 text-[15px] font-bold text-white">
+                      Group photo coming soon
+                    </p>
+                    <p className="m-0 mt-1.5 max-w-[300px] text-[12.5px] leading-[1.55] text-neutral-500">
+                      Upload via <span className="font-mono text-[#FF80B8]">/admin/team</span> to drop the crew in here.
+                    </p>
+                  </div>
+                )}
+                {/* corner badge */}
+                <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3 py-1 backdrop-blur-md">
+                  <span className="size-1.5 rounded-full bg-[#EC1E79]" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white">
+                    The Crew
+                  </span>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* body */}
-        <section className="mx-auto max-w-[720px] px-6 py-16 sm:py-20">
-          <div className="flex flex-col gap-4 text-[1.0625rem] leading-[1.8] text-neutral-700">
-            <p className="m-0">
-              Luton Cards is a UK-based shop for Pok&eacute;mon and One Piece TCG collectors. We started because we
-              couldn&apos;t find a UK shop that sold the way we&apos;d want to buy &mdash; properly checked stock, fair pricing,
-              no surprises in the post.
-            </p>
-            <p className="m-0">
-              From raw singles to PSA-graded slabs to sealed booster boxes, every card on the site has been through our
-              hands. We source carefully, grade honestly, and pack like it matters &mdash; because it does.
-            </p>
-            <p className="m-0">
-              Whether you&apos;re chasing a vintage holo, completing a modern Pok&eacute;mon set, or building a Luffy
-              leader deck &mdash; we&apos;re here to help.
-            </p>
-          </div>
-        </section>
-
-        {/* stats strip */}
+        {/* ─── STATS STRIP ─────────────────────────────────────────────── */}
         <section className="border-y border-neutral-200 bg-neutral-50">
-          <div className="mx-auto grid max-w-[1100px] grid-cols-1 divide-y divide-neutral-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="mx-auto grid max-w-[1100px] grid-cols-2 divide-y divide-neutral-200 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
             {[
               { icon: MapPin, value: 'Luton, UK', label: 'Based in' },
-              { icon: Trophy, value: '2025', label: 'Established' },
-              { icon: Users, value: String(team.length), label: 'Specialists', isNumber: true },
+              { icon: Users, value: String(team.length), label: 'In the crew', isNumber: true },
+              { icon: Tent, value: 'UK Events', label: 'Where to find us' },
+              { icon: Calendar, value: '2020', label: 'Friends since' },
             ].map((stat, i) => {
               const Icon = stat.icon
               return (
@@ -245,15 +373,76 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* team */}
+        {/* ─── OUR STORY (narrative) ───────────────────────────────────── */}
+        <section id="our-story" className="mx-auto max-w-[760px] px-6 py-20 sm:py-24">
+          <div className="mb-8 text-center">
+            <p className="m-0 mb-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
+              How it started
+            </p>
+            <h2 className="m-0 text-[clamp(1.9rem,4vw,2.7rem)] font-black leading-[1.08] tracking-[-0.035em] text-neutral-900">
+              Three lads, one lockdown, a load of cards.
+            </h2>
+          </div>
+
+          <div className="flex flex-col gap-5 text-[1.05rem] leading-[1.85] text-neutral-700">
+            <p className="m-0">
+              Bash, Ramz and Bhumit became mates during COVID. Warzone lobbies, late nights, no jobs to wake up
+              for. The friendship stuck. When lockdown lifted, the cards came in. Pokémon dragged us back to
+              the hobby, One Piece TCG dropped and we were properly cooked.
+            </p>
+            <p className="m-0">
+              Allan came in later. We were vending at an event in Milton Keynes when he pulled up to talk
+              grading and sealed product. Knew his stuff instantly. Four became the lineup and it has stayed
+              that way ever since.
+            </p>
+            <p className="m-0">
+              We are not a shop yet. We vend at events around the UK with raw singles, graded slabs and sealed
+              product you can actually trust. The long game is a proper bricks and mortar spot in Luton. We open
+              when the timing is right, not a day before.
+            </p>
+            <p className="m-0">
+              Think of us as a dysfunctional family that hypes each other up over every PSA 10 and roasts each
+              other over every PSA 7. Different specialisms, same obsession.
+            </p>
+          </div>
+        </section>
+
+        {/* ─── TIMELINE ────────────────────────────────────────────────── */}
+        <section className="relative overflow-hidden bg-[#0a0a0b] py-20 sm:py-24">
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(60% 50% at 50% 0%, rgba(236,30,121,0.12) 0%, transparent 70%)',
+            }}
+          />
+          <div className="relative mx-auto max-w-[860px] px-6">
+            <div className="mb-12 text-center">
+              <p className="m-0 mb-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#FF80B8]">
+                Crew timeline
+              </p>
+              <h2 className="m-0 text-[clamp(1.7rem,3.8vw,2.4rem)] font-black leading-[1.08] tracking-[-0.03em] text-white">
+                From Warzone lobbies to event stalls.
+              </h2>
+            </div>
+
+            <ol className="relative m-0 list-none p-0">
+              {TIMELINE.map((moment, i) => (
+                <TimelineItem key={moment.title} moment={moment} index={i} />
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ─── TEAM GRID ───────────────────────────────────────────────── */}
         <section className="py-20 sm:py-24">
           <div className="mx-auto max-w-[1180px] px-6">
             <div className="mb-12 text-center">
               <p className="m-0 mb-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
-                Meet the team
+                Meet the four
               </p>
               <h2 className="m-0 text-[clamp(1.8rem,4vw,2.6rem)] font-black leading-[1.1] tracking-[-0.03em] text-neutral-900">
-                The four behind the cards.
+                Different specialisms, same obsession.
               </h2>
             </div>
 
@@ -273,7 +462,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* mission */}
+        {/* ─── MISSION PULL QUOTE ──────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-[#0d0d0d] py-24 sm:py-28">
           <div
             className="pointer-events-none absolute inset-0"
@@ -282,28 +471,30 @@ export default function AboutPage() {
                 'radial-gradient(50% 60% at 50% 0%, rgba(236,30,121,0.15) 0%, transparent 70%)',
             }}
           />
-          <div className="relative mx-auto max-w-[680px] px-6 text-center">
+          <div className="relative mx-auto max-w-[760px] px-6 text-center">
             <div className="mx-auto mb-7 h-px w-12 bg-[#EC1E79]" />
-            <blockquote className="m-0 text-[clamp(1.15rem,2.6vw,1.5rem)] font-bold italic leading-[1.6] tracking-[-0.01em] text-white">
-              &ldquo;A UK card shop run by people who actually collect &mdash; properly sourced stock, fair pricing, and a
-              community that puts the hobby first.&rdquo;
+            <blockquote className="m-0 text-[clamp(1.2rem,2.6vw,1.55rem)] font-bold italic leading-[1.55] tracking-[-0.01em] text-white">
+              &ldquo;A vending crew run by people who actually collect. Properly sourced stock, fair pricing, and
+              a community that puts the hobby first.&rdquo;
             </blockquote>
+            <div className="mx-auto mt-7 h-px w-12 bg-[#EC1E79]" />
           </div>
         </section>
 
-        {/* CTA */}
+        {/* ─── CTA ─────────────────────────────────────────────────────── */}
         <section className="py-20 sm:py-24">
-          <div className="mx-auto max-w-[560px] px-6 text-center">
-            <h2 className="m-0 mb-3 text-[clamp(1.6rem,4vw,2.3rem)] font-black leading-[1.15] tracking-[-0.03em] text-neutral-900">
-              Ready to shop?
+          <div className="mx-auto max-w-[640px] px-6 text-center">
+            <h2 className="m-0 mb-3 text-[clamp(1.7rem,4vw,2.4rem)] font-black leading-[1.12] tracking-[-0.03em] text-neutral-900">
+              Catch us at the next event.
             </h2>
-            <p className="m-0 mb-7 text-base leading-[1.6] text-neutral-500">
-              Browse our full range of Pok&eacute;mon and One Piece &mdash; singles, graded slabs, and sealed boxes.
+            <p className="m-0 mb-8 text-base leading-[1.65] text-neutral-500">
+              Or skip the queue and shop the latest singles, graded slabs and sealed product online. We pack
+              every order like it matters, because it does.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link href="/products?game=pokemon">
                 <ShimmerButton className="px-7 py-3 text-sm" background="linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-white">
                     Shop Pok&eacute;mon <ArrowRight size={14} />
                   </span>
                 </ShimmerButton>
