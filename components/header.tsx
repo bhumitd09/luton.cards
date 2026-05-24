@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Menu, X, ChevronDown, User } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import { SearchBar } from '@/components/search-bar'
 
 type MegaMenuItem = { href: string; label: string; description?: string }
 
@@ -226,7 +227,10 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="header-actions">
+          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="hidden md:block">
+              <SearchBar />
+            </div>
             <Link href="/account" style={{ textDecoration: 'none' }} aria-label="Account">
               <motion.button
                 className="btn-icon"
@@ -295,6 +299,9 @@ export function Header() {
               style={{ overflow: 'hidden', borderTop: '1px solid #f0f0f0' }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0 1rem' }}>
+                <div className="md:hidden" style={{ padding: '0.5rem 0 0.75rem' }}>
+                  <SearchBar variant="mobile" onNavigate={() => setIsMenuOpen(false)} />
+                </div>
                 {MEGA_MENUS.map((menu, i) => {
                   const isOpen = openMobileMega === menu.id
                   return (
