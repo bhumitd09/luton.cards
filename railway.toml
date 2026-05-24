@@ -13,3 +13,13 @@ healthcheckPath = "/api/health"
 healthcheckTimeout = 120
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+# ─── Persistent storage for admin uploads ───────────────────────────────
+# Required for the self-hosted upload system to survive deploys.
+# Set up via Railway UI:
+#   1. Service → Settings → Volumes → New Volume
+#   2. Mount path: /data
+#   3. Size: 5GB (cheap, grows on demand)
+# Then add env var: UPLOAD_DIR=/data/uploads
+# Without a volume, uploaded files live in the ephemeral container filesystem
+# and disappear on the next deploy.

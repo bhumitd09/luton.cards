@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminFromRequest } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
+import { storage } from '@/lib/storage'
+
+/**
+ * POST /api/admin/upload  (multipart/form-data: { file, prefix? })
+ *
+ * Admin-only. Streams the uploaded file through the active Storage driver
+ * (local/Railway-volume now, S3 later) and saves a Media row for the asset.
+ *
+ * Returns { url, mediaId } — the URL is wired straight into product images,
+ * team photos, etc.
+ */
+
+const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
+const ALLOWED_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/webp',
+  'image/gif', 'image/avif', 'image/svg+xml',
+])
 
 export async function POST(req: NextRequest) {
   const admin = getAdminFromRequest(req)
@@ -20,64 +37,52 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 })
   }
 
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME
-  const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET
-
-  if (!cloudName || !uploadPreset) {
-    return NextResponse.json(
-      { error: 'Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET environment variables.' },
-      { status: 400 }
-    )
-  }
-
-  // Get file metadata
-  const filename =
-    (file as File).name ??
-    `upload-${Date.now()}.${file.type.split('/')[1] ?? 'jpg'}`
-  const mimeType = file.type || 'image/jpeg'
+  const filename = (file as File).name ?? `upload-${Date.now()}`
+  const mimeType = file.type || 'application/octet-stream'
   const size = file.size
 
-  // Convert file to base64 data URI
-  const arrayBuffer = await file.arrayBuffer()
-  const base64 = Buffer.from(arrayBuffer).toString('base64')
-  const dataUri = `data:${mimeType};base64,${base64}`
-
-  // Upload to Cloudinary
-  let secureUrl: string
-  try {
-    const uploadForm = new FormData()
-    uploadForm.append('file', dataUri)
-    uploadForm.append('upload_preset', uploadPreset)
-
-    const cloudRes = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-      { method: 'POST', body: uploadForm }
+  if (size > MAX_BYTES) {
+    return NextResponse.json(
+      { error: `File too large — max ${MAX_BYTES / 1024 / 1024} MB.` },
+      { status: 413 }
     )
-
-    if (!cloudRes.ok) {
-      const errData = await cloudRes.json().catch(() => ({}))
-      const message =
-        (errData as { error?: { message?: string } }).error?.message ??
-        'Cloudinary upload failed'
-      return NextResponse.json({ error: message }, { status: 502 })
-    }
-
-    const cloudData = await cloudRes.json() as { secure_url: string }
-    secureUrl = cloudData.secure_url
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Upload failed'
-    return NextResponse.json({ error: message }, { status: 502 })
   }
 
-  // Persist to DB
-  const media = await db.media.create({
-    data: {
-      url: secureUrl,
-      filename,
-      size,
-      mimeType,
-    },
-  })
+  if (!ALLOWED_MIME.has(mimeType)) {
+    return NextResponse.json(
+      { error: `Unsupported file type "${mimeType}". Use JPG, PNG, WebP, GIF, AVIF, or SVG.` },
+      { status: 415 }
+    )
+  }
 
-  return NextResponse.json({ url: secureUrl, mediaId: media.id }, { status: 201 })
+  const prefix = typeof formData.get('prefix') === 'string'
+    ? String(formData.get('prefix'))
+    : 'misc'
+
+  // Read into buffer + hand off to storage driver
+  const arrayBuffer = await file.arrayBuffer()
+  const data = Buffer.from(arrayBuffer)
+
+  let saved: { url: string; key: string }
+  try {
+    saved = await storage().put({ data, filename, mimeType, prefix })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Storage error'
+    console.error('Upload storage error:', err)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+
+  // Persist a Media row so admin can browse uploaded assets later
+  let mediaId: string | null = null
+  try {
+    const media = await db.media.create({
+      data: { url: saved.url, filename, size, mimeType },
+    })
+    mediaId = media.id
+  } catch (err) {
+    // Non-fatal — file is uploaded, just the DB record is missing
+    console.error('Media DB insert failed (non-fatal):', err)
+  }
+
+  return NextResponse.json({ url: saved.url, key: saved.key, mediaId }, { status: 201 })
 }

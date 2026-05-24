@@ -7,6 +7,7 @@ import {
   Package, Star, ChevronLeft, ChevronRight, ToggleLeft, ToggleRight,
   Image as ImageIcon, Tag, Copy,
 } from 'lucide-react'
+import { ImageUploader } from '@/components/admin/image-uploader'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -490,10 +491,11 @@ function ProductModal({
 
           {/* Images */}
           <div style={{ gridColumn: '1/-1' }}>
-            <label style={labelStyle}>Images</label>
-            <ImageUrlInput
+            <ImageUploader
               images={form.images}
               onChange={imgs => update('images', imgs)}
+              max={8}
+              label="Images — up to 8 angles"
             />
           </div>
 

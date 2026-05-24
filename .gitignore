@@ -43,3 +43,6 @@ public/uploads/*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local upload storage (dev only — Railway uses /data volume in prod)
+/uploads/
