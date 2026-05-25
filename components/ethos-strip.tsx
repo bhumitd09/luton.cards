@@ -2,6 +2,7 @@
 
 import { motion, useInView } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
+import { EditableText } from '@/components/editable/editable-text'
 
 const DEFAULTS = {
   ethos_label: 'How we operate',
@@ -53,52 +54,72 @@ export function EthosStrip() {
   return (
     <section ref={ref} className="bg-white py-24 sm:py-28">
       <div className="mx-auto max-w-[1180px] px-6">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.4 }}
-          className="m-0 mb-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#EC1E79]"
-        >
-          {cms.ethos_label}
-        </motion.p>
+        <EditableText cmsKey="ethos_label" label="Ethos: eyebrow label" value={cms.ethos_label} maxLength={40}>
+          {(val) => (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4 }}
+              className="m-0 mb-5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#EC1E79]"
+            >
+              {val}
+            </motion.p>
+          )}
+        </EditableText>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 14 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.05 }}
-          className="m-0 mb-16 max-w-[640px] text-[clamp(2rem,4.2vw,3.5rem)] font-black leading-[1.04] tracking-[-0.04em] text-neutral-900"
-        >
-          {cms.ethos_headline.split('\n').map((line, i, arr) => (
-            <span key={i} className="block">
-              {line}
-              {i < arr.length - 1 && <br />}
-            </span>
-          ))}
-        </motion.h2>
+        <EditableText cmsKey="ethos_headline" label="Ethos: headline" value={cms.ethos_headline} multiline maxLength={120}>
+          {(val) => (
+            <motion.h2
+              initial={{ opacity: 0, y: 14 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="m-0 mb-16 max-w-[640px] text-[clamp(2rem,4.2vw,3.5rem)] font-black leading-[1.04] tracking-[-0.04em] text-neutral-900"
+            >
+              {val.split('\n').map((line, i, arr) => (
+                <span key={i} className="block">
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </span>
+              ))}
+            </motion.h2>
+          )}
+        </EditableText>
 
         <div className="grid grid-cols-1 divide-neutral-200 md:grid-cols-3 md:divide-x">
-          {pillars.map((p, i) => (
-            <motion.div
-              key={p.number}
-              initial={{ opacity: 0, y: 18 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.1 + i * 0.08 }}
-              className={[
-                'px-0 py-6 md:py-0',
-                i > 0 ? 'md:pl-10' : '',
-                i < 2 ? 'md:pr-10' : '',
-                i > 0 ? 'border-t border-neutral-200 md:border-t-0' : '',
-              ].join(' ')}
-            >
-              <span className="block text-[11px] font-extrabold tracking-[0.1em] text-[#EC1E79]">
-                {p.number}
-              </span>
-              <h3 className="m-0 mb-3 mt-3 text-[1.15rem] font-extrabold tracking-[-0.025em] text-neutral-900">
-                {p.title}
-              </h3>
-              <p className="m-0 text-sm leading-[1.7] text-neutral-500">{p.body}</p>
-            </motion.div>
-          ))}
+          {pillars.map((p, i) => {
+            const titleKey = `ethos_0${i + 1}_title`
+            const bodyKey = `ethos_0${i + 1}_body`
+            return (
+              <motion.div
+                key={p.number}
+                initial={{ opacity: 0, y: 18 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: 0.1 + i * 0.08 }}
+                className={[
+                  'px-0 py-6 md:py-0',
+                  i > 0 ? 'md:pl-10' : '',
+                  i < 2 ? 'md:pr-10' : '',
+                  i > 0 ? 'border-t border-neutral-200 md:border-t-0' : '',
+                ].join(' ')}
+              >
+                <span className="block text-[11px] font-extrabold tracking-[0.1em] text-[#EC1E79]">
+                  {p.number}
+                </span>
+                <EditableText cmsKey={titleKey} label={`Ethos ${p.number}: title`} value={p.title} maxLength={60}>
+                  {(val) => (
+                    <h3 className="m-0 mb-3 mt-3 text-[1.15rem] font-extrabold tracking-[-0.025em] text-neutral-900">
+                      {val}
+                    </h3>
+                  )}
+                </EditableText>
+                <EditableText cmsKey={bodyKey} label={`Ethos ${p.number}: body`} value={p.body} multiline maxLength={300}>
+                  {(val) => (
+                    <p className="m-0 text-sm leading-[1.7] text-neutral-500">{val}</p>
+                  )}
+                </EditableText>
+              </motion.div>
+            )
+          })}
         </div>
       </div>
 

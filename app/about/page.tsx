@@ -11,6 +11,8 @@ import { BorderBeam } from '@/components/magicui/border-beam'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { NumberTicker } from '@/components/magicui/number-ticker'
 import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
+import { EditableText } from '@/components/editable/editable-text'
+import { EditableImage } from '@/components/editable/editable-image'
 
 type TeamMember = {
   name: string
@@ -191,9 +193,23 @@ export default function AboutPage() {
   const particlesRef = useRef<HTMLDivElement>(null)
   const [team, setTeam] = useState<TeamMember[]>(DEFAULT_TEAM)
   const [groupPhoto, setGroupPhoto] = useState<string>('')
+  // CMS-backed copy. Defaults render until the fetch resolves; admin can
+  // overwrite any of these inline via the pencil icons.
+  const [cms, setCms] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    fetch('/api/content?keys=team_members,about_group_photo')
+    const keys = [
+      'team_members',
+      'about_group_photo',
+      'about_hero_subtitle',
+      'about_story_p1',
+      'about_story_p2',
+      'about_story_p3',
+      'about_story_p4',
+      'about_mission_quote',
+      'about_cta_body',
+    ].join(',')
+    fetch(`/api/content?keys=${keys}`)
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
         if (!data) return
@@ -211,6 +227,20 @@ export default function AboutPage() {
             }
           } catch {}
         }
+        // Pull through the simple text keys
+        const text: Record<string, string> = {}
+        for (const k of [
+          'about_hero_subtitle',
+          'about_story_p1',
+          'about_story_p2',
+          'about_story_p3',
+          'about_story_p4',
+          'about_mission_quote',
+          'about_cta_body',
+        ]) {
+          if (typeof data[k] === 'string') text[k] = data[k]
+        }
+        setCms(text)
       })
       .catch(() => {})
   }, [])
@@ -271,15 +301,25 @@ export default function AboutPage() {
                 who turned a card obsession into a crew.
               </motion.h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.18 }}
-                className="m-0 mt-6 max-w-[520px] text-[1.05rem] leading-[1.7] text-neutral-400 lg:max-w-[480px]"
+              <EditableText
+                cmsKey="about_hero_subtitle"
+                label="About: hero subtitle"
+                value={cms.about_hero_subtitle}
+                fallback="We vend at events across the UK. Pokémon, One Piece, raw singles, graded slabs, sealed product. A proper shop is on the way. Until then, find us at the next event or shop online."
+                multiline
+                maxLength={300}
               >
-                We vend at events across the UK. Pokémon, One Piece, raw singles, graded slabs, sealed product.
-                A proper shop is on the way. Until then, find us at the next event or shop online.
-              </motion.p>
+                {(val) => (
+                  <motion.p
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.18 }}
+                    className="m-0 mt-6 max-w-[520px] text-[1.05rem] leading-[1.7] text-neutral-400 lg:max-w-[480px]"
+                  >
+                    {val}
+                  </motion.p>
+                )}
+              </EditableText>
 
               <motion.div
                 initial={{ opacity: 0, y: 14 }}
@@ -315,35 +355,44 @@ export default function AboutPage() {
                 aria-hidden
                 className="absolute -inset-3 rounded-[28px] bg-gradient-to-br from-[#EC1E79]/40 via-[#7e1247]/30 to-transparent blur-2xl"
               />
-              <div className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#160512] via-[#0d0b0e] to-[#070708] shadow-[0_28px_70px_-20px_rgba(236,30,121,0.55)]">
-                {groupPhoto ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={groupPhoto}
-                    alt="The Luton Cards crew"
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <div className="flex size-full flex-col items-center justify-center px-8 text-center">
-                    <div className="mb-4 flex size-14 items-center justify-center rounded-full border border-[#EC1E79]/30 bg-[#190614]">
-                      <Users size={22} className="text-[#FF80B8]" />
+              <EditableImage
+                cmsKey="about_group_photo"
+                label="About: group photo"
+                value={groupPhoto}
+                alt="The Luton Cards crew"
+              >
+                {(url) => (
+                  <div className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#160512] via-[#0d0b0e] to-[#070708] shadow-[0_28px_70px_-20px_rgba(236,30,121,0.55)]">
+                    {url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={url}
+                        alt="The Luton Cards crew"
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex size-full flex-col items-center justify-center px-8 text-center">
+                        <div className="mb-4 flex size-14 items-center justify-center rounded-full border border-[#EC1E79]/30 bg-[#190614]">
+                          <Users size={22} className="text-[#FF80B8]" />
+                        </div>
+                        <p className="m-0 text-[15px] font-bold text-white">
+                          Group photo coming soon
+                        </p>
+                        <p className="m-0 mt-1.5 max-w-[300px] text-[12.5px] leading-[1.55] text-neutral-500">
+                          Tap &ldquo;Edit image&rdquo; (top right) to drop the crew shot in.
+                        </p>
+                      </div>
+                    )}
+                    {/* corner badge */}
+                    <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3 py-1 backdrop-blur-md">
+                      <span className="size-1.5 rounded-full bg-[#EC1E79]" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white">
+                        The Crew
+                      </span>
                     </div>
-                    <p className="m-0 text-[15px] font-bold text-white">
-                      Group photo coming soon
-                    </p>
-                    <p className="m-0 mt-1.5 max-w-[300px] text-[12.5px] leading-[1.55] text-neutral-500">
-                      Upload via <span className="font-mono text-[#FF80B8]">/admin/team</span> to drop the crew in here.
-                    </p>
                   </div>
                 )}
-                {/* corner badge */}
-                <div className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3 py-1 backdrop-blur-md">
-                  <span className="size-1.5 rounded-full bg-[#EC1E79]" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-white">
-                    The Crew
-                  </span>
-                </div>
-              </div>
+              </EditableImage>
             </motion.div>
           </div>
         </section>
@@ -385,22 +434,46 @@ export default function AboutPage() {
           </div>
 
           <div className="flex flex-col gap-5 text-[1.05rem] leading-[1.85] text-neutral-700">
-            <p className="m-0">
-              Bash, Ramz and Bhumit linked up in lockdown. Warzone lobbies, late nights, friendship stuck.
-              Pokémon dragged us back to the hobby, One Piece TCG dropped, and we were cooked.
-            </p>
-            <p className="m-0">
-              We met Allan vending at the same Milton Keynes event. That is where it all started. He joined the
-              crew not long after, and it has been the same ever since. Family.
-            </p>
-            <p className="m-0">
-              We are not a shop yet. We vend at events across the UK with raw singles, graded slabs and sealed
-              product you can actually trust. A proper bricks and mortar spot is the long game.
-            </p>
-            <p className="m-0">
-              Dysfunctional family energy. We hype every PSA 10 and roast every PSA 7. Different specialisms,
-              same obsession.
-            </p>
+            <EditableText
+              cmsKey="about_story_p1"
+              label="About story · paragraph 1 (origin)"
+              value={cms.about_story_p1}
+              fallback="Bash, Ramz and Bhumit linked up in lockdown. Warzone lobbies, late nights, friendship stuck. Pokémon dragged us back to the hobby, One Piece TCG dropped, and we were cooked."
+              multiline
+              maxLength={400}
+            >
+              {(val) => <p className="m-0">{val}</p>}
+            </EditableText>
+            <EditableText
+              cmsKey="about_story_p2"
+              label="About story · paragraph 2 (Allan)"
+              value={cms.about_story_p2}
+              fallback="We met Allan vending at the same Milton Keynes event. That is where it all started. He joined the crew not long after, and it has been the same ever since. Family."
+              multiline
+              maxLength={400}
+            >
+              {(val) => <p className="m-0">{val}</p>}
+            </EditableText>
+            <EditableText
+              cmsKey="about_story_p3"
+              label="About story · paragraph 3 (vending / future)"
+              value={cms.about_story_p3}
+              fallback="We are not a shop yet. We vend at events across the UK with raw singles, graded slabs and sealed product you can actually trust. A proper bricks and mortar spot is the long game."
+              multiline
+              maxLength={400}
+            >
+              {(val) => <p className="m-0">{val}</p>}
+            </EditableText>
+            <EditableText
+              cmsKey="about_story_p4"
+              label="About story · paragraph 4 (vibe)"
+              value={cms.about_story_p4}
+              fallback="Dysfunctional family energy. We hype every PSA 10 and roast every PSA 7. Different specialisms, same obsession."
+              multiline
+              maxLength={400}
+            >
+              {(val) => <p className="m-0">{val}</p>}
+            </EditableText>
           </div>
         </section>
 
@@ -470,10 +543,20 @@ export default function AboutPage() {
           />
           <div className="relative mx-auto max-w-[760px] px-6 text-center">
             <div className="mx-auto mb-7 h-px w-12 bg-[#EC1E79]" />
-            <blockquote className="m-0 text-[clamp(1.2rem,2.6vw,1.55rem)] font-bold italic leading-[1.55] tracking-[-0.01em] text-white">
-              &ldquo;A vending crew run by people who actually collect. Properly sourced stock, fair pricing, and
-              a community that puts the hobby first.&rdquo;
-            </blockquote>
+            <EditableText
+              cmsKey="about_mission_quote"
+              label="About: mission quote"
+              value={cms.about_mission_quote}
+              fallback="A vending crew run by people who actually collect. Properly sourced stock, fair pricing, and a community that puts the hobby first."
+              multiline
+              maxLength={300}
+            >
+              {(val) => (
+                <blockquote className="m-0 text-[clamp(1.2rem,2.6vw,1.55rem)] font-bold italic leading-[1.55] tracking-[-0.01em] text-white">
+                  &ldquo;{val}&rdquo;
+                </blockquote>
+              )}
+            </EditableText>
             <div className="mx-auto mt-7 h-px w-12 bg-[#EC1E79]" />
           </div>
         </section>
@@ -484,10 +567,18 @@ export default function AboutPage() {
             <h2 className="m-0 mb-3 text-[clamp(1.7rem,4vw,2.4rem)] font-black leading-[1.12] tracking-[-0.03em] text-neutral-900">
               Catch us at the next event.
             </h2>
-            <p className="m-0 mb-8 text-base leading-[1.65] text-neutral-500">
-              Or skip the queue and shop the latest singles, graded slabs and sealed product online. We pack
-              every order like it matters, because it does.
-            </p>
+            <EditableText
+              cmsKey="about_cta_body"
+              label="About: CTA body"
+              value={cms.about_cta_body}
+              fallback="Or skip the queue and shop the latest singles, graded slabs and sealed product online. We pack every order like it matters, because it does."
+              multiline
+              maxLength={250}
+            >
+              {(val) => (
+                <p className="m-0 mb-8 text-base leading-[1.65] text-neutral-500">{val}</p>
+              )}
+            </EditableText>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link href="/products?game=pokemon">
                 <ShimmerButton className="px-7 py-3 text-sm" background="linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)">

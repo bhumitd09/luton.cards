@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { CartProvider } from '@/lib/cart-context'
+import { AdminProvider } from '@/lib/admin-context'
 import { AnnouncementBar } from '@/components/announcement-bar'
 import { CookieBanner } from '@/components/cookie-banner'
 import { Analytics } from '@/components/analytics'
+import { EditModeIndicator } from '@/components/editable/edit-mode-indicator'
 import './globals.css'
 
 // Use display:swap so text renders immediately while Inter loads — avoids
@@ -85,11 +87,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
         />
-        <CartProvider>
-          <AnnouncementBar />
-          {children}
-          <CookieBanner />
-        </CartProvider>
+        <AdminProvider>
+          <CartProvider>
+            <AnnouncementBar />
+            {children}
+            <CookieBanner />
+            <EditModeIndicator />
+          </CartProvider>
+        </AdminProvider>
         <Analytics />
       </body>
     </html>

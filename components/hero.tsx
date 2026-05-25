@@ -7,6 +7,7 @@ import { ArrowRight, Sparkles } from 'lucide-react'
 import { Particles } from '@/components/magicui/particles'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
+import { EditableText } from '@/components/editable/editable-text'
 
 export function Hero() {
   const [headline, setHeadline] = useState('Pokémon.\nOne Piece.\nProperly sourced.')
@@ -107,38 +108,61 @@ export function Hero() {
           className="mb-5 h-[100px] w-auto drop-shadow-[0_14px_32px_rgba(236,30,121,0.3)] sm:h-[115px] md:h-[125px]"
         />
 
-        <motion.h1
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="m-0 text-[clamp(1.85rem,4.2vw,3.25rem)] font-black leading-[1.04] tracking-[-0.04em] text-white"
+        <EditableText
+          cmsKey="hero_headline"
+          label="Homepage hero headline"
+          value={headline}
+          multiline
+          maxLength={120}
         >
-          {headlineParts.map((part, i) => (
-            <span key={i} className="block">
-              {i === 1 ? (
-                <span className="bg-gradient-to-br from-[#EC1E79] via-[#FF4DA6] to-[#EC1E79] bg-clip-text text-transparent">
-                  {part}
-                </span>
-              ) : (
-                part
-              )}
-            </span>
-          ))}
-        </motion.h1>
+          {(current) => {
+            const parts = current.split('\n')
+            return (
+              <motion.h1
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="m-0 text-[clamp(1.85rem,4.2vw,3.25rem)] font-black leading-[1.04] tracking-[-0.04em] text-white"
+              >
+                {parts.map((part, i) => (
+                  <span key={i} className="block">
+                    {i === 1 ? (
+                      <span className="bg-gradient-to-br from-[#EC1E79] via-[#FF4DA6] to-[#EC1E79] bg-clip-text text-transparent">
+                        {part}
+                      </span>
+                    ) : (
+                      part
+                    )}
+                  </span>
+                ))}
+              </motion.h1>
+            )
+          }}
+        </EditableText>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="mx-auto mb-6 mt-3 max-w-[480px] text-[0.875rem] leading-[1.6] text-white/55 sm:text-[0.9375rem]"
+        <EditableText
+          cmsKey="hero_subtext"
+          label="Homepage hero subtext"
+          value={subtext}
+          multiline
+          maxLength={200}
         >
-          {subtext.split('\n').map((line, i, arr) => (
-            <span key={i}>
-              {line}
-              {i < arr.length - 1 && <br />}
-            </span>
-          ))}
-        </motion.p>
+          {(current) => (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="mx-auto mb-6 mt-3 max-w-[480px] text-[0.875rem] leading-[1.6] text-white/55 sm:text-[0.9375rem]"
+            >
+              {current.split('\n').map((line, i, arr) => (
+                <span key={i}>
+                  {line}
+                  {i < arr.length - 1 && <br />}
+                </span>
+              ))}
+            </motion.p>
+          )}
+        </EditableText>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}

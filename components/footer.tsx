@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Instagram, Youtube, ArrowRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { EditableText } from '@/components/editable/editable-text'
 
 function DiscordIcon({ size = 18 }: { size?: number }) {
   return (
@@ -285,9 +286,20 @@ export function Footer() {
               className="f-logo-img"
               style={{ height: '120px', width: 'auto', display: 'block', marginBottom: '1.25rem' }}
             />
-            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, margin: '0 0 1.5rem' }}>
-              {get('footer_tagline') || 'Pokemon cards for collectors. Cardboard enjoyers welcome.'}
-            </p>
+            <EditableText
+              cmsKey="footer_tagline"
+              label="Footer tagline"
+              value={get('footer_tagline')}
+              fallback="Pokemon cards for collectors. Cardboard enjoyers welcome."
+              multiline
+              maxLength={200}
+            >
+              {(val) => (
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, margin: '0 0 1.5rem' }}>
+                  {val}
+                </p>
+              )}
+            </EditableText>
             {socials.length > 0 && (
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {socials.map(({ icon: Icon, label, href }) => (

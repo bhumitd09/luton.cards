@@ -75,10 +75,59 @@ model AdminUser {
   // Disable a member without deleting — their products stay live but they
   // can't log in or create new stock.
   active         Boolean   @default(true)
+
+  // ─── Two-factor authentication (TOTP) ─────────────────────────────────
+  // Encrypted secret (AES-GCM, key derived from ADMIN_JWT_SECRET). Null
+  // until the user starts enrolment.
+  totpSecret     String?   @db.Text
+  // True only after the first valid 6-digit code is submitted — until then
+  // the secret is "pending" and not honoured at login.
+  totpEnabled    Boolean   @default(false)
+  // 10 single-use recovery codes (bcrypt-hashed). Used to log in if the
+  // authenticator is lost; each consumed code is rotated to a "used" marker.
+  totpRecoveryCodes String[] @default([])
+
   createdAt      DateTime  @default(now())
   lastLogin      DateTime?
   products       Product[]
   orderItems     OrderItem[]
+  passkeys       Passkey[]
+}
+
+// ─── WebAuthn / passkey credentials ─────────────────────────────────────
+// One row per registered credential. A single user can have many: laptop
+// biometric, phone, hardware key, etc. counter is the WebAuthn signature
+// counter (BigInt because most authenticators emit 32-bit unsigned values).
+model Passkey {
+  id              String    @id @default(cuid())
+  adminUserId     String
+  adminUser       AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  // Base64URL-encoded credential ID returned by the authenticator. Indexed
+  // so login can look up the user by credentialID returned in the assertion.
+  credentialID    String    @unique
+  // Raw public key bytes (CBOR-encoded COSE key) used to verify assertions.
+  publicKey       Bytes
+  // WebAuthn counter — must monotonically increase on every assertion.
+  // Stored as BigInt to safely hold values from common 32-bit authenticators.
+  counter         BigInt    @default(0)
+  // Comma-separated transports hint ("usb", "ble", "internal", "nfc", "hybrid").
+  transports      String?
+  // User-friendly name set at registration time ("Bhumit's iPhone", "YubiKey").
+  name            String
+  // Whether this credential is "discoverable" (resident key) so the user can
+  // sign in without typing their email first.
+  isDiscoverable  Boolean   @default(true)
+  // Optional device-type marker reported by the browser ("platform" or
+  // "cross-platform"). Used purely for UI icon hints.
+  deviceType      String?
+  // Whether the credential is backed up to the user's cloud (Apple/Google
+  // password manager). Informational, used to surface to the user.
+  backedUp        Boolean   @default(false)
+
+  createdAt       DateTime  @default(now())
+  lastUsedAt      DateTime?
+
+  @@index([adminUserId])
 }
 
 model Order {
