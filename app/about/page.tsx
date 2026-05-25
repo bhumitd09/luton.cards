@@ -265,7 +265,7 @@ export default function AboutPage() {
               >
                 Four mates from{' '}
                 <span className="bg-gradient-to-br from-[#EC1E79] to-[#FF4DA6] bg-clip-text text-transparent">
-                  Luton
+                  all around
                 </span>
                 <br className="hidden sm:block" />
                 who turned a card obsession into a crew.
