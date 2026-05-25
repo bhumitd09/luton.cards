@@ -137,7 +137,7 @@ const TIMELINE: TimelineMoment[] = [
     icon: UserPlus,
     year: '2024',
     title: 'Met Allan in Milton Keynes',
-    body: 'We were vending at an event in MK when Allan rocked up to talk grading and sealed product. Knew his stuff instantly. Four became the lineup and it has stayed that way ever since.',
+    body: 'We met Allan vending at the same MK event. Got talking, clicked instantly, and he joined the crew not long after. Family ever since.',
   },
   {
     icon: Tent,
@@ -390,8 +390,8 @@ export default function AboutPage() {
               Pokémon dragged us back to the hobby, One Piece TCG dropped, and we were cooked.
             </p>
             <p className="m-0">
-              Allan rocked up at our Milton Keynes stall to talk grading and sealed product. Knew his stuff
-              instantly. Four became the lineup and stayed that way.
+              We met Allan vending at the same Milton Keynes event. That is where it all started. He joined the
+              crew not long after, and it has been the same ever since. Family.
             </p>
             <p className="m-0">
               We are not a shop yet. We vend at events across the UK with raw singles, graded slabs and sealed
