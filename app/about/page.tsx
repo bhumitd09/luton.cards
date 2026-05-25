@@ -380,29 +380,26 @@ export default function AboutPage() {
               How it started
             </p>
             <h2 className="m-0 text-[clamp(1.9rem,4vw,2.7rem)] font-black leading-[1.08] tracking-[-0.035em] text-neutral-900">
-              Three lads, one lockdown, a load of cards.
+              Four lads, one obsession, a load of cards.
             </h2>
           </div>
 
           <div className="flex flex-col gap-5 text-[1.05rem] leading-[1.85] text-neutral-700">
             <p className="m-0">
-              Bash, Ramz and Bhumit became mates during COVID. Warzone lobbies, late nights, no jobs to wake up
-              for. The friendship stuck. When lockdown lifted, the cards came in. Pokémon dragged us back to
-              the hobby, One Piece TCG dropped and we were properly cooked.
+              Bash, Ramz and Bhumit linked up in lockdown. Warzone lobbies, late nights, friendship stuck.
+              Pokémon dragged us back to the hobby, One Piece TCG dropped, and we were cooked.
             </p>
             <p className="m-0">
-              Allan came in later. We were vending at an event in Milton Keynes when he pulled up to talk
-              grading and sealed product. Knew his stuff instantly. Four became the lineup and it has stayed
-              that way ever since.
+              Allan rocked up at our Milton Keynes stall to talk grading and sealed product. Knew his stuff
+              instantly. Four became the lineup and stayed that way.
             </p>
             <p className="m-0">
-              We are not a shop yet. We vend at events around the UK with raw singles, graded slabs and sealed
-              product you can actually trust. The long game is a proper bricks and mortar spot in Luton. We open
-              when the timing is right, not a day before.
+              We are not a shop yet. We vend at events across the UK with raw singles, graded slabs and sealed
+              product you can actually trust. A proper bricks and mortar spot is the long game.
             </p>
             <p className="m-0">
-              Think of us as a dysfunctional family that hypes each other up over every PSA 10 and roasts each
-              other over every PSA 7. Different specialisms, same obsession.
+              Dysfunctional family energy. We hype every PSA 10 and roast every PSA 7. Different specialisms,
+              same obsession.
             </p>
           </div>
         </section>
