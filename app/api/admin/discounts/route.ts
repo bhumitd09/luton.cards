@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
+
+/**
+ * Platform-wide discount codes. Superadmin only — vendors creating their
+ * own 100%-off codes would directly remove revenue. Closes part of C6.
+ */
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
     }
 
     const discounts = await db.discount.findMany({
@@ -22,9 +31,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
     }
 
     const body = await req.json()

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { db } from '@/lib/db'
 import { formatGrade } from '@/lib/utils'
+import { escapeJsonForScriptTag } from '@/lib/html-escape'
 
 /**
  * Server-side metadata + structured data for individual product pages.
@@ -108,7 +109,10 @@ export default async function ProductLayout(
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          // escapeJsonForScriptTag swaps </ → <\/, etc. so a vendor-supplied
+          // product.name like 'pwn</script><script>alert(1)</script>' can't
+          // break out of the script tag and execute on every PDP visit.
+          dangerouslySetInnerHTML={{ __html: escapeJsonForScriptTag(jsonLd) }}
         />
       )}
       {children}

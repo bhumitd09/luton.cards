@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { storage } from '@/lib/storage'
 
@@ -11,16 +11,28 @@ import { storage } from '@/lib/storage'
  *
  * Returns { url, mediaId } — the URL is wired straight into product images,
  * team photos, etc.
+ *
+ * SVG is intentionally NOT in the allow list: SVG files can carry inline
+ * <script> that would execute when loaded as /api/uploads/.../foo.svg on
+ * the same origin as the auth cookie — stored XSS. If we ever need SVG
+ * support, sanitize via DOMPurify on upload AND serve from a separate
+ * origin with `Content-Security-Policy: sandbox`.
  */
 
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 const ALLOWED_MIME = new Set([
   'image/jpeg', 'image/png', 'image/webp',
-  'image/gif', 'image/avif', 'image/svg+xml',
+  'image/gif', 'image/avif',
+  // 'image/svg+xml' deliberately removed — see file header.
 ])
 
+// Constrain admin-supplied `prefix` to a tight charset so it can't escape
+// the storage root via traversal or null-byte tricks. Empty / invalid →
+// fall back to 'misc'.
+const SAFE_PREFIX_RE = /^[a-z0-9][a-z0-9_-]{0,31}$/
+
 export async function POST(req: NextRequest) {
-  const admin = getAdminFromRequest(req)
+  const admin = await verifyAdminSession(req)
   if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -50,14 +62,14 @@ export async function POST(req: NextRequest) {
 
   if (!ALLOWED_MIME.has(mimeType)) {
     return NextResponse.json(
-      { error: `Unsupported file type "${mimeType}". Use JPG, PNG, WebP, GIF, AVIF, or SVG.` },
+      { error: `Unsupported file type "${mimeType}". Use JPG, PNG, WebP, GIF, or AVIF.` },
       { status: 415 }
     )
   }
 
-  const prefix = typeof formData.get('prefix') === 'string'
-    ? String(formData.get('prefix'))
-    : 'misc'
+  const rawPrefix = formData.get('prefix')
+  const prefixCandidate = typeof rawPrefix === 'string' ? rawPrefix.toLowerCase() : ''
+  const prefix = SAFE_PREFIX_RE.test(prefixCandidate) ? prefixCandidate : 'misc'
 
   // Read into buffer + hand off to storage driver
   const arrayBuffer = await file.arrayBuffer()

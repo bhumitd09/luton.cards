@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Aggregated customer view. Superadmin only — this returns every customer's
+ * name, email, phone and order history. Vendors don't get a list of other
+ * vendors' customers; they should use the orders list filtered to their own
+ * items instead. Closes part of Critical finding C6.
+ */
 export async function GET(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
     }
 
     const orders = await db.order.findMany({

@@ -4,10 +4,29 @@ import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
 import { splitLineTotal } from '@/lib/vendor-auth'
 
+/**
+ * POST /api/orders — guest or logged-in checkout.
+ *
+ * Hardened pricing model:
+ *  - The caller supplies `items: [{ productId, quantity }]` only. Any price
+ *    fields in the body are IGNORED.
+ *  - For every line we fetch the live Product, validate active+stock, and
+ *    use Product.price for line.price. That feeds Order.total and the
+ *    vendor payout split — neither can be tampered with from the client.
+ *  - Shipping cost is supplied by the client but capped at a sane maximum
+ *    (£100) and clamped to >= 0. The real shipping math should live in
+ *    /api/shipping/rates and be re-fetched here, but capping is a tight
+ *    floor for now.
+ *  - Discount codes are validated server-side against the live Discount
+ *    table and applied to the SERVER subtotal — the client subtotal is
+ *    not consulted anywhere.
+ *
+ * Closes Critical finding C5 (client-supplied prices stored as truth).
+ */
+
 interface OrderItemInput {
-  productId: string
-  productName: string
-  price: number
+  productId?: string
+  productName?: string // optional — falls back to DB if missing
   quantity: number
 }
 
@@ -24,9 +43,10 @@ interface CreateOrderBody {
   shippingMethod?: string
   shippingCost?: number
   items: OrderItemInput[]
-  total: number
   discountCode?: string
 }
+
+const MAX_SHIPPING_COST = 100 // hard ceiling in GBP
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,103 +65,115 @@ export async function POST(req: NextRequest) {
       shippingMethod,
       shippingCost,
       items,
-      total,
       discountCode,
     } = body
 
     if (!name || !email) {
-      return NextResponse.json(
-        { error: 'Name and email are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
     }
-
-    if (!items || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: 'Order must contain at least one item' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    if (typeof total !== 'number' || total < 0) {
-      return NextResponse.json(
-        { error: 'Invalid order total' },
-        { status: 400 }
-      )
+    // Clamp shipping to [0, MAX_SHIPPING_COST]. Reject negatives outright.
+    const requestedShipping = typeof shippingCost === 'number' && isFinite(shippingCost) ? shippingCost : 0
+    if (requestedShipping < 0) {
+      return NextResponse.json({ error: 'Invalid shipping cost' }, { status: 400 })
+    }
+    const safeShipping = Math.min(MAX_SHIPPING_COST, requestedShipping)
+
+    // ─── Server-side price + stock validation ─────────────────────────────
+    // Fetch all products in one query, then walk items.
+    const productIds = items
+      .map(i => i.productId)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    if (productIds.length !== items.length) {
+      return NextResponse.json({ error: 'Every item must have a productId.' }, { status: 400 })
     }
 
-    // Server-side discount validation
-    let finalTotal = total
+    const products = await db.product.findMany({
+      where: { id: { in: productIds }, active: true },
+      select: {
+        id: true, name: true, price: true, stock: true,
+        vendorId: true,
+        vendor: { select: { commissionRate: true } },
+      },
+    })
+    const productById = new Map(products.map(p => [p.id, p]))
+
+    // Validate every line + build the trusted lineItems we'll persist.
+    type Line = {
+      productId: string
+      productName: string
+      price: number
+      quantity: number
+      vendorId: string | null
+      commissionRate: number
+    }
+    const lines: Line[] = []
+    for (const item of items) {
+      const qty = Number(item.quantity)
+      if (!Number.isInteger(qty) || qty <= 0 || qty > 99) {
+        return NextResponse.json({ error: 'Invalid quantity.' }, { status: 400 })
+      }
+      const p = productById.get(item.productId as string)
+      if (!p) {
+        return NextResponse.json(
+          { error: 'A product in your basket is no longer available.' },
+          { status: 400 },
+        )
+      }
+      if (p.stock < qty) {
+        return NextResponse.json(
+          { error: `Only ${p.stock} of "${p.name}" left in stock.` },
+          { status: 400 },
+        )
+      }
+      lines.push({
+        productId: p.id,
+        productName: p.name,
+        price: p.price, // ← server-side, not from request
+        quantity: qty,
+        vendorId: p.vendorId ?? null,
+        commissionRate: p.vendor?.commissionRate ?? 0,
+      })
+    }
+
+    // ─── Subtotal + discount math (all server-side) ───────────────────────
+    const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
+
     let appliedDiscount: { id: string; code: string; type: string; value: number; savings: number } | null = null
-
-    if (discountCode) {
+    if (discountCode && typeof discountCode === 'string') {
       const discount = await db.discount.findUnique({
         where: { code: discountCode.trim().toUpperCase() },
       })
-
-      if (
-        discount &&
-        discount.active &&
-        (!discount.expiresAt || discount.expiresAt > new Date()) &&
-        (discount.maxUses == null || discount.uses < discount.maxUses)
-      ) {
-        // Calculate subtotal from items for minOrder check
-        const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-
-        if (discount.minOrder == null || subtotal >= discount.minOrder) {
-          let savings: number
-          if (discount.type === 'percentage') {
-            savings = (subtotal * discount.value) / 100
-          } else {
-            savings = Math.min(discount.value, subtotal)
-          }
-          const resolvedShippingCost = typeof shippingCost === 'number' ? shippingCost : 0
-          finalTotal = Math.max(0, subtotal + resolvedShippingCost - savings)
-          appliedDiscount = {
-            id: discount.id,
-            code: discount.code,
-            type: discount.type,
-            value: discount.value,
-            savings,
-          }
+      const ok = discount
+        && discount.active
+        && (!discount.expiresAt || discount.expiresAt > new Date())
+        && (discount.maxUses == null || discount.uses < discount.maxUses)
+        && (discount.minOrder == null || subtotal >= discount.minOrder)
+      if (ok && discount) {
+        const savingsRaw = discount.type === 'percentage'
+          ? (subtotal * discount.value) / 100
+          : discount.value
+        const savings = Math.min(savingsRaw, subtotal)
+        appliedDiscount = {
+          id: discount.id,
+          code: discount.code,
+          type: discount.type,
+          value: discount.value,
+          savings,
         }
       }
     }
 
-    // Validate stock + collect vendor snapshot for each line. Snapshot is
-    // critical: payout math is frozen at sale time so future changes to a
-    // vendor's commissionRate don't affect historical orders.
-    const vendorByProduct = new Map<string, { vendorId: string | null; commissionRate: number }>()
+    const discountSavings = appliedDiscount?.savings ?? 0
+    const finalTotal = Math.max(0, subtotal + safeShipping - discountSavings)
 
-    for (const item of items) {
-      if (!item.productId) continue
-      const product = await db.product.findUnique({
-        where: { id: item.productId },
-        select: {
-          stock: true, name: true, active: true,
-          vendorId: true,
-          vendor: { select: { commissionRate: true } },
-        },
-      })
-      if (!product || !product.active) {
-        return NextResponse.json(
-          { error: `Product "${item.productName}" is no longer available` },
-          { status: 400 }
-        )
-      }
-      if (product.stock < item.quantity) {
-        return NextResponse.json(
-          { error: `Only ${product.stock} unit${product.stock !== 1 ? 's' : ''} of "${item.productName}" available` },
-          { status: 400 }
-        )
-      }
-      vendorByProduct.set(item.productId, {
-        vendorId: product.vendorId ?? null,
-        commissionRate: product.vendor?.commissionRate ?? 0,
-      })
-    }
-
-    // Link order to logged-in customer (null for guest checkout)
+    // ─── Persist ───────────────────────────────────────────────────────────
     const customer = getCustomerFromRequest(req)
 
     const order = await db.order.create({
@@ -156,95 +188,69 @@ export async function POST(req: NextRequest) {
         shippingPostcode: shippingPostcode ?? null,
         shippingCountry: shippingCountry ?? 'GB',
         shippingMethod: shippingMethod ?? null,
-        shippingCost: typeof shippingCost === 'number' ? shippingCost : 0,
+        shippingCost: safeShipping,
         status: 'pending',
         total: finalTotal,
         userId: customer?.userId ?? null,
         discountCode: appliedDiscount?.code ?? null,
-        discountAmount: appliedDiscount?.savings ?? 0,
+        discountAmount: discountSavings,
         items: {
-          create: items.map((item) => {
-            const v = vendorByProduct.get(item.productId)
-            const lineTotal = item.price * item.quantity
-            const { vendorPayout, platformFee } = splitLineTotal(
-              lineTotal,
-              v?.commissionRate ?? 0
-            )
+          create: lines.map(l => {
+            const lineTotal = l.price * l.quantity
+            const { vendorPayout, platformFee } = splitLineTotal(lineTotal, l.commissionRate)
             return {
-              productId: item.productId,
-              productName: item.productName,
-              price: item.price,
-              quantity: item.quantity,
-              vendorId: v?.vendorId ?? null,
+              productId: l.productId,
+              productName: l.productName,
+              price: l.price,
+              quantity: l.quantity,
+              vendorId: l.vendorId,
               vendorPayout,
               platformFee,
             }
           }),
         },
       },
-      include: {
-        items: true,
-      },
+      include: { items: true },
     })
 
-    // Increment discount usage count (fire-and-forget — won't block order success)
+    // Bump discount uses once, atomically.
     if (appliedDiscount?.id) {
-      db.discount
-        .update({ where: { id: appliedDiscount.id }, data: { uses: { increment: 1 } } })
-        .catch(err => console.error('Discount usage increment failed:', err))
+      db.discount.update({
+        where: { id: appliedDiscount.id },
+        data: { uses: { increment: 1 } },
+      }).catch(err => console.error('Discount usage increment failed:', err))
     }
 
-    // Send order confirmation and admin notification emails
-    const subtotalForEmail = items.reduce((s, i) => s + i.price * i.quantity, 0)
-    const shippingCostForEmail = typeof shippingCost === 'number' ? shippingCost : 0
-    const discountForEmail = Math.max(0, subtotalForEmail + shippingCostForEmail - finalTotal)
+    // ─── Emails (fire-and-forget) ─────────────────────────────────────────
     const emailData = {
       orderId: order.id,
       customerName: order.name,
       customerEmail: order.email,
-      items: order.items.map((i) => ({
+      items: order.items.map(i => ({
         productName: i.productName,
         quantity: i.quantity,
         price: i.price,
       })),
-      subtotal: subtotalForEmail,
-      shippingCost: shippingCostForEmail,
-      discount: discountForEmail,
+      subtotal,
+      shippingCost: safeShipping,
+      discount: discountSavings,
       total: finalTotal,
       shippingMethod,
       shippingAddress: [shippingLine1, shippingCity, shippingPostcode]
         .filter(Boolean)
         .join(', '),
     }
-    await Promise.allSettled([
+    Promise.allSettled([
       sendOrderConfirmation(emailData),
       sendAdminOrderNotification(emailData),
-    ])
+    ]).catch(() => {})
 
-    // Increment discount uses if a valid code was applied
-    if (appliedDiscount) {
-      await db.discount.update({
-        where: { id: appliedDiscount.id },
-        data: { uses: { increment: 1 } },
-      }).catch(() => {})
-    }
-
-    // After order is created, decrement stock for each item
-    for (const item of items) {
-      if (item.productId) {
-        await db.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        }).catch(() => {})
-      }
-    }
-
-    return NextResponse.json({ orderId: order.id, success: true }, { status: 201 })
+    return NextResponse.json({ orderId: order.id, total: finalTotal, success: true }, { status: 201 })
   } catch (error) {
     console.error('Failed to create order:', error)
     return NextResponse.json(
       { error: 'Failed to create order' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

@@ -87,6 +87,13 @@ model AdminUser {
   // authenticator is lost; each consumed code is rotated to a "used" marker.
   totpRecoveryCodes String[] @default([])
 
+  // ─── Session revocation ───────────────────────────────────────────────
+  // Bumped on password change or "sign out everywhere". JWT payload carries
+  // the token's version at sign time; getAdminFromRequest compares against
+  // this column and rejects stale tokens. Enables real session revocation
+  // without a server-side session store.
+  tokenVersion   Int       @default(0)
+
   createdAt      DateTime  @default(now())
   lastLogin      DateTime?
   products       Product[]
@@ -154,6 +161,11 @@ model Order {
   // Optional link to registered customer (guest orders leave this null)
   userId           String?
   user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Stripe Checkout session id, recorded at session-create time. The webhook
+  // verifies that the incoming session id matches this column before flipping
+  // the order to 'paid' — stops attackers from creating a £1 session whose
+  // metadata.orderId points at someone else's expensive pending order.
+  stripeSessionId  String?
   items            OrderItem[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -161,6 +173,7 @@ model Order {
   @@index([status])
   @@index([email])
   @@index([userId])
+  @@index([stripeSessionId])
 }
 
 model OrderItem {
@@ -285,6 +298,8 @@ model User {
   city          String?
   postcode      String?
   country       String?   @default("GB")
+  // Session revocation — see AdminUser.tokenVersion.
+  tokenVersion  Int       @default(0)
   createdAt     DateTime  @default(now())
   lastLogin     DateTime?
   orders        Order[]

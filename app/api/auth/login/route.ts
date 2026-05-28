@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { signCustomerToken, CUSTOMER_TOKEN_COOKIE } from '@/lib/customer-auth'
+import { signCustomerToken, CUSTOMER_TOKEN_COOKIE, invalidateCustomerSession } from '@/lib/customer-auth'
+import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
 
+const DUMMY_HASH = '$2a$12$abcdefghijklmnopqrstuv0123456789ABCDEFGHIJKLMNOPQRSTUV'
+
+/**
+ * Customer login. Rate-limited 5/min/IP + 10/hr/(IP+email). 7-day cookie
+ * (was 30d). Constant-time bcrypt to avoid email enumeration via timing.
+ * Includes tokenVersion in JWT for revocation on password change.
+ */
 export async function POST(req: NextRequest) {
+  const ipBlock = enforceRateLimit(req, {
+    bucket: 'customer-login-ip',
+    max: 5,
+    windowMs: 60_000,
+  })
+  if (ipBlock) return ipBlock
+
   let body: { email?: string; password?: string }
   try {
     body = await req.json()
@@ -18,10 +33,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 })
   }
 
+  const ipEmailBlock = enforceRateLimit(req, {
+    bucket: 'customer-login-ip-email',
+    keyParts: [clientIp(req), email],
+    max: 10,
+    windowMs: 60 * 60_000,
+  })
+  if (ipEmailBlock) return ipEmailBlock
+
   const user = await db.user.findUnique({ where: { email } })
-  // Always do the bcrypt compare to avoid leaking which emails exist (timing-safe)
-  const dummyHash = '$2a$12$abcdefghijklmnopqrstuv0123456789ABCDEFGHIJKLMNOPQRSTUV'
-  const valid = await bcrypt.compare(password, user?.passwordHash || dummyHash)
+  const valid = await bcrypt.compare(password, user?.passwordHash || DUMMY_HASH)
 
   if (!user || !valid) {
     return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
@@ -32,19 +53,25 @@ export async function POST(req: NextRequest) {
     data: { lastLogin: new Date() },
   })
 
-  const token = signCustomerToken({ userId: user.id, email: user.email })
+  const token = signCustomerToken({
+    userId: user.id,
+    email: user.email,
+    tv: user.tokenVersion,
+  })
   const response = NextResponse.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } })
   response.cookies.set(CUSTOMER_TOKEN_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24 * 7, // 7 days (was 30)
   })
   return response
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const token = req.cookies.get(CUSTOMER_TOKEN_COOKIE)?.value
+  invalidateCustomerSession(token)
   const response = NextResponse.json({ ok: true })
   response.cookies.set(CUSTOMER_TOKEN_COOKIE, '', {
     httpOnly: true,

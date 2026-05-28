@@ -1,14 +1,23 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Order CSV export. Superadmin only — vendors don't get to download the
+ * entire order book (with customer emails, addresses and phone numbers).
+ * Closes part of Critical finding C6.
+ */
 export async function GET(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return new Response(JSON.stringify({ error: 'Superadmin only' }), { status: 403 })
     }
 
     const orders = await db.order.findMany({

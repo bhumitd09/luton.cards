@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
 
 /**
  * Subscribe to back-in-stock notifications for a product.
@@ -28,6 +29,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = getCustomerFromRequest(req)
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 10 / day per user (or per IP when not logged in). Stops a malicious
+  // logged-in customer from spamming subscribe + unsubscribe to fill the
+  // table or drive notification emails when stock returns.
+  const block = enforceRateLimit(req, {
+    bucket: 'stock-notify',
+    keyParts: [auth.userId || clientIp(req)],
+    max: 10,
+    windowMs: 24 * 60 * 60_000,
+  })
+  if (block) return block
 
   // Verify product exists + is out of stock (otherwise no point subscribing)
   const product = await db.product.findUnique({ where: { id: params.id } })

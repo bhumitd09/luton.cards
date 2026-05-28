@@ -1,7 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // 5 per hour per IP. The previous code wrote one Content row per submission
+  // and had no cap — combined with the now-fixed /api/content data leak that
+  // could fill the table and exfiltrate every submission later.
+  const block = enforceRateLimit(req, {
+    bucket: 'contact-form',
+    max: 5,
+    windowMs: 60 * 60_000,
+  })
+  if (block) return block
+
   try {
     const body = await req.json()
     const { name, email, subject, message } = body

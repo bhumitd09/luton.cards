@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -35,9 +35,14 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Update name / password. Password change bumps tokenVersion which
+ * invalidates every existing session for this admin (incl. the one making
+ * the request — front-end should re-authenticate).
+ */
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -83,7 +88,11 @@ export async function PATCH(req: NextRequest) {
       where: { id: admin.userId },
       data: {
         ...(newName !== undefined ? { name: newName } : {}),
-        ...(newPasswordHash !== undefined ? { passwordHash: newPasswordHash } : {}),
+        ...(newPasswordHash !== undefined ? {
+          passwordHash: newPasswordHash,
+          // Bump tokenVersion to invalidate every existing session.
+          tokenVersion: { increment: 1 },
+        } : {}),
       },
       select: {
         id: true,

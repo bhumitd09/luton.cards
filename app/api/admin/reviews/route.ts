@@ -2,11 +2,12 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -22,11 +23,19 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Admin-created reviews. Superadmin only — previously any vendor could
+ * fabricate verified-purchase reviews on their own products via this
+ * endpoint, bypassing the public review moderation flow.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
     }
 
     const body = await req.json()

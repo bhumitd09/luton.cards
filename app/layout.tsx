@@ -6,6 +6,7 @@ import { AnnouncementBar } from '@/components/announcement-bar'
 import { CookieBanner } from '@/components/cookie-banner'
 import { Analytics } from '@/components/analytics'
 import { EditModeIndicator } from '@/components/editable/edit-mode-indicator'
+import { escapeJsonForScriptTag } from '@/lib/html-escape'
 import './globals.css'
 
 // Use display:swap so text renders immediately while Inter loads — avoids
@@ -85,7 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: escapeJsonForScriptTag(localBusinessJsonLd) }}
         />
         <AdminProvider>
           <CartProvider>

@@ -52,7 +52,9 @@ export function EditableText({
   maxLength,
   children,
 }: EditableTextProps) {
-  const { isAdmin, loading: adminLoading } = useAdmin()
+  // Editor surface is superadmin-only — vendors don't get to rewrite global
+  // brand content. Matches the server-side gate at /api/admin/content/[key].
+  const { isSuperadmin, loading: adminLoading } = useAdmin()
   const [value, setValue] = useState<string>(valueProp ?? '')
   const [hasFetched, setHasFetched] = useState<boolean>(valueProp !== undefined)
   const [isOpen, setIsOpen] = useState(false)
@@ -86,7 +88,7 @@ export function EditableText({
 
       {/* Admin overlay: floating pencil + click handler. Wraps the children
           in a positioned span so the pencil can sit at the top-right. */}
-      {isAdmin && !adminLoading && (
+      {isSuperadmin && !adminLoading && (
         <EditablePencil
           label={label || cmsKey}
           onClick={() => setIsOpen(true)}

@@ -14,21 +14,30 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text()
 
-    // Verify signature if webhook secret is configured
+    // Verify signature. The previous version skipped verification if EITHER
+    // the secret OR the signature header was missing — meaning an attacker
+    // who found the URL could fire forged product mutations. Now we REQUIRE
+    // a configured secret AND a present signature, and reject otherwise.
     const settings = await getCollectTCGSettings()
     const webhookSecret = settings?.webhookSecret || ''
+    if (!webhookSecret) {
+      return NextResponse.json(
+        { error: 'Webhook secret not configured.' },
+        { status: 503 },
+      )
+    }
 
     const signatureHeader =
       req.headers.get('x-collecttcg-signature') ||
       req.headers.get('x-hub-signature-256') ||
       req.headers.get('x-signature') ||
       ''
-
-    if (webhookSecret && signatureHeader) {
-      const valid = verifyWebhookSignature(rawBody, signatureHeader, webhookSecret)
-      if (!valid) {
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-      }
+    if (!signatureHeader) {
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+    }
+    const valid = verifyWebhookSignature(rawBody, signatureHeader, webhookSecret)
+    if (!valid) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     let body: { event: string; product?: CollectTCGProduct; signature?: string }

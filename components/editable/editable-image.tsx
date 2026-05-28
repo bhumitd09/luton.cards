@@ -40,7 +40,8 @@ export function EditableImage({
   alt,
   children,
 }: EditableImageProps) {
-  const { isAdmin, loading: adminLoading } = useAdmin()
+  // Superadmin-only — matches /api/admin/content/[key] server gate.
+  const { isSuperadmin, loading: adminLoading } = useAdmin()
   const [value, setValue] = useState<string>(valueProp ?? '')
   const [isOpen, setIsOpen] = useState(false)
 
@@ -64,7 +65,7 @@ export function EditableImage({
     <span style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
       {children(value)}
 
-      {isAdmin && !adminLoading && (
+      {isSuperadmin && !adminLoading && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}

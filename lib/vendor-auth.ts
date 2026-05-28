@@ -29,6 +29,18 @@ export function productListScope(admin: AdminJwtPayload): Record<string, unknown
 }
 
 /**
+ * Returns the `Order` where-filter for the given admin. Superadmin sees all,
+ * vendor sees only orders that contain at least one OrderItem they own.
+ *
+ * Used by the admin orders list + detail + export so a vendor account
+ * can't read customer PII for orders that belong to another vendor.
+ */
+export function orderListScope(admin: AdminJwtPayload): Record<string, unknown> {
+  if (isSuperadmin(admin)) return {}
+  return { items: { some: { vendorId: admin.userId } } }
+}
+
+/**
  * Can this admin EDIT (update/delete) this product?
  * Ownership only — even superadmin can't edit another vendor's stock per
  * the founder's request ("I just can't edit and mess around with it").

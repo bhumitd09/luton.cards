@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
+
+/**
+ * Single discount code edit / delete. Superadmin only. See sibling route
+ * file for the full rationale.
+ */
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
     }
 
     const { id } = params
@@ -56,9 +65,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
     }
 
     const { id } = params

@@ -1,5 +1,13 @@
 // Email sending utility using Resend
-// Only sends if RESEND_API_KEY is configured — silently skips if not
+// Only sends if RESEND_API_KEY is configured — silently skips if not.
+//
+// All user-controlled strings (customer names, product names, addresses,
+// tracking numbers, carriers) are passed through `escapeHtml` before being
+// embedded into the HTML body — otherwise a customer ordering as
+// `<img src=x onerror=...>` would inject HTML into every admin notification
+// email and the customer's own confirmation.
+
+import { escapeHtml } from '@/lib/html-escape'
 
 export interface OrderEmailData {
   orderId: string
@@ -25,7 +33,7 @@ function buildItemRows(items: OrderEmailData['items']): string {
     .map(
       (item) => `
     <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;">${item.productName}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;">${escapeHtml(item.productName)}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;text-align:center;">${item.quantity}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;text-align:right;">${formatPrice(item.price * item.quantity)}</td>
     </tr>`
@@ -45,7 +53,7 @@ function buildOrderConfirmationHtml(data: OrderEmailData): string {
   const addressBlock = data.shippingAddress
     ? `<div style="margin-top:24px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #eee;">
         <div style="font-size:12px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:6px;">Shipping Address</div>
-        <div style="font-size:14px;color:#333;line-height:1.5;">${data.shippingAddress.replace(/,\s*/g, '<br>')}</div>
+        <div style="font-size:14px;color:#333;line-height:1.5;">${escapeHtml(data.shippingAddress).replace(/,\s*/g, '<br>')}</div>
       </div>`
     : ''
 
@@ -69,7 +77,7 @@ function buildOrderConfirmationHtml(data: OrderEmailData): string {
         <!-- Body -->
         <tr>
           <td style="background:#fff;padding:40px;">
-            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${data.customerName},</p>
+            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${escapeHtml(data.customerName)},</p>
             <p style="font-size:15px;color:#555;margin:0 0 28px 0;line-height:1.6;">Thanks for your order &mdash; we&rsquo;ll get it packed up and sent your way.</p>
 
             <!-- Order table -->
@@ -93,7 +101,7 @@ function buildOrderConfirmationHtml(data: OrderEmailData): string {
                 <td style="padding:6px 12px;font-size:13px;color:#333;text-align:right;">${formatPrice(data.subtotal)}</td>
               </tr>
               <tr>
-                <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Shipping${data.shippingMethod ? ` (${data.shippingMethod})` : ''}</td>
+                <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Shipping${data.shippingMethod ? ` (${escapeHtml(data.shippingMethod)})` : ''}</td>
                 <td style="padding:6px 12px;font-size:13px;color:#333;text-align:right;">${data.shippingCost > 0 ? formatPrice(data.shippingCost) : 'Free'}</td>
               </tr>
               ${discountRow}
@@ -157,14 +165,14 @@ function buildShippingNotificationHtml(data: OrderEmailData): string {
         <!-- Body -->
         <tr>
           <td style="background:#fff;padding:40px;">
-            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${data.customerName},</p>
+            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${escapeHtml(data.customerName)},</p>
             <p style="font-size:15px;color:#555;margin:0 0 28px 0;line-height:1.6;">Great news &mdash; your order has been shipped and is on its way to you!</p>
 
             <!-- Tracking box -->
             <div style="background:#f0fdf9;border:2px solid #EC1E79;border-radius:10px;padding:24px;text-align:center;">
               <div style="font-size:12px;font-weight:700;color:#EC1E79;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Tracking Number</div>
-              <div style="font-size:22px;font-weight:900;color:#111;letter-spacing:2px;">${tracking}</div>
-              <div style="font-size:13px;color:#666;margin-top:6px;">Carrier: ${carrier}</div>
+              <div style="font-size:22px;font-weight:900;color:#111;letter-spacing:2px;">${escapeHtml(tracking)}</div>
+              <div style="font-size:13px;color:#666;margin-top:6px;">Carrier: ${escapeHtml(carrier)}</div>
               ${trackingBlock}
             </div>
           </td>
@@ -186,6 +194,8 @@ function buildShippingNotificationHtml(data: OrderEmailData): string {
 }
 
 function buildAdminNotificationHtml(data: OrderEmailData): string {
+  // Build the body in plain text and escape ONCE at the end. Safer than
+  // remembering to escape every fragment individually.
   const itemLines = data.items
     .map((i) => `  - ${i.productName} x${i.quantity} @ ${formatPrice(i.price)} each`)
     .join('\n')
@@ -208,7 +218,7 @@ function buildAdminNotificationHtml(data: OrderEmailData): string {
     .filter((l) => l !== null)
     .join('\n')
 
-  const htmlLines = lines.replace(/\n/g, '<br>')
+  const htmlLines = escapeHtml(lines).replace(/\n/g, '<br>')
 
   return `<!DOCTYPE html>
 <html>
@@ -243,13 +253,34 @@ async function sendEmail(payload: {
   }
 }
 
-const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev'
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@lutoncards.co.uk'
+// In production we refuse to send from the shared Resend test sender
+// (looks like phishing and trashes deliverability). EMAIL_FROM and
+// ADMIN_EMAIL must be configured explicitly. In dev/test we fall back to
+// the test sender so contributors can boot without env config.
+//
+// Resolved lazily at call time so importing this module never crashes the
+// Next build's page-data collection step.
+function getFrom(): string {
+  const env = process.env.EMAIL_FROM
+  if (env) return env
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('EMAIL_FROM env var is required in production.')
+  }
+  return 'onboarding@resend.dev'
+}
+function getAdminEmail(): string {
+  const env = process.env.ADMIN_EMAIL
+  if (env) return env
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('ADMIN_EMAIL env var is required in production.')
+  }
+  return 'admin@lutoncards.co.uk'
+}
 
 export async function sendOrderConfirmation(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: FROM,
+    from: getFrom(),
     to: data.customerEmail,
     subject: `Order confirmed — #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildOrderConfirmationHtml(data),
@@ -259,8 +290,8 @@ export async function sendOrderConfirmation(data: OrderEmailData): Promise<void>
 export async function sendAdminOrderNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: FROM,
-    to: ADMIN_EMAIL,
+    from: getFrom(),
+    to: getAdminEmail(),
     subject: `New order #${data.orderId.slice(-8).toUpperCase()} from ${data.customerName}`,
     html: buildAdminNotificationHtml(data),
   })
@@ -269,7 +300,7 @@ export async function sendAdminOrderNotification(data: OrderEmailData): Promise<
 export async function sendShippingNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: FROM,
+    from: getFrom(),
     to: data.customerEmail,
     subject: `Your order is on its way! — #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildShippingNotificationHtml(data),
@@ -298,8 +329,8 @@ function buildBackInStockHtml(data: BackInStockEmailData): string {
       <h1 style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.02em;">It&rsquo;s back. Get it quick.</h1>
     </td></tr>
     <tr><td style="padding:28px 32px;text-align:center;">
-      ${data.productImage ? `<img src="${data.productImage}" alt="${data.productName.replace(/"/g, '&quot;')}" style="max-width:240px;width:100%;height:auto;border-radius:8px;margin-bottom:18px;" />` : ''}
-      <h2 style="margin:0 0 8px;color:#111;font-size:18px;font-weight:800;letter-spacing:-0.01em;">${data.productName}</h2>
+      ${data.productImage ? `<img src="${escapeHtml(data.productImage)}" alt="${escapeHtml(data.productName)}" style="max-width:240px;width:100%;height:auto;border-radius:8px;margin-bottom:18px;" />` : ''}
+      <h2 style="margin:0 0 8px;color:#111;font-size:18px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(data.productName)}</h2>
       <p style="margin:0 0 22px;color:#EC1E79;font-size:24px;font-weight:900;letter-spacing:-0.02em;">£${data.productPrice.toLocaleString('en-GB')}</p>
       <a href="${productUrl}" style="display:inline-block;background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);color:#fff;font-weight:800;font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;">View product</a>
       <p style="margin:18px 0 0;color:#666;font-size:13px;line-height:1.6;">You asked us to let you know when this came back. Stock can move fast — first to checkout wins.</p>
@@ -315,7 +346,7 @@ function buildBackInStockHtml(data: BackInStockEmailData): string {
 export async function sendBackInStockNotification(data: BackInStockEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: FROM,
+    from: getFrom(),
     to: data.customerEmail,
     subject: `Back in stock: ${data.productName}`,
     html: buildBackInStockHtml(data),

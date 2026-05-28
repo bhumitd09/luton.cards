@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+/**
+ * Public product listing API. READ ONLY.
+ *
+ * The previous version of this file ALSO exported a `POST` that anyone on
+ * the internet could call to create products. That hole let an attacker
+ * wipe stock, rewrite prices, or reassign vendorId. It was removed during
+ * the security hardening pass — the admin equivalent at
+ * /api/admin/products handles authenticated writes.
+ *
+ * Same story for /api/products/[id] — only GET remains; PUT/DELETE moved
+ * to /api/admin/products/[id] where auth + vendor ownership are enforced.
+ */
+
 const VALID_GAMES = new Set(['pokemon', 'one-piece'])
 
 export async function GET(request: Request) {
@@ -23,34 +36,5 @@ export async function GET(request: Request) {
     return NextResponse.json(normalised)
   } catch {
     return NextResponse.json([])
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const name = body.name as string
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-    const game = VALID_GAMES.has(body.game) ? body.game : 'pokemon'
-    const product = await db.product.create({
-      data: {
-        name,
-        slug,
-        category: body.category,
-        game,
-        price: Number(body.price),
-        stock: Number(body.stock),
-        description: body.description || null,
-        grade: body.grade || null,
-        grader: body.grader || null,
-        featured: Boolean(body.featured),
-        active: true,
-        images: body.images || [],
-        tags: body.tags || [],
-      },
-    })
-    return NextResponse.json(product, { status: 201 })
-  } catch {
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 400 })
   }
 }

@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
 import { sendAdminOrderNotification } from '@/lib/email'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
+// Superadmin-only and rate-limited so a vendor (or compromised vendor
+// session) can't spam the admin inbox or burn Resend quota.
 export async function POST(req: NextRequest) {
-  const admin = getAdminFromRequest(req)
+  const admin = await verifyAdminSession(req)
   if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  if (!isSuperadmin(admin)) {
+    return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
+  }
+  const block = enforceRateLimit(req, {
+    bucket: 'admin-email-test',
+    keyParts: [admin.userId],
+    max: 3,
+    windowMs: 60_000,
+  })
+  if (block) return block
 
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ sent: false, reason: 'RESEND_API_KEY is not configured' })

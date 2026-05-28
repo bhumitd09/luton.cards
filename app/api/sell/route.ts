@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 const MAX_IMAGES = 5
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB per image (base64)
@@ -10,6 +11,16 @@ function isEmail(value: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // 3 per hour per IP. Each submission can include up to 5x ~3MB base64
+  // images = ~15MB per call; before this cap an attacker could fill the
+  // Railway volume in minutes.
+  const block = enforceRateLimit(req, {
+    bucket: 'sell-form',
+    max: 3,
+    windowMs: 60 * 60_000,
+  })
+  if (block) return block
+
   let body: Record<string, unknown>
   try {
     body = await req.json()

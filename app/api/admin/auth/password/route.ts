@@ -35,9 +35,15 @@ export async function PUT(req: NextRequest) {
 
     const newHash = await bcrypt.hash(newPassword, 12)
 
+    // Bump tokenVersion to invalidate every existing session for this admin,
+    // including the cookie that issued this request. The front-end should
+    // redirect to /admin/login after a successful password change.
     await db.adminUser.update({
       where: { id: admin.userId },
-      data: { passwordHash: newHash },
+      data: {
+        passwordHash: newHash,
+        tokenVersion: { increment: 1 },
+      },
     })
 
     return NextResponse.json({ success: true })

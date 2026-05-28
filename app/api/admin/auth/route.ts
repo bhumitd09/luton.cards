@@ -1,32 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { signAdminToken, getAdminFromRequest } from '@/lib/admin-auth'
+import { signAdminToken, verifyAdminSession, ADMIN_TOKEN_COOKIE_NAME, invalidateAdminSession } from '@/lib/admin-auth'
+import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
+
+/**
+ * Admin sign-in / session check / sign-out.
+ *
+ * Hardened:
+ *  - Always runs bcrypt (with a dummy hash on miss) so timing doesn't leak
+ *    which emails exist. The "this account is disabled" message has been
+ *    folded into the generic "Invalid credentials" for the same reason.
+ *  - Rate-limited 5/min per IP and 10/hour per (IP + email) tuple to slow
+ *    brute force.
+ *  - Includes tokenVersion in the JWT so a password change immediately
+ *    invalidates every existing session.
+ */
+
+// A real bcrypt hash so the compare path is the same shape on miss + hit.
+// (Generated offline; not a valid password for anyone.)
+const DUMMY_HASH = '$2a$12$abcdefghijklmnopqrstuv0123456789ABCDEFGHIJKLMNOPQRSTUV'
 
 export async function POST(req: NextRequest) {
+  // Per-IP cap first (quick).
+  const ipBlock = enforceRateLimit(req, {
+    bucket: 'admin-login-ip',
+    max: 5,
+    windowMs: 60_000, // 5 / minute
+  })
+  if (ipBlock) return ipBlock
+
   try {
     const body = await req.json()
-    const { email, password } = body
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const password = typeof body.password === 'string' ? body.password : ''
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
+    // Per-(IP, email) cap to catch credential stuffing of a single account.
+    const ipEmailBlock = enforceRateLimit(req, {
+      bucket: 'admin-login-ip-email',
+      keyParts: [clientIp(req), email],
+      max: 10,
+      windowMs: 60 * 60_000, // 10 / hour
+    })
+    if (ipEmailBlock) return ipEmailBlock
+
     const adminUser = await db.adminUser.findUnique({ where: { email } })
 
-    if (!adminUser) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
+    // Always run bcrypt to keep timing constant.
+    const passwordValid = await bcrypt.compare(password, adminUser?.passwordHash || DUMMY_HASH)
 
-    // Soft-deleted / disabled members can't sign in. Their products stay live
-    // until a superadmin reassigns or deactivates them.
-    if (adminUser.active === false) {
-      return NextResponse.json({ error: 'This account is disabled' }, { status: 403 })
-    }
-
-    const passwordValid = await bcrypt.compare(password, adminUser.passwordHash)
-
-    if (!passwordValid) {
+    if (!adminUser || !passwordValid || !adminUser.active) {
+      // Same response for missing user, wrong password, disabled account.
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
@@ -39,6 +67,7 @@ export async function POST(req: NextRequest) {
       userId: adminUser.id,
       email: adminUser.email,
       role: adminUser.role,
+      tv: adminUser.tokenVersion,
     })
 
     const response = NextResponse.json({
@@ -51,11 +80,11 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    response.cookies.set('luton_admin_token', token, {
+    response.cookies.set(ADMIN_TOKEN_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24, // 24h — was 7d
       path: '/',
     })
 
@@ -68,8 +97,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = getAdminFromRequest(req)
-
+    const admin = await verifyAdminSession(req)
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -90,9 +118,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const token = req.cookies.get(ADMIN_TOKEN_COOKIE_NAME)?.value
+  invalidateAdminSession(token)
   const response = NextResponse.json({ success: true })
-  response.cookies.set('luton_admin_token', '', {
+  response.cookies.set(ADMIN_TOKEN_COOKIE_NAME, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

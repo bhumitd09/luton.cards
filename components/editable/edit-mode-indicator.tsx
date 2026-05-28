@@ -20,7 +20,9 @@ import { useAdmin } from '@/lib/admin-context'
 const HIDE_KEY = 'lc_edit_indicator_hidden'
 
 export function EditModeIndicator() {
-  const { isAdmin, admin, loading } = useAdmin()
+  // Only superadmin sees this — inline-edit pencils are superadmin-only,
+  // so showing the indicator to a vendor would be misleading.
+  const { isSuperadmin, admin, loading } = useAdmin()
   const pathname = usePathname() || ''
   const [hidden, setHidden] = useState(false)
 
@@ -31,7 +33,7 @@ export function EditModeIndicator() {
 
   // Don't render on /admin routes — admin pages have their own chrome and
   // the indicator would just be visual noise on top of a back-office layout.
-  if (loading || !isAdmin || hidden) return null
+  if (loading || !isSuperadmin || hidden) return null
   if (pathname.startsWith('/admin')) return null
 
   const dismiss = () => {

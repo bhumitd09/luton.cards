@@ -18,8 +18,18 @@ export class LocalStorage implements StorageDriver {
   private publicBase: string
 
   constructor() {
-    // Resolve upload dir from env or default to ./uploads relative to cwd.
-    const dir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
+    // In production we refuse to start without an explicit UPLOAD_DIR.
+    // Otherwise we'd silently write to ./uploads which on Railway is
+    // ephemeral — every deploy would wipe customer-supplied sell-form
+    // photos and admin uploads. Loud failure beats silent data loss.
+    const dirEnv = process.env.UPLOAD_DIR
+    if (!dirEnv && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'UPLOAD_DIR env var is required in production. Set it to a mounted ' +
+        'persistent volume path (e.g. /data/uploads on Railway).',
+      )
+    }
+    const dir = dirEnv || path.join(process.cwd(), 'uploads')
     this.root = path.resolve(dir)
     // Public URL base — usually just /api/uploads, but allow override for
     // CDN-fronted setups (e.g. /cdn-uploads if you proxy through Cloudflare)
@@ -28,10 +38,11 @@ export class LocalStorage implements StorageDriver {
 
   private safeExt(filename: string, mimeType: string): string {
     // Prefer extension from filename if it looks like an image extension.
+    // SVG intentionally excluded — see /api/admin/upload for rationale.
     const m = filename.match(/\.([a-zA-Z0-9]{2,5})$/)
     if (m) {
       const ext = m[1].toLowerCase()
-      if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'svg'].includes(ext)) {
+      if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'].includes(ext)) {
         return ext === 'jpeg' ? 'jpg' : ext
       }
     }
@@ -42,14 +53,21 @@ export class LocalStorage implements StorageDriver {
       'image/webp': 'webp',
       'image/gif': 'gif',
       'image/avif': 'avif',
-      'image/svg+xml': 'svg',
     }
     return fromMime[mimeType] || 'bin'
   }
 
-  // Prevent directory-traversal attacks
+  // Prevent directory-traversal attacks. Layered defence:
+  //  1. Reject null bytes, backslashes, "..", or absolute paths up-front.
+  //  2. After path.resolve, verify the result is still inside our root.
   private resolveKey(key: string): string {
+    if (!key || key.includes('\0') || key.includes('\\')) {
+      throw new Error('Invalid key')
+    }
     const clean = key.replace(/^\/+/, '')
+    if (clean.split('/').some(seg => seg === '..' || seg === '.')) {
+      throw new Error('Invalid key (traversal blocked)')
+    }
     const full = path.resolve(this.root, clean)
     if (!full.startsWith(this.root + path.sep) && full !== this.root) {
       throw new Error('Invalid key (traversal blocked)')

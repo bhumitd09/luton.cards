@@ -65,6 +65,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
       }
       data.passwordHash = await bcrypt.hash(password, 12)
+      // Bump tokenVersion so any active sessions for the member are
+      // invalidated when a superadmin rotates their password.
+      data.tokenVersion = { increment: 1 }
+    }
+    // Disabling a member also invalidates their existing sessions.
+    if (active === false) {
+      data.tokenVersion = { increment: 1 }
     }
 
     const member = await db.adminUser.update({

@@ -6,25 +6,33 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding database...')
 
-  // Admin user — always sync to current env vars so rotating ADMIN_PASSWORD
-  // (or changing ADMIN_EMAIL) works by just redeploying. update path resets
-  // the password hash and role; create path is identical for new DBs.
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@lutoncards.co.uk'
-  const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'luton2025', 12)
-  await prisma.adminUser.upsert({
-    where: { email: adminEmail },
-    update: {
-      passwordHash,
-      role: 'superadmin',
-    },
-    create: {
-      email: adminEmail,
-      passwordHash,
-      name: 'Admin',
-      role: 'superadmin',
-    },
-  })
-  console.log(`Admin user synced for ${adminEmail}`)
+  // Admin user. Both ADMIN_EMAIL and ADMIN_PASSWORD MUST be set explicitly
+  // — the previous defaults ('admin@lutoncards.co.uk' / 'luton2025') were
+  // baked into source and would silently provision a known-credentials
+  // superadmin on any deploy where the operator forgot to set them.
+  const adminEmail = process.env.ADMIN_EMAIL
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminEmail || !adminPassword) {
+    console.warn('[seed] ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping admin user seed.')
+  } else if (adminPassword.length < 12) {
+    console.warn('[seed] ADMIN_PASSWORD is shorter than 12 chars — refusing to seed admin user.')
+  } else {
+    const passwordHash = await bcrypt.hash(adminPassword, 12)
+    await prisma.adminUser.upsert({
+      where: { email: adminEmail },
+      update: {
+        passwordHash,
+        role: 'superadmin',
+      },
+      create: {
+        email: adminEmail,
+        passwordHash,
+        name: 'Admin',
+        role: 'superadmin',
+      },
+    })
+    console.log(`Admin user synced for ${adminEmail}`)
+  }
 
   // Default content (matches new Luton hero / marquee in components)
   const contents = [

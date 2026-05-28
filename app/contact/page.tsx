@@ -1,23 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import {
+  Mail, Instagram, MapPin, Send, Check, AlertCircle, Loader2, ArrowRight,
+} from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { Particles } from '@/components/magicui/particles'
+import { BorderBeam } from '@/components/magicui/border-beam'
+import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 
-const CONTENT_KEYS = [
-  'contact_email',
-  'contact_phone',
-  'contact_address',
-  'contact_heading',
-  'contact_subtext',
-]
+const CONTENT_KEYS = ['contact_email', 'contact_heading', 'contact_subtext', 'instagram_handle']
 
 const DEFAULTS: Record<string, string> = {
   contact_email: 'hello@lutoncards.co.uk',
-  contact_phone: '+44 7700 000000',
-  contact_address: 'United Kingdom',
-  contact_heading: 'Get in Touch',
-  contact_subtext: 'Have a question about a card, an order, or just want to chat about the hobby? We\'d love to hear from you.',
+  contact_heading: "Let's talk cards.",
+  contact_subtext:
+    "Question about a card, chasing an order, or want to know which event we are at next? The fastest way to reach the crew is a DM on Instagram. The form works too.",
+  instagram_handle: 'luton.cards',
 }
 
 type FormState = {
@@ -27,32 +28,19 @@ type FormState = {
   message: string
 }
 
-function SkeletonBlock({ width = '100%', height = '1.2rem', radius = '6px' }: { width?: string; height?: string; radius?: string }) {
-  return (
-    <div
-      style={{
-        width,
-        height,
-        borderRadius: radius,
-        background: 'linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%)',
-        backgroundSize: '200% 100%',
-        animation: 'shimmer 1.4s infinite',
-      }}
-    />
-  )
-}
-
 export default function ContactPage() {
   const [content, setContent] = useState<Record<string, string> | null>(null)
   const [form, setForm] = useState<FormState>({ name: '', email: '', subject: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [formHovered, setFormHovered] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`/api/content?keys=${CONTENT_KEYS.join(',')}`)
-      .then(r => r.json())
-      .then((data: Record<string, string>) => setContent(data))
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: Record<string, string> | null) => setContent(data || {}))
       .catch(() => setContent({}))
   }, [])
 
@@ -61,9 +49,13 @@ export default function ContactPage() {
       ? content[key]
       : DEFAULTS[key]
 
-  const loading = content === null
+  const igHandle = (get('instagram_handle') || 'luton.cards').replace(/^@/, '')
+  const igUrl = `https://instagram.com/${igHandle}`
+  const email = get('contact_email')
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
     setError('')
   }
@@ -78,536 +70,333 @@ export default function ContactPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error || 'Failed to send message. Please try again.')
+        setError(data.error || 'Could not send your message. Try again.')
       } else {
         setSubmitted(true)
       }
     } catch {
-      setError('Network error. Please try again.')
+      setError('Network error. Try again.')
     } finally {
       setSubmitting(false)
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '0.75rem 1rem',
-    borderRadius: '8px',
-    border: '1.5px solid #e0e0e0',
-    fontSize: '0.95rem',
-    color: '#111',
-    background: '#fff',
-    fontFamily: 'inherit',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-  }
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: '0.8rem',
-    fontWeight: 700,
-    color: '#444',
-    marginBottom: '0.4rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-  }
-
   return (
     <>
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .contact-input:focus {
-          border-color: #EC1E79 !important;
-        }
-        .contact-submit:hover:not(:disabled) {
-          background: #C81C6B !important;
-          transform: translateY(-1px);
-        }
-        .contact-submit {
-          transition: background 0.2s, transform 0.15s;
-        }
-        .contact-submit:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        @media (max-width: 768px) {
-          .contact-hero { padding: 3rem 1rem 2.5rem !important; }
-          .contact-body { padding: 2rem 1rem !important; }
-          .contact-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
-          .contact-form-card { padding: 1.5rem !important; }
-          .contact-submit { width: 100% !important; }
-        }
-      `}</style>
       <Header />
-      <main>
-        {/* Hero */}
+      <main className="bg-white">
+        {/* ─── HERO ─────────────────────────────────────────────────────── */}
         <section
-          className="contact-hero"
-          style={{
-            background: 'linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 60%, #0d1b2a 100%)',
-            padding: '5rem 1.5rem 4rem',
-            textAlign: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
+          ref={heroRef}
+          className="relative overflow-hidden bg-[#070708] pt-20 pb-16 sm:pt-24 sm:pb-20"
         >
+          <Particles
+            className="absolute inset-0"
+            quantity={60}
+            ease={70}
+            color="#EC1E79"
+            size={0.6}
+            staticity={45}
+          />
           <div
+            className="pointer-events-none absolute inset-0"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '400px',
-              height: '400px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(236,30,121,0.1) 0%, transparent 70%)',
-              pointerEvents: 'none',
+              background:
+                'radial-gradient(70% 50% at 50% 0%, rgba(236,30,121,0.22) 0%, rgba(236,30,121,0.05) 35%, transparent 70%)',
             }}
           />
-          <div style={{ position: 'relative', maxWidth: '680px', margin: '0 auto' }}>
-            {loading ? (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                  <SkeletonBlock width="50%" height="3rem" radius="8px" />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <SkeletonBlock width="75%" height="1.4rem" radius="6px" />
-                </div>
-              </>
-            ) : (
-              <>
-                <h1
-                  style={{
-                    fontSize: 'clamp(2rem, 5vw, 3rem)',
-                    fontWeight: 900,
-                    color: '#fff',
-                    letterSpacing: '-0.03em',
-                    margin: '0 0 1rem',
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {get('contact_heading')}
-                </h1>
-                <p
-                  style={{
-                    fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
-                    color: 'rgba(255,255,255,0.5)',
-                    margin: 0,
-                    lineHeight: 1.65,
-                  }}
-                >
-                  {get('contact_subtext')}
-                </p>
-              </>
-            )}
+
+          <div className="relative z-10 mx-auto max-w-[720px] px-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mb-6 flex justify-center"
+            >
+              <AnimatedGradientText className="!bg-white/[0.04] !text-white">
+                <Mail className="mr-1.5 size-3.5 text-[#EC1E79]" />
+                <span className="inline animate-gradient bg-gradient-to-r from-[#EC1E79] via-[#FF80B8] to-[#EC1E79] bg-[length:var(--bg-size)_100%] bg-clip-text text-xs font-bold uppercase tracking-[0.14em] text-transparent">
+                  Get in touch
+                </span>
+              </AnimatedGradientText>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="m-0 text-[clamp(2.1rem,5vw,3.2rem)] font-black leading-[1.04] tracking-[-0.04em] text-white"
+            >
+              {get('contact_heading')}
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.18 }}
+              className="m-0 mx-auto mt-5 max-w-[540px] text-[1.02rem] leading-[1.7] text-neutral-400"
+            >
+              {get('contact_subtext')}
+            </motion.p>
           </div>
         </section>
 
-        {/* Two-column layout */}
-        <section className="contact-body" style={{ background: '#f7f7f7', padding: '4rem 1.5rem' }}>
-          <div
-            className="contact-grid"
-            style={{
-              maxWidth: '1040px',
-              margin: '0 auto',
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '3rem',
-              alignItems: 'start',
-            }}
-          >
-            {/* Left: Contact Form */}
-            <div
-              className="contact-form-card"
-              style={{
-                background: '#fff',
-                borderRadius: '16px',
-                padding: '2.5rem',
-                border: '1px solid #eee',
-                boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
-              }}
+        {/* ─── BODY ─────────────────────────────────────────────────────── */}
+        <section className="mx-auto max-w-[1080px] px-6 py-16 sm:py-20">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
+            {/* Left: form */}
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.5 }}
+              onMouseEnter={() => setFormHovered(true)}
+              onMouseLeave={() => setFormHovered(false)}
+              className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white p-7 shadow-[0_18px_50px_-24px_rgba(0,0,0,0.25)] sm:p-9"
             >
-              <h2
-                style={{
-                  fontSize: '1.3rem',
-                  fontWeight: 800,
-                  color: '#111',
-                  margin: '0 0 1.75rem',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                Send a Message
+              <p className="m-0 mb-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
+                Drop us a message
+              </p>
+              <h2 className="m-0 mb-6 text-[1.5rem] font-black tracking-[-0.025em] text-neutral-900">
+                Send it over
               </h2>
 
               {submitted ? (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    padding: '2.5rem 1rem',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '56px',
-                      height: '56px',
-                      borderRadius: '50%',
-                      background: '#e6faf6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 1.25rem',
-                      fontSize: '1.75rem',
-                    }}
-                  >
-                    <span style={{ color: '#EC1E79' }}>&#10003;</span>
+                <div className="flex flex-col items-center py-10 text-center">
+                  <div className="mb-5 flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[#EC1E79] to-[#FF4DA6] shadow-[0_10px_30px_-8px_rgba(236,30,121,0.6)]">
+                    <Check size={28} className="text-white" />
                   </div>
-                  <h3
-                    style={{
-                      fontSize: '1.2rem',
-                      fontWeight: 800,
-                      color: '#111',
-                      margin: '0 0 0.5rem',
-                    }}
-                  >
-                    Message Sent!
+                  <h3 className="m-0 mb-2 text-[1.25rem] font-black tracking-[-0.02em] text-neutral-900">
+                    Message sent.
                   </h3>
-                  <p style={{ color: '#666', fontSize: '0.95rem', margin: 0, lineHeight: 1.6 }}>
-                    Thanks for reaching out. We&apos;ll get back to you within 24 hours.
+                  <p className="m-0 max-w-[320px] text-[0.95rem] leading-[1.6] text-neutral-500">
+                    Cheers for reaching out. We will get back to you, usually within a day. For anything
+                    urgent, DM us on Instagram.
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div>
-                    <label style={labelStyle} htmlFor="contact-name">Name</label>
-                    <input
-                      id="contact-name"
-                      className="contact-input"
-                      name="name"
-                      type="text"
-                      required
-                      value={form.name}
-                      onChange={handleChange}
-                      placeholder="Your name"
-                      style={inputStyle}
-                    />
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field label="Name">
+                      <input
+                        name="name"
+                        type="text"
+                        required
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="Your name"
+                        className="lc-cinput"
+                      />
+                    </Field>
+                    <Field label="Email">
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="you@email.com"
+                        className="lc-cinput"
+                      />
+                    </Field>
                   </div>
-                  <div>
-                    <label style={labelStyle} htmlFor="contact-email">Email</label>
+                  <Field label="Subject">
                     <input
-                      id="contact-email"
-                      className="contact-input"
-                      name="email"
-                      type="email"
-                      required
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="your@email.com"
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle} htmlFor="contact-subject">Subject</label>
-                    <input
-                      id="contact-subject"
-                      className="contact-input"
                       name="subject"
                       type="text"
                       required
                       value={form.subject}
                       onChange={handleChange}
-                      placeholder="What's this about?"
-                      style={inputStyle}
+                      placeholder="What's it about?"
+                      className="lc-cinput"
                     />
-                  </div>
-                  <div>
-                    <label style={labelStyle} htmlFor="contact-message">Message</label>
+                  </Field>
+                  <Field label="Message">
                     <textarea
-                      id="contact-message"
-                      className="contact-input"
                       name="message"
                       required
                       rows={5}
                       value={form.message}
                       onChange={handleChange}
-                      placeholder="Tell us what you need..."
-                      style={{ ...inputStyle, resize: 'vertical', minHeight: '120px' }}
+                      placeholder="Tell us what you need a hand with."
+                      className="lc-cinput resize-y min-h-[130px]"
                     />
-                  </div>
+                  </Field>
+
                   {error && (
-                    <p
-                      style={{
-                        color: '#e53935',
-                        fontSize: '0.875rem',
-                        margin: 0,
-                        padding: '0.6rem 0.9rem',
-                        background: '#fff5f5',
-                        borderRadius: '6px',
-                        border: '1px solid #fecdd3',
-                      }}
-                    >
-                      {error}
-                    </p>
+                    <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">
+                      <AlertCircle size={15} className="mt-0.5 shrink-0" />
+                      <span>{error}</span>
+                    </div>
                   )}
+
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="contact-submit"
-                    style={{
-                      background: '#EC1E79',
-                      color: '#000',
-                      border: 'none',
-                      padding: '0.85rem 1.5rem',
-                      borderRadius: '10px',
-                      fontSize: '0.95rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      letterSpacing: '-0.01em',
-                      width: '100%',
-                    }}
+                    className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#EC1E79] to-[#FF4DA6] px-6 py-3.5 text-[0.95rem] font-extrabold text-white shadow-[0_10px_26px_-10px_rgba(236,30,121,0.7)] transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-60"
                   >
-                    {submitting ? 'Sending...' : 'Send Message'}
+                    {submitting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" /> Sending…
+                      </>
+                    ) : (
+                      <>
+                        Send message <Send size={15} />
+                      </>
+                    )}
                   </button>
                 </form>
               )}
-            </div>
 
-            {/* Right: Contact Info */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Email card */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: '14px',
-                  padding: '1.5rem',
-                  border: '1px solid #eee',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                }}
+              {formHovered && (
+                <BorderBeam size={300} duration={10} colorFrom="#EC1E79" colorTo="#FF80B8" borderWidth={1.5} />
+              )}
+            </motion.div>
+
+            {/* Right: channels */}
+            <div className="flex flex-col gap-4">
+              {/* Instagram — primary channel for a vending crew */}
+              <motion.a
+                href={igUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                className="group relative block overflow-hidden rounded-3xl bg-[#070708] p-7 no-underline"
               >
                 <div
+                  className="pointer-events-none absolute inset-0"
                   style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '10px',
-                    background: 'rgba(236,30,121,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    fontSize: '1.1rem',
+                    background:
+                      'radial-gradient(80% 80% at 100% 0%, rgba(236,30,121,0.35) 0%, transparent 60%)',
                   }}
-                >
-                  <span style={{ color: '#EC1E79' }}>&#9993;</span>
+                />
+                <div className="relative">
+                  <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#EC1E79] to-[#FF4DA6] shadow-[0_8px_22px_-8px_rgba(236,30,121,0.7)]">
+                    <Instagram size={22} className="text-white" />
+                  </div>
+                  <p className="m-0 mb-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#FF80B8]">
+                    Fastest way to reach us
+                  </p>
+                  <h3 className="m-0 text-[1.35rem] font-black tracking-[-0.02em] text-white">
+                    DM us on Instagram
+                  </h3>
+                  <p className="m-0 mt-1.5 text-[0.95rem] text-neutral-400">
+                    @{igHandle}
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-white transition-transform group-hover:translate-x-0.5">
+                    Open Instagram <ArrowRight size={14} />
+                  </span>
                 </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: '#999',
-                      margin: '0 0 0.3rem',
-                    }}
-                  >
+              </motion.a>
+
+              {/* Email */}
+              <motion.a
+                href={`mailto:${email}`}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="group flex items-start gap-4 rounded-3xl border border-neutral-200 bg-white p-6 no-underline transition-colors hover:border-[#EC1E79]/40 hover:bg-[#fff7fb]"
+              >
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#fff0f7]">
+                  <Mail size={19} className="text-[#EC1E79]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="m-0 mb-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-neutral-400">
                     Email
                   </p>
-                  {loading ? (
-                    <SkeletonBlock width="180px" height="1rem" />
-                  ) : (
-                    <a
-                      href={`mailto:${get('contact_email')}`}
-                      style={{ color: '#111', fontSize: '0.95rem', fontWeight: 600, textDecoration: 'none' }}
-                    >
-                      {get('contact_email')}
-                    </a>
-                  )}
+                  <p className="m-0 break-words text-[1rem] font-extrabold tracking-[-0.01em] text-neutral-900">
+                    {email}
+                  </p>
+                  <p className="m-0 mt-1 text-[13px] leading-[1.5] text-neutral-500">
+                    Best for order questions and anything detailed.
+                  </p>
                 </div>
-              </div>
+              </motion.a>
 
-              {/* Phone card */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: '14px',
-                  padding: '1.5rem',
-                  border: '1px solid #eee',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                }}
+              {/* Catch us at events */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="flex items-start gap-4 rounded-3xl border border-neutral-200 bg-white p-6"
               >
-                <div
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '10px',
-                    background: 'rgba(236,30,121,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  <span style={{ color: '#EC1E79' }}>&#128222;</span>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#fff0f7]">
+                  <MapPin size={19} className="text-[#EC1E79]" />
                 </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: '#999',
-                      margin: '0 0 0.3rem',
-                    }}
-                  >
-                    Phone
+                <div className="min-w-0">
+                  <p className="m-0 mb-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-neutral-400">
+                    Catch us in person
                   </p>
-                  {loading ? (
-                    <SkeletonBlock width="140px" height="1rem" />
-                  ) : (
-                    <a
-                      href={`tel:${get('contact_phone')}`}
-                      style={{ color: '#111', fontSize: '0.95rem', fontWeight: 600, textDecoration: 'none' }}
-                    >
-                      {get('contact_phone')}
-                    </a>
-                  )}
+                  <p className="m-0 text-[1rem] font-extrabold tracking-[-0.01em] text-neutral-900">
+                    We vend at events across the UK
+                  </p>
+                  <p className="m-0 mt-1 text-[13px] leading-[1.5] text-neutral-500">
+                    Based in Luton. Follow us on Instagram to see where the stall lands next.
+                  </p>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Address card */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: '14px',
-                  padding: '1.5rem',
-                  border: '1px solid #eee',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                }}
+              {/* Response note */}
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex items-center gap-2.5 rounded-2xl border border-[#EC1E79]/20 bg-[#fff0f7] px-4 py-3"
               >
-                <div
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '10px',
-                    background: 'rgba(236,30,121,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  <span style={{ color: '#EC1E79' }}>&#128205;</span>
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: '#999',
-                      margin: '0 0 0.3rem',
-                    }}
-                  >
-                    Address
-                  </p>
-                  {loading ? (
-                    <SkeletonBlock width="160px" height="1rem" />
-                  ) : (
-                    <p style={{ color: '#111', fontSize: '0.95rem', fontWeight: 600, margin: 0 }}>
-                      {get('contact_address')}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Business hours card */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: '14px',
-                  padding: '1.5rem',
-                  border: '1px solid #eee',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                }}
-              >
-                <div
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '10px',
-                    background: 'rgba(236,30,121,0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  <span style={{ color: '#EC1E79' }}>&#128336;</span>
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: '#999',
-                      margin: '0 0 0.3rem',
-                    }}
-                  >
-                    Business Hours
-                  </p>
-                  <p style={{ color: '#111', fontSize: '0.95rem', fontWeight: 600, margin: '0 0 0.2rem' }}>
-                    Mon&ndash;Sat: 9am &ndash; 6pm
-                  </p>
-                  <p style={{ color: '#999', fontSize: '0.85rem', margin: 0 }}>
-                    Sunday: Closed
-                  </p>
-                </div>
-              </div>
-
-              {/* Response time note */}
-              <div
-                style={{
-                  background: 'rgba(236,30,121,0.07)',
-                  borderRadius: '12px',
-                  padding: '1.1rem 1.25rem',
-                  border: '1px solid rgba(236,30,121,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.65rem',
-                }}
-              >
-                <span style={{ color: '#EC1E79', fontSize: '1rem' }}>&#9679;</span>
-                <p style={{ color: '#2a7a6a', fontSize: '0.875rem', fontWeight: 600, margin: 0 }}>
-                  We aim to respond within 24 hours
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#EC1E79] opacity-60" />
+                  <span className="relative inline-flex size-2 rounded-full bg-[#EC1E79]" />
+                </span>
+                <p className="m-0 text-[13px] font-bold text-[#7e1247]">
+                  We usually reply within a day.
                 </p>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
-
       </main>
       <Footer />
+
+      <style>{`
+        .lc-cinput {
+          width: 100%;
+          padding: 0.7rem 0.9rem;
+          border-radius: 12px;
+          border: 1.5px solid #e6e6e6;
+          font-size: 0.95rem;
+          color: #111;
+          background: #fafafa;
+          font-family: inherit;
+          outline: none;
+          box-sizing: border-box;
+          transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+        }
+        .lc-cinput::placeholder { color: #a1a1aa; }
+        .lc-cinput:focus {
+          border-color: #EC1E79;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(236,30,121,0.1);
+        }
+      `}</style>
     </>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[11px] font-extrabold uppercase tracking-[0.08em] text-neutral-500">
+        {label}
+      </span>
+      {children}
+    </label>
   )
 }
