@@ -161,11 +161,11 @@ export default function DiscountsPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '0.6rem 0.875rem',
-    borderRadius: '8px',
-    border: '1.5px solid #2a2a2a',
-    background: '#1a1a1a',
-    color: '#e5e7eb',
+    padding: '0.6rem 0.8rem',
+    borderRadius: '11px',
+    border: '1px solid #202022',
+    background: '#0c0c0d',
+    color: '#fff',
     fontSize: '0.875rem',
     outline: 'none',
     boxSizing: 'border-box',
@@ -175,95 +175,116 @@ export default function DiscountsPage() {
   const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '0.75rem',
-    fontWeight: 600,
+    fontWeight: 700,
     color: '#9ca3af',
-    marginBottom: '0.375rem',
+    marginBottom: '0.4rem',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   }
 
   return (
-    <div style={{ padding: '2rem', position: 'relative', minHeight: '100%' }}>
+    <div style={{ padding: '2rem', position: 'relative', minHeight: '100%', background: '#0a0a0a' }}>
       {/* Header */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
         marginBottom: '2rem',
+        gap: '1rem',
+        flexWrap: 'wrap',
       }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: 0 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            color: '#EC1E79',
+            fontSize: '10px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.16em',
+            marginBottom: '0.5rem',
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+            Promotions
+          </div>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', color: '#fff', margin: 0 }}>
             Discount Codes
           </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.4rem 0 0' }}>
             Manage promotional discount codes
           </p>
         </div>
         <button
           onClick={openSlideOver}
           style={{
-            background: '#EC1E79',
-            color: '#000',
+            background: 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)',
+            color: '#fff',
             border: 'none',
-            borderRadius: '10px',
-            padding: '0.625rem 1.25rem',
-            fontWeight: 700,
-            fontSize: '0.875rem',
+            borderRadius: '11px',
+            padding: '0.6rem 1.1rem',
+            fontWeight: 800,
+            fontSize: '0.85rem',
             cursor: 'pointer',
             fontFamily: 'inherit',
             display: 'flex',
             alignItems: 'center',
             gap: '0.4rem',
+            boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Create Code
+          New discount
         </button>
       </div>
 
       {/* Table */}
       <div style={{
-        background: '#111',
-        borderRadius: '14px',
-        border: '1px solid #1f1f1f',
+        background: '#0f0f10',
+        borderRadius: '16px',
+        border: '1px solid #202022',
         overflow: 'hidden',
       }}>
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#9ca3af' }}>
             Loading...
           </div>
         ) : discounts.length === 0 ? (
           <div style={{ padding: '4rem', textAlign: 'center' }}>
             <div style={{
-              width: '56px', height: '56px',
-              background: '#1a1a1a',
+              width: '44px', height: '44px',
+              background: '#161617',
+              border: '1px solid #202022',
               borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 1rem',
             }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
                 <line x1="7" y1="7" x2="7.01" y2="7" />
               </svg>
             </div>
-            <p style={{ color: '#6b7280', fontWeight: 500 }}>No discount codes yet</p>
-            <p style={{ color: '#4b5563', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
+            <p style={{ color: '#f4f4f5', fontWeight: 700, margin: 0 }}>No discount codes yet</p>
+            <p style={{ color: '#9ca3af', fontSize: '0.8125rem', marginTop: '0.35rem' }}>
               Create your first discount code to get started
             </p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #1f1f1f' }}>
+              <tr style={{ borderBottom: '1px solid #202022' }}>
                 {['Code', 'Type', 'Value', 'Uses / Max', 'Min Order', 'Expires', 'Status', ''].map(col => (
                   <th key={col} style={{
                     padding: '0.875rem 1rem',
                     textAlign: 'left',
                     fontSize: '0.6875rem',
                     fontWeight: 700,
-                    color: '#4b5563',
+                    color: '#6b7280',
                     textTransform: 'uppercase',
                     letterSpacing: '0.07em',
                   }}>
@@ -277,7 +298,7 @@ export default function DiscountsPage() {
                 <tr
                   key={d.id}
                   style={{
-                    borderBottom: i < discounts.length - 1 ? '1px solid #1a1a1a' : 'none',
+                    borderBottom: i < discounts.length - 1 ? '1px solid #1a1a1c' : 'none',
                   }}
                 >
                   <td style={{ padding: '0.875rem 1rem' }}>
@@ -301,7 +322,7 @@ export default function DiscountsPage() {
                     </span>
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
-                    <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#e5e7eb' }}>
+                    <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#f4f4f5' }}>
                       {formatValue(d)}
                     </span>
                   </td>
@@ -327,13 +348,13 @@ export default function DiscountsPage() {
                     <button
                       onClick={() => handleToggleActive(d)}
                       style={{
-                        background: d.active ? 'rgba(236,30,121,0.1)' : 'rgba(107,114,128,0.1)',
-                        border: `1px solid ${d.active ? 'rgba(236,30,121,0.3)' : 'rgba(107,114,128,0.3)'}`,
+                        background: d.active ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.12)',
+                        border: `1px solid ${d.active ? 'rgba(16,185,129,0.25)' : 'rgba(107,114,128,0.25)'}`,
                         borderRadius: '999px',
                         padding: '0.25rem 0.75rem',
                         fontSize: '0.75rem',
                         fontWeight: 700,
-                        color: d.active ? '#EC1E79' : '#6b7280',
+                        color: d.active ? '#10b981' : '#9ca3af',
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                         transition: 'all 0.15s',
@@ -346,12 +367,12 @@ export default function DiscountsPage() {
                     <button
                       onClick={() => handleDelete(d.id)}
                       style={{
-                        background: 'transparent',
-                        border: 'none',
+                        background: 'rgba(239,68,68,0.1)',
+                        border: '1px solid rgba(239,68,68,0.25)',
                         cursor: 'pointer',
-                        padding: '0.25rem',
-                        borderRadius: '6px',
-                        color: '#6b7280',
+                        padding: '0.4rem',
+                        borderRadius: '9px',
+                        color: '#ef4444',
                         display: 'flex',
                         alignItems: 'center',
                       }}
@@ -387,14 +408,16 @@ export default function DiscountsPage() {
 
       {/* Slide-over panel */}
       <div
+        role="dialog"
+        aria-modal="true"
         style={{
           position: 'fixed',
           top: 0,
           right: 0,
           bottom: 0,
           width: '400px',
-          background: '#111',
-          borderLeft: '1px solid #1f1f1f',
+          background: '#0f0f10',
+          borderLeft: '1px solid #202022',
           zIndex: 50,
           display: 'flex',
           flexDirection: 'column',
@@ -405,25 +428,26 @@ export default function DiscountsPage() {
       >
         {/* Slide-over header */}
         <div style={{
-          padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid #1f1f1f',
+          padding: '1.25rem 1.35rem',
+          borderBottom: '1px solid #1a1a1c',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
         }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', margin: 0 }}>
-            Create Discount Code
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#fff', margin: 0 }}>
+            New discount
           </h2>
           <button
             onClick={closeSlideOver}
+            aria-label="Close"
             style={{
-              background: 'transparent',
-              border: 'none',
+              background: '#161617',
+              border: '1px solid #202022',
               cursor: 'pointer',
-              color: '#6b7280',
-              padding: '0.25rem',
-              borderRadius: '6px',
+              color: '#9ca3af',
+              padding: '0.35rem',
+              borderRadius: '9px',
               display: 'flex',
               alignItems: 'center',
             }}
@@ -450,14 +474,14 @@ export default function DiscountsPage() {
               <button
                 onClick={() => setCode(generateCode())}
                 style={{
-                  background: '#1a1a1a',
-                  border: '1.5px solid #2a2a2a',
-                  borderRadius: '8px',
-                  color: '#9ca3af',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
+                  background: '#161617',
+                  border: '1px solid #202022',
+                  borderRadius: '11px',
+                  color: '#e4e4e7',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  padding: '0 0.75rem',
+                  padding: '0 0.85rem',
                   whiteSpace: 'nowrap',
                   fontFamily: 'inherit',
                 }}
@@ -479,12 +503,12 @@ export default function DiscountsPage() {
                   style={{
                     flex: 1,
                     padding: '0.6rem',
-                    borderRadius: '8px',
-                    border: `1.5px solid ${type === t ? '#EC1E79' : '#2a2a2a'}`,
-                    background: type === t ? 'rgba(236,30,121,0.1)' : '#1a1a1a',
-                    color: type === t ? '#EC1E79' : '#6b7280',
+                    borderRadius: '11px',
+                    border: `1px solid ${type === t ? '#EC1E79' : '#202022'}`,
+                    background: type === t ? 'rgba(236,30,121,0.12)' : '#161617',
+                    color: type === t ? '#EC1E79' : '#9ca3af',
                     fontSize: '0.875rem',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                     transition: 'all 0.15s',
@@ -516,7 +540,7 @@ export default function DiscountsPage() {
           {/* Min Order */}
           <div>
             <label style={labelStyle}>
-              Min Order Value (£) <span style={{ color: '#4b5563', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>optional</span>
+              Min Order Value (£) <span style={{ color: '#6b7280', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>optional</span>
             </label>
             <input
               type="number"
@@ -532,7 +556,7 @@ export default function DiscountsPage() {
           {/* Max Uses */}
           <div>
             <label style={labelStyle}>
-              Max Uses <span style={{ color: '#4b5563', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>optional — blank for unlimited</span>
+              Max Uses <span style={{ color: '#6b7280', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>optional &mdash; blank for unlimited</span>
             </label>
             <input
               type="number"
@@ -548,7 +572,7 @@ export default function DiscountsPage() {
           {/* Expiry */}
           <div>
             <label style={labelStyle}>
-              Expiry Date <span style={{ color: '#4b5563', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>optional</span>
+              Expiry Date <span style={{ color: '#6b7280', textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>optional</span>
             </label>
             <input
               type="datetime-local"
@@ -561,9 +585,9 @@ export default function DiscountsPage() {
           {formError && (
             <div style={{
               background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.3)',
-              color: '#f87171',
-              borderRadius: '8px',
+              border: '1px solid rgba(239,68,68,0.25)',
+              color: '#ef4444',
+              borderRadius: '11px',
               padding: '0.75rem 1rem',
               fontSize: '0.875rem',
             }}>
@@ -574,8 +598,8 @@ export default function DiscountsPage() {
 
         {/* Slide-over footer */}
         <div style={{
-          padding: '1rem 1.5rem',
-          borderTop: '1px solid #1f1f1f',
+          padding: '1rem 1.35rem',
+          borderTop: '1px solid #1a1a1c',
           display: 'flex',
           gap: '0.75rem',
           flexShrink: 0,
@@ -584,15 +608,15 @@ export default function DiscountsPage() {
             onClick={closeSlideOver}
             style={{
               flex: 1,
-              padding: '0.7rem',
-              borderRadius: '8px',
-              border: '1.5px solid #2a2a2a',
-              background: 'transparent',
-              color: '#9ca3af',
-              fontWeight: 600,
+              padding: '0.6rem 1.1rem',
+              borderRadius: '11px',
+              border: '1px solid #202022',
+              background: '#161617',
+              color: '#e4e4e7',
+              fontWeight: 700,
               cursor: 'pointer',
               fontFamily: 'inherit',
-              fontSize: '0.875rem',
+              fontSize: '0.85rem',
             }}
           >
             Cancel
@@ -602,15 +626,17 @@ export default function DiscountsPage() {
             disabled={saving}
             style={{
               flex: 2,
-              padding: '0.7rem',
-              borderRadius: '8px',
+              padding: '0.6rem 1.1rem',
+              borderRadius: '11px',
               border: 'none',
-              background: saving ? '#99f0e0' : '#EC1E79',
-              color: '#000',
-              fontWeight: 700,
+              background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: '0.85rem',
               cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.7 : 1,
               fontFamily: 'inherit',
-              fontSize: '0.875rem',
+              boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
             }}
           >
             {saving ? 'Saving...' : 'Save Code'}

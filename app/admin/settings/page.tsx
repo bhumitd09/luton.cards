@@ -15,6 +15,7 @@ import {
   Download,
   Database,
   Send,
+  SlidersHorizontal,
 } from 'lucide-react'
 
 interface AdminProfile {
@@ -262,14 +263,18 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-6 text-white sm:p-8">
+    <div className="min-h-screen bg-[#0a0a0a] p-6 text-[#f4f4f5] sm:p-8">
       <div className="mx-auto max-w-[1100px]">
         {/* Header */}
         <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="m-0 text-[1.6rem] font-black tracking-[-0.025em]">Settings</h1>
-            <p className="m-0 mt-1 text-sm text-neutral-400">
-              {profile?.email ? <>Signed in as <span className="text-neutral-200">{profile.email}</span></> : 'Account & store config'}
+            <div className="mb-2 flex items-center gap-1.5 text-[#EC1E79]">
+              <SlidersHorizontal size={13} />
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.16em]">Settings</span>
+            </div>
+            <h1 className="m-0 text-[clamp(1.4rem,2.5vw,1.75rem)] font-black tracking-[-0.025em] text-white">Settings</h1>
+            <p className="m-0 mt-1 text-[0.875rem] text-[#9ca3af]">
+              {profile?.email ? <>Signed in as <span className="text-[#f4f4f5]">{profile.email}</span></> : 'Account & store config'}
             </p>
           </div>
         </div>
@@ -277,7 +282,7 @@ export default function SettingsPage() {
         {/* Two-column layout: tabs sidebar + active panel */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
           {/* Tabs */}
-          <nav className="flex flex-row gap-1 overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-900/40 p-2 md:flex-col md:overflow-visible">
+          <nav className="flex flex-row gap-1 overflow-x-auto rounded-2xl border border-[#202022] bg-[#0f0f10] p-2 md:flex-col md:overflow-visible">
             {TABS.map(t => {
               const Icon = t.icon
               const active = tab === t.id
@@ -287,16 +292,16 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => setTab(t.id)}
                   className={[
-                    'group flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors md:shrink',
+                    'group relative flex shrink-0 items-center gap-2.5 rounded-[11px] px-3 py-2.5 text-left transition-colors md:shrink',
                     active
-                      ? 'bg-[#EC1E79] text-white shadow-[0_6px_18px_-6px_rgba(236,30,121,0.55)]'
-                      : 'text-neutral-400 hover:bg-neutral-800/60 hover:text-white',
+                      ? 'bg-[rgba(236,30,121,0.12)] text-[#EC1E79] md:before:absolute md:before:left-0 md:before:top-1/2 md:before:h-5 md:before:w-[3px] md:before:-translate-y-1/2 md:before:rounded-full md:before:bg-[#EC1E79]'
+                      : 'text-[#9ca3af] hover:bg-[#161617] hover:text-[#f4f4f5]',
                   ].join(' ')}
                 >
                   <Icon size={15} />
                   <div className="hidden md:block">
                     <div className="text-[13px] font-bold">{t.label}</div>
-                    <div className={`text-[10.5px] ${active ? 'text-white/70' : 'text-neutral-500'}`}>
+                    <div className={`text-[10.5px] ${active ? 'text-[#EC1E79]/70' : 'text-[#6b7280]'}`}>
                       {t.description}
                     </div>
                   </div>
@@ -307,7 +312,7 @@ export default function SettingsPage() {
           </nav>
 
           {/* Active panel */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
+          <div className="rounded-2xl border border-[#202022] bg-[#0f0f10] p-6">
             <AnimatePresence mode="wait">
               {tab === 'profile' && (
                 <motion.div
@@ -319,7 +324,7 @@ export default function SettingsPage() {
                 >
                   {/* Name + email */}
                   <section>
-                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
                       Profile details
                     </h2>
                     <Field label="Email (read-only)">
@@ -328,7 +333,7 @@ export default function SettingsPage() {
                         disabled
                         value={profileLoading ? '' : profile?.email ?? ''}
                         placeholder="Loading…"
-                        className="w-full cursor-not-allowed rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-[13px] text-neutral-500 outline-none"
+                        className="w-full cursor-not-allowed rounded-[11px] border border-[#202022] bg-[#0c0c0d] px-3 py-2.5 text-[0.9rem] text-[#6b7280] outline-none"
                       />
                     </Field>
                     <Field label="Display name">
@@ -352,7 +357,7 @@ export default function SettingsPage() {
 
                   {/* Change password */}
                   <section>
-                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
                       Change password
                     </h2>
                     <Field label="Current password">
@@ -383,7 +388,7 @@ export default function SettingsPage() {
                       />
                     </Field>
                     {profilePwError && (
-                      <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">
+                      <div className="mb-3 rounded-[11px] border border-[#ef4444]/30 bg-[#ef4444]/10 px-3 py-2 text-[12px] text-[#ef4444]">
                         {profilePwError}
                       </div>
                     )}
@@ -406,10 +411,10 @@ export default function SettingsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                 >
-                  <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                  <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
                     Store information
                   </h2>
-                  <p className="m-0 mb-5 text-[13px] text-neutral-400">
+                  <p className="m-0 mb-5 text-[13px] text-[#9ca3af]">
                     Public-facing site identity. These values appear in metadata and the contact page.
                   </p>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -449,10 +454,10 @@ export default function SettingsPage() {
                 >
                   <div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
                     <div>
-                      <h2 className="m-0 mb-1 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                      <h2 className="m-0 mb-1 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
                         Email notifications
                       </h2>
-                      <p className="m-0 text-[13px] text-neutral-400">
+                      <p className="m-0 text-[13px] text-[#9ca3af]">
                         Address used as the &ldquo;From&rdquo; on order emails. Send a test below.
                       </p>
                     </div>
@@ -492,8 +497,8 @@ export default function SettingsPage() {
                   </div>
 
                   {!resendConfigured && !loadingEmailFrom && (
-                    <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-[12.5px] leading-[1.55] text-amber-200/90">
-                      Email provider not configured. Set the <code className="rounded bg-black/40 px-1 py-0.5 text-amber-300">RESEND_API_KEY</code> env var
+                    <div className="mt-4 rounded-[11px] border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 text-[12.5px] leading-[1.55] text-[#f59e0b]">
+                      Email provider not configured. Set the <code className="rounded bg-black/40 px-1 py-0.5 text-[#f59e0b]">RESEND_API_KEY</code> env var
                       in Railway to enable transactional emails (order confirmation, admin notifications, test sends).
                     </div>
                   )}
@@ -510,10 +515,10 @@ export default function SettingsPage() {
                 >
                   {/* Export */}
                   <section>
-                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
                       Export
                     </h2>
-                    <p className="m-0 mb-4 text-[13px] leading-[1.55] text-neutral-400">
+                    <p className="m-0 mb-4 text-[13px] leading-[1.55] text-[#9ca3af]">
                       Download the full product catalogue as JSON. Useful for backups or
                       re-importing via Bulk Import on another instance.
                     </p>
@@ -525,15 +530,15 @@ export default function SettingsPage() {
 
                   {/* Danger zone */}
                   <section>
-                    <h2 className="m-0 mb-3 flex items-center gap-1.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-red-400">
+                    <h2 className="m-0 mb-3 flex items-center gap-1.5 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#ef4444]">
                       <AlertTriangle size={12} /> Danger zone
                     </h2>
-                    <p className="m-0 mb-4 text-[13px] leading-[1.55] text-neutral-400">
+                    <p className="m-0 mb-4 text-[13px] leading-[1.55] text-[#9ca3af]">
                       Database resets / destructive operations are intentionally not exposed in
                       the admin UI. If you need to wipe orders or products, use Railway&apos;s
                       Postgres data tab — that way the action is logged and intentional.
                     </p>
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-[12.5px] text-red-200/80">
+                    <div className="rounded-[11px] border border-[#ef4444]/20 bg-[#ef4444]/[0.08] px-4 py-3 text-[12.5px] text-[#ef4444]/80">
                       Need a hard reset? Drop the relevant table in Railway then redeploy —
                       migrations + seed will rebuild structure.
                     </div>
@@ -553,17 +558,17 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border bg-neutral-950 px-4 py-3 shadow-2xl"
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-[11px] border bg-[#0f0f10] px-4 py-3 shadow-2xl"
             style={{
-              borderColor: toast.type === 'success' ? 'rgba(52,211,153,0.4)' : 'rgba(239,68,68,0.4)',
+              borderColor: toast.type === 'success' ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)',
             }}
           >
             {toast.type === 'success' ? (
-              <CheckCircle size={16} className="text-emerald-400" />
+              <CheckCircle size={16} className="text-[#10b981]" />
             ) : (
-              <XCircle size={16} className="text-red-400" />
+              <XCircle size={16} className="text-[#ef4444]" />
             )}
-            <span className="text-[13px] font-bold text-white">{toast.message}</span>
+            <span className="text-[13px] font-bold text-[#f4f4f5]">{toast.message}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -576,7 +581,7 @@ export default function SettingsPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-3.5">
-      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-400">
+      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">
         {label}
       </label>
       {children}
@@ -605,7 +610,7 @@ function PasswordInput({
       <button
         type="button"
         onClick={toggle}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#f4f4f5]"
         tabIndex={-1}
       >
         {show ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -617,7 +622,7 @@ function PasswordInput({
 function StatusPill({ ok, loading }: { ok: boolean; loading: boolean }) {
   if (loading) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#202022] bg-[#161617] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6b7280]">
         <Loader2 size={10} className="animate-spin" /> Checking
       </span>
     )
@@ -627,21 +632,21 @@ function StatusPill({ ok, loading }: { ok: boolean; loading: boolean }) {
       className={[
         'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
         ok
-          ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-          : 'border border-amber-500/30 bg-amber-500/10 text-amber-300',
+          ? 'border border-[#10b981]/30 bg-[#10b981]/10 text-[#10b981]'
+          : 'border border-[#f59e0b]/30 bg-[#f59e0b]/10 text-[#f59e0b]',
       ].join(' ')}
     >
-      <span className="size-1.5 rounded-full" style={{ background: ok ? '#34d399' : '#f59e0b' }} />
+      <span className="size-1.5 rounded-full" style={{ background: ok ? '#10b981' : '#f59e0b' }} />
       {ok ? 'Email ready' : 'Not configured'}
     </span>
   )
 }
 
 const darkInput =
-  'box-border w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-2.5 text-[13px] font-medium text-white outline-none transition-colors placeholder:text-neutral-600 focus:border-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-50'
+  'box-border w-full rounded-[11px] border border-[#202022] bg-[#0c0c0d] px-3 py-2.5 text-[0.9rem] font-medium text-white outline-none transition-colors placeholder:text-[#6b7280] disabled:cursor-not-allowed disabled:opacity-50'
 
 const primaryBtn =
-  'inline-flex items-center gap-1.5 rounded-xl bg-[#EC1E79] px-4 py-2.5 text-[13px] font-extrabold text-white shadow-[0_6px_18px_-6px_rgba(236,30,121,0.55)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex items-center gap-1.5 rounded-[11px] bg-[linear-gradient(135deg,#EC1E79,#FF4DA6)] px-[1.1rem] py-2.5 text-[0.85rem] font-extrabold text-white shadow-[0_8px_22px_-10px_rgba(236,30,121,0.6)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50'
 
 const secondaryBtn =
-  'inline-flex items-center gap-1.5 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-2.5 text-[13px] font-bold text-neutral-200 transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex items-center gap-1.5 rounded-[11px] border border-[#202022] bg-[#161617] px-[1.1rem] py-2.5 text-[0.85rem] font-bold text-[#e4e4e7] transition-colors hover:bg-[#202022] disabled:cursor-not-allowed disabled:opacity-50'

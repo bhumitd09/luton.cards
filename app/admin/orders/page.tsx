@@ -78,9 +78,9 @@ const CARRIERS = ['Royal Mail', 'DHL', 'DPD', 'Evri', 'Parcelforce', 'UPS', 'Fed
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string; Icon: React.ElementType; label: string }> = {
   pending:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)',  Icon: Clock,        label: 'Pending'   },
-  paid:      { color: '#EC1E79', bg: 'rgba(236,30,121,0.12)',   border: 'rgba(236,30,121,0.3)',   Icon: CreditCard,   label: 'Paid'      },
-  shipped:   { color: '#818cf8', bg: 'rgba(129,140,248,0.12)', border: 'rgba(129,140,248,0.3)', Icon: Truck,        label: 'Shipped'   },
-  delivered: { color: '#34d399', bg: 'rgba(52,211,153,0.12)',  border: 'rgba(52,211,153,0.3)',  Icon: CheckCircle,  label: 'Delivered' },
+  paid:      { color: '#10b981', bg: 'rgba(16,185,129,0.12)',   border: 'rgba(16,185,129,0.3)',   Icon: CreditCard,   label: 'Paid'      },
+  shipped:   { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.3)',  Icon: Truck,        label: 'Shipped'   },
+  delivered: { color: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)',  Icon: CheckCircle,  label: 'Delivered' },
   cancelled: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.3)',   Icon: XCircle,      label: 'Cancelled' },
 }
 
@@ -135,11 +135,11 @@ function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status] ?? { color: '#9ca3af', bg: 'rgba(156,163,175,0.12)', border: 'rgba(156,163,175,0.3)', label: status }
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-      padding: '0.25rem 0.75rem', borderRadius: '999px',
-      background: cfg.bg, border: `1px solid ${cfg.border}`,
-      color: cfg.color, fontSize: '0.75rem', fontWeight: 700,
-      letterSpacing: '0.02em', textTransform: 'capitalize',
+      display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+      padding: '0.3rem 0.75rem', borderRadius: '999px',
+      background: cfg.bg, color: cfg.color,
+      fontSize: '0.75rem', fontWeight: 700,
+      letterSpacing: '0.01em', textTransform: 'capitalize',
       whiteSpace: 'nowrap',
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
@@ -155,7 +155,7 @@ function SkeletonRow() {
         <td key={i} style={{ padding: '1rem 1.25rem' }}>
           <div style={{
             height: 16, borderRadius: 6,
-            background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)',
+            background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)',
             backgroundSize: '200% 100%',
             animation: 'shimmer 1.4s infinite',
             width: i === 0 ? '80px' : i === 1 ? '120px' : '60px',
@@ -183,17 +183,17 @@ function StatusStepper({ status }: { status: string }) {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem', flex: 1 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%',
-                background: isActive ? cfg.bg : isCompleted ? 'rgba(52,211,153,0.12)' : 'rgba(26,26,26,0.8)',
-                border: `2px solid ${isActive ? cfg.color : isCompleted ? '#34d399' : '#2a2a2a'}`,
+                background: isActive ? cfg.bg : isCompleted ? 'rgba(16,185,129,0.12)' : '#161617',
+                border: `2px solid ${isActive ? cfg.color : isCompleted ? '#10b981' : '#202022'}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'all 0.3s',
                 flexShrink: 0,
               }}>
-                <cfg.Icon size={14} color={isActive ? cfg.color : isCompleted ? '#34d399' : '#4b5563'} />
+                <cfg.Icon size={14} color={isActive ? cfg.color : isCompleted ? '#10b981' : '#6b7280'} />
               </div>
               <span style={{
                 fontSize: '0.6875rem', fontWeight: isActive ? 700 : 500,
-                color: isActive ? cfg.color : isCompleted ? '#34d399' : '#4b5563',
+                color: isActive ? cfg.color : isCompleted ? '#10b981' : '#6b7280',
                 whiteSpace: 'nowrap',
               }}>
                 {cfg.label}
@@ -202,7 +202,7 @@ function StatusStepper({ status }: { status: string }) {
             {idx < STATUS_FLOW.length - 1 && (
               <div style={{
                 height: 2, flex: 1, marginBottom: '1.25rem',
-                background: isCompleted ? '#34d399' : '#1f1f1f',
+                background: isCompleted ? '#10b981' : '#202022',
                 transition: 'background 0.3s',
               }} />
             )}
@@ -213,8 +213,8 @@ function StatusStepper({ status }: { status: string }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: '0.5rem',
           padding: '0.375rem 0.75rem',
-          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-          borderRadius: '8px', marginLeft: '0.75rem', flexShrink: 0,
+          background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)',
+          borderRadius: '999px', marginLeft: '0.75rem', flexShrink: 0,
         }}>
           <XCircle size={14} color="#ef4444" />
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444' }}>Cancelled</span>
@@ -448,7 +448,7 @@ function OrderDetailModal({
         onClick={handleBackdropClick}
         style={{
           position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'rgba(0,0,0,0.7)',
           backdropFilter: 'blur(4px)',
           zIndex: 1000,
           display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end',
@@ -456,6 +456,9 @@ function OrderDetailModal({
         }}
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Order #${order.id.slice(0, 8).toUpperCase()}`}
           initial={{ x: '100%', opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: '100%', opacity: 0 }}
@@ -464,8 +467,8 @@ function OrderDetailModal({
           style={{
             width: '100%', maxWidth: 640,
             height: '100vh',
-            background: '#0d0d0d',
-            borderLeft: '1px solid #1f1f1f',
+            background: '#0a0a0a',
+            borderLeft: '1px solid #202022',
             display: 'flex', flexDirection: 'column',
             overflowY: 'auto',
           }}
@@ -474,23 +477,23 @@ function OrderDetailModal({
           {/* Modal Header */}
           <div style={{
             padding: '1.5rem',
-            borderBottom: '1px solid #1a1a1a',
+            borderBottom: '1px solid #202022',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            position: 'sticky', top: 0, background: '#0d0d0d', zIndex: 10,
+            position: 'sticky', top: 0, background: '#0a0a0a', zIndex: 10,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
               <div style={{
-                width: 40, height: 40, borderRadius: '10px',
-                background: 'rgba(236,30,121,0.1)', border: '1px solid rgba(236,30,121,0.2)',
+                width: 40, height: 40, borderRadius: '11px',
+                background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <ShoppingBag size={18} color="#EC1E79" />
               </div>
               <div>
-                <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 700, color: '#EC1E79' }}>
+                <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 800, color: '#EC1E79' }}>
                   #{order.id.slice(0, 8).toUpperCase()}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.1rem' }}>
+                <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.1rem' }}>
                   {formatDate(order.createdAt)}
                 </div>
               </div>
@@ -501,10 +504,10 @@ function OrderDetailModal({
                 onClick={() => openPrintWindow(order)}
                 title="Print / Export"
                 style={{
-                  width: 36, height: 36, borderRadius: '8px',
-                  background: '#1a1a1a', border: '1px solid #2a2a2a',
+                  width: 36, height: 36, borderRadius: '11px',
+                  background: '#161617', border: '1px solid #202022',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: '#9ca3af',
+                  cursor: 'pointer', color: '#e4e4e7',
                 }}
               >
                 <Printer size={15} />
@@ -512,10 +515,10 @@ function OrderDetailModal({
               <button
                 onClick={onClose}
                 style={{
-                  width: 36, height: 36, borderRadius: '8px',
-                  background: '#1a1a1a', border: '1px solid #2a2a2a',
+                  width: 36, height: 36, borderRadius: '11px',
+                  background: '#161617', border: '1px solid #202022',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: '#9ca3af',
+                  cursor: 'pointer', color: '#e4e4e7',
                 }}
               >
                 <X size={16} />
@@ -527,10 +530,10 @@ function OrderDetailModal({
             {/* Status Flow Stepper */}
             <div style={{
               padding: '1.25rem',
-              background: '#111', border: '1px solid #1f1f1f',
-              borderRadius: '14px',
+              background: '#0f0f10', border: '1px solid #202022',
+              borderRadius: '16px',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
                 Order Progress
               </div>
               <StatusStepper status={order.status} />
@@ -539,16 +542,16 @@ function OrderDetailModal({
             {/* Customer Info */}
             <div style={{
               padding: '1.25rem',
-              background: '#111', border: '1px solid #1f1f1f',
-              borderRadius: '14px',
+              background: '#0f0f10', border: '1px solid #202022',
+              borderRadius: '16px',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
                 Customer
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                   <User size={14} color="#6b7280" style={{ flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}>{order.name}</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f4f4f5' }}>{order.name}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                   <Mail size={14} color="#6b7280" style={{ flexShrink: 0 }} />
@@ -593,17 +596,17 @@ function OrderDetailModal({
             {/* Order Items */}
             <div style={{
               padding: '1.25rem',
-              background: '#111', border: '1px solid #1f1f1f',
-              borderRadius: '14px',
+              background: '#0f0f10', border: '1px solid #202022',
+              borderRadius: '16px',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
                 Items ({order.items.reduce((s, i) => s + i.quantity, 0)})
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                 <div style={{
                   display: 'grid', gridTemplateColumns: '1fr 60px 80px 80px',
                   padding: '0.375rem 0.625rem',
-                  fontSize: '0.6875rem', fontWeight: 700, color: '#4b5563',
+                  fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280',
                   textTransform: 'uppercase', letterSpacing: '0.06em',
                 }}>
                   <span>Product</span>
@@ -616,18 +619,18 @@ function OrderDetailModal({
                     display: 'grid', gridTemplateColumns: '1fr 60px 80px 80px',
                     alignItems: 'center',
                     padding: '0.75rem 0.625rem',
-                    background: '#161616', border: '1px solid #1f1f1f',
-                    borderRadius: '10px',
+                    background: '#161617', border: '1px solid #202022',
+                    borderRadius: '11px',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
                       <div style={{
                         width: 28, height: 28, borderRadius: 7,
-                        background: 'rgba(236,30,121,0.08)', border: '1px solid rgba(236,30,121,0.15)',
+                        background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.2)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       }}>
                         <Package size={12} color="#EC1E79" />
                       </div>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#f4f4f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.productName}
                       </span>
                     </div>
@@ -648,7 +651,7 @@ function OrderDetailModal({
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: '0.5rem 0.625rem',
-                  borderTop: '1px solid #1f1f1f',
+                  borderTop: '1px solid #1a1a1c',
                 }}>
                   <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>Shipping</span>
                   <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
@@ -659,10 +662,10 @@ function OrderDetailModal({
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '0.875rem 0.625rem',
-                borderTop: '1px solid #1f1f1f',
+                borderTop: '1px solid #1a1a1c',
               }}>
                 <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#9ca3af' }}>Order Total</span>
-                <span style={{ fontSize: '1.125rem', fontWeight: 900, color: '#fff' }}>
+                <span style={{ fontSize: '1.125rem', fontWeight: 900, color: '#f4f4f5' }}>
                   £{order.total.toFixed(2)}
                 </span>
               </div>
@@ -671,10 +674,10 @@ function OrderDetailModal({
             {/* Status Update */}
             <div style={{
               padding: '1.25rem',
-              background: '#111', border: '1px solid #1f1f1f',
-              borderRadius: '14px',
+              background: '#0f0f10', border: '1px solid #202022',
+              borderRadius: '16px',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem' }}>
                 Update Status
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -684,10 +687,10 @@ function OrderDetailModal({
                     onChange={e => handleStatusChange(e.target.value)}
                     style={{
                       width: '100%',
-                      background: '#161616',
-                      border: `1px solid ${STATUS_CONFIG[localStatus]?.border ?? '#2a2a2a'}`,
-                      borderRadius: '10px',
-                      color: STATUS_CONFIG[localStatus]?.color ?? '#fff',
+                      background: '#161617',
+                      border: `1px solid ${STATUS_CONFIG[localStatus]?.border ?? '#202022'}`,
+                      borderRadius: '11px',
+                      color: STATUS_CONFIG[localStatus]?.color ?? '#f4f4f5',
                       padding: '0.625rem 2.25rem 0.625rem 0.875rem',
                       fontSize: '0.875rem',
                       fontWeight: 700,
@@ -701,7 +704,7 @@ function OrderDetailModal({
                     }}
                   >
                     {['pending', 'paid', 'shipped', 'delivered', 'cancelled'].map(s => (
-                      <option key={s} value={s} style={{ background: '#161616', color: '#fff' }}>
+                      <option key={s} value={s} style={{ background: '#161617', color: '#f4f4f5' }}>
                         {s.charAt(0).toUpperCase() + s.slice(1)}
                       </option>
                     ))}
@@ -714,8 +717,8 @@ function OrderDetailModal({
                     style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
                       padding: '0.625rem 1rem',
-                      background: 'rgba(129,140,248,0.12)', border: '1px solid rgba(129,140,248,0.3)',
-                      borderRadius: '10px', color: '#818cf8',
+                      background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)',
+                      borderRadius: '11px', color: '#3b82f6',
                       fontSize: '0.8125rem', fontWeight: 700,
                       cursor: saving ? 'wait' : 'pointer',
                       whiteSpace: 'nowrap',
@@ -734,11 +737,11 @@ function OrderDetailModal({
             {(localStatus === 'shipped' || showTracking) && (
               <div style={{
                 padding: '1.25rem',
-                background: '#111', border: '1px solid rgba(129,140,248,0.25)',
-                borderRadius: '14px',
+                background: '#0f0f10', border: '1px solid rgba(59,130,246,0.25)',
+                borderRadius: '16px',
               }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Truck size={12} color="#818cf8" />
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Truck size={12} color="#3b82f6" />
                   Tracking
                 </div>
 
@@ -748,7 +751,7 @@ function OrderDetailModal({
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
                       padding: '0.375rem 0.75rem',
-                      background: 'rgba(236,30,121,0.1)', border: '1px solid rgba(236,30,121,0.25)',
+                      background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)',
                       borderRadius: '999px',
                     }}>
                       <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#EC1E79', fontFamily: 'monospace' }}>
@@ -785,15 +788,15 @@ function OrderDetailModal({
 
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <div style={{ flex: '0 0 auto', minWidth: 160 }}>
-                    <label style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
+                    <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
                       Carrier
                     </label>
                     <select
                       value={trackingCarrier}
                       onChange={e => setTrackingCarrier(e.target.value)}
                       style={{
-                        background: '#161616', border: '1px solid #2a2a2a',
-                        borderRadius: '10px', color: '#fff',
+                        background: '#161617', border: '1px solid #202022',
+                        borderRadius: '11px', color: '#f4f4f5',
                         padding: '0.5rem 2rem 0.5rem 0.75rem',
                         fontSize: '0.8125rem', fontWeight: 600,
                         cursor: 'pointer', outline: 'none',
@@ -804,12 +807,12 @@ function OrderDetailModal({
                       }}
                     >
                       {CARRIERS.map(c => (
-                        <option key={c} value={c} style={{ background: '#161616', color: '#fff' }}>{c}</option>
+                        <option key={c} value={c} style={{ background: '#161617', color: '#f4f4f5' }}>{c}</option>
                       ))}
                     </select>
                   </div>
                   <div style={{ flex: 1, minWidth: 180 }}>
-                    <label style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
+                    <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
                       Tracking Number
                     </label>
                     <input
@@ -819,14 +822,14 @@ function OrderDetailModal({
                       placeholder="e.g. JD000009999GB"
                       style={{
                         width: '100%', boxSizing: 'border-box',
-                        background: '#161616', border: '1px solid #2a2a2a',
-                        borderRadius: '10px', color: '#fff',
+                        background: '#161617', border: '1px solid #202022',
+                        borderRadius: '11px', color: '#f4f4f5',
                         padding: '0.5rem 0.75rem', fontSize: '0.8125rem',
                         outline: 'none', fontFamily: 'monospace',
                         transition: 'border-color 0.15s',
                       }}
-                      onFocus={e => { e.currentTarget.style.borderColor = 'rgba(129,140,248,0.4)' }}
-                      onBlur={e => { e.currentTarget.style.borderColor = '#2a2a2a' }}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'rgba(59,130,246,0.45)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = '#202022' }}
                     />
                   </div>
                 </div>
@@ -837,10 +840,10 @@ function OrderDetailModal({
                     style={{
                       display: 'flex', alignItems: 'center', gap: '0.5rem',
                       padding: '0.5rem 1.125rem',
-                      background: trackingNumber.trim() && !trackingSaving ? 'rgba(129,140,248,0.15)' : '#1a1a1a',
-                      border: `1px solid ${trackingNumber.trim() && !trackingSaving ? 'rgba(129,140,248,0.4)' : '#2a2a2a'}`,
-                      borderRadius: '10px',
-                      color: trackingNumber.trim() && !trackingSaving ? '#818cf8' : '#4b5563',
+                      background: trackingNumber.trim() && !trackingSaving ? 'rgba(59,130,246,0.15)' : '#161617',
+                      border: `1px solid ${trackingNumber.trim() && !trackingSaving ? 'rgba(59,130,246,0.4)' : '#202022'}`,
+                      borderRadius: '11px',
+                      color: trackingNumber.trim() && !trackingSaving ? '#3b82f6' : '#6b7280',
                       fontSize: '0.8125rem', fontWeight: 700,
                       cursor: trackingSaving || !trackingNumber.trim() ? 'not-allowed' : 'pointer',
                       transition: 'all 0.15s',
@@ -855,19 +858,19 @@ function OrderDetailModal({
             {/* Fulfillment Notes */}
             <div style={{
               padding: '1.25rem',
-              background: '#111', border: '1px solid #1f1f1f',
-              borderRadius: '14px',
+              background: '#0f0f10', border: '1px solid #202022',
+              borderRadius: '16px',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileText size={12} color="#4b5563" />
+                  <FileText size={12} color="#6b7280" />
                   Fulfillment Notes
-                  <span style={{ fontSize: '0.625rem', color: '#4b5563', fontWeight: 500, background: '#1a1a1a', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>
+                  <span style={{ fontSize: '0.625rem', color: '#9ca3af', fontWeight: 600, background: '#161617', border: '1px solid #202022', borderRadius: '999px', padding: '0.1rem 0.5rem' }}>
                     Internal only
                   </span>
                 </div>
                 {notesUpdatedAt && (
-                  <span style={{ fontSize: '0.6875rem', color: '#4b5563', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.6875rem', color: '#6b7280', fontWeight: 500 }}>
                     Saved at {notesUpdatedAt}
                   </span>
                 )}
@@ -875,19 +878,19 @@ function OrderDetailModal({
               <textarea
                 value={localNotes}
                 onChange={e => setLocalNotes(e.target.value)}
-                onBlur={handleNotesBlur}
                 placeholder="Add internal fulfillment notes (not visible to customer)..."
                 rows={3}
                 style={{
                   width: '100%', boxSizing: 'border-box',
-                  background: '#161616', border: '1px solid #2a2a2a',
-                  borderRadius: '10px', color: '#fff',
+                  background: '#161617', border: '1px solid #202022',
+                  borderRadius: '11px', color: '#f4f4f5',
                   padding: '0.75rem', fontSize: '0.875rem',
                   resize: 'vertical', outline: 'none',
                   fontFamily: 'inherit', lineHeight: 1.6,
                   transition: 'border-color 0.15s',
                 }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(236,30,121,0.4)' }}
+                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(236,30,121,0.45)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = '#202022'; handleNotesBlur() }}
               />
             </div>
 
@@ -902,13 +905,13 @@ function OrderDetailModal({
                 <div key={label} style={{
                   flex: 1, minWidth: 180,
                   padding: '0.875rem',
-                  background: '#111', border: '1px solid #1f1f1f',
-                  borderRadius: '10px',
+                  background: '#0f0f10', border: '1px solid #202022',
+                  borderRadius: '11px',
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
-                  <Icon size={14} color="#4b5563" style={{ flexShrink: 0 }} />
+                  <Icon size={14} color="#6b7280" style={{ flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: '0.6875rem', color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.2rem' }}>
+                    <div style={{ fontSize: '0.6875rem', color: '#6b7280', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.2rem' }}>
                       {label}
                     </div>
                     <div style={{ fontSize: '0.8125rem', color: '#9ca3af' }}>{value}</div>
@@ -921,17 +924,17 @@ function OrderDetailModal({
           {/* Sticky Footer */}
           <div style={{
             padding: '1rem 1.5rem',
-            borderTop: '1px solid #1a1a1a',
-            background: '#0d0d0d',
+            borderTop: '1px solid #202022',
+            background: '#0a0a0a',
             display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem',
           }}>
             <button
               onClick={onClose}
               style={{
-                padding: '0.625rem 1.25rem',
-                background: 'transparent', border: '1px solid #2a2a2a',
-                borderRadius: '10px', color: '#9ca3af',
-                fontSize: '0.875rem', fontWeight: 600,
+                padding: '0.6rem 1.1rem',
+                background: '#161617', border: '1px solid #202022',
+                borderRadius: '11px', color: '#e4e4e7',
+                fontSize: '0.85rem', fontWeight: 600,
                 cursor: 'pointer',
               }}
             >
@@ -941,13 +944,14 @@ function OrderDetailModal({
               onClick={handleSave}
               disabled={saving || !isDirty}
               style={{
-                padding: '0.625rem 1.5rem',
-                background: isDirty && !saving ? '#EC1E79' : '#1a1a1a',
-                border: `1px solid ${isDirty && !saving ? '#EC1E79' : '#2a2a2a'}`,
-                borderRadius: '10px',
-                color: isDirty && !saving ? '#000' : '#4b5563',
-                fontSize: '0.875rem', fontWeight: 700,
+                padding: '0.6rem 1.5rem',
+                background: isDirty && !saving ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
+                border: isDirty && !saving ? 'none' : '1px solid #202022',
+                borderRadius: '11px',
+                color: isDirty && !saving ? '#fff' : '#6b7280',
+                fontSize: '0.85rem', fontWeight: 800,
                 cursor: saving || !isDirty ? 'not-allowed' : 'pointer',
+                boxShadow: isDirty && !saving ? '0 8px 22px -10px rgba(236,30,121,0.6)' : 'none',
                 transition: 'all 0.2s',
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
               }}
@@ -1092,12 +1096,13 @@ export default function OrdersPage() {
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
         }
-        .order-row:hover { background: #161616 !important; }
+        .order-row:hover { background: #161617 !important; }
         .order-row { transition: background 0.15s ease; cursor: pointer; }
         .action-btn:hover { border-color: rgba(236,30,121,0.4) !important; color: #EC1E79 !important; }
         .copy-addr-btn:hover { border-color: rgba(236,30,121,0.35) !important; color: #EC1E79 !important; }
-        select option { background: #161616; color: #fff; }
-        .status-select:hover { border-color: #3a3a3a !important; }
+        select option { background: #161617; color: #f4f4f5; }
+        .status-select:hover { border-color: #2a2a2c !important; }
+        .status-chip:hover { filter: brightness(1.08); }
         .date-pill:hover { border-color: rgba(236,30,121,0.3) !important; color: #9ca3af !important; }
         @media (max-width: 768px) {
           .orders-header { flex-direction: column !important; align-items: flex-start !important; }
@@ -1110,7 +1115,7 @@ export default function OrdersPage() {
         }
       `}</style>
 
-      <div className="orders-page-padding" style={{ padding: '2rem', color: '#fff', maxWidth: '1400px' }}>
+      <div className="orders-page-padding" style={{ padding: '2rem', color: '#f4f4f5', maxWidth: '1400px' }}>
 
         {/* Header */}
         <motion.div
@@ -1121,19 +1126,28 @@ export default function OrdersPage() {
           style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}
         >
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.025em', marginBottom: '0.25rem' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+              color: '#EC1E79', marginBottom: '0.5rem',
+            }}>
+              <ShoppingBag size={13} color="#EC1E79" />
+              <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em' }}>
+                Order Management
+              </span>
+            </div>
+            <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', color: '#fff', marginBottom: '0.25rem' }}>
               Orders
             </h1>
-            <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Manage and track customer orders</p>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Manage and track customer orders</p>
           </div>
           {!loading && (
             <motion.span
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               style={{
-                background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.3)',
+                background: 'rgba(236,30,121,0.12)',
                 color: '#EC1E79', borderRadius: '999px', padding: '0.3rem 0.875rem',
-                fontSize: '0.8125rem', fontWeight: 700,
+                fontSize: '0.8125rem', fontWeight: 800,
               }}
             >
               {statusCounts.all ?? pagination.total} total
@@ -1144,22 +1158,22 @@ export default function OrdersPage() {
               onClick={() => window.open('/api/admin/orders/export', '_blank')}
               onMouseEnter={e => {
                 const el = e.currentTarget
-                el.style.borderColor = '#EC1E79'
+                el.style.borderColor = 'rgba(236,30,121,0.4)'
                 el.style.color = '#EC1E79'
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget
-                el.style.borderColor = '#333'
-                el.style.color = '#9ca3af'
+                el.style.borderColor = '#202022'
+                el.style.color = '#e4e4e7'
               }}
               style={{
-                background: 'transparent',
-                border: '1px solid #333',
-                color: '#9ca3af',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
+                background: '#161617',
+                border: '1px solid #202022',
+                color: '#e4e4e7',
+                padding: '0.6rem 1.1rem',
+                borderRadius: '11px',
                 cursor: 'pointer',
-                fontSize: '0.8125rem',
+                fontSize: '0.85rem',
                 fontWeight: 600,
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1181,42 +1195,38 @@ export default function OrdersPage() {
           style={{
             display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
             marginBottom: '1rem',
-            background: '#111', border: '1px solid #1f1f1f',
-            borderRadius: '14px', padding: '0.5rem',
           }}
         >
           {STATUSES.map(s => {
             const isActive = statusFilter === s
-            const cfg = s !== 'all' ? STATUS_CONFIG[s] : null
             const count = statusCounts[s] ?? 0
             return (
               <motion.button
                 key={s}
+                className="status-chip"
                 onClick={() => setStatusFilter(s)}
-                whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '10px',
-                  border: isActive ? `1px solid ${cfg?.border ?? 'rgba(236,30,121,0.3)'}` : '1px solid transparent',
-                  background: isActive ? (cfg?.bg ?? 'rgba(236,30,121,0.12)') : 'transparent',
-                  color: isActive ? (cfg?.color ?? '#EC1E79') : '#9ca3af',
+                  padding: '0.45rem 0.95rem',
+                  borderRadius: '999px',
+                  border: 'none',
+                  background: isActive ? 'rgba(236,30,121,0.12)' : '#161617',
+                  color: isActive ? '#EC1E79' : '#9ca3af',
                   fontSize: '0.8125rem', fontWeight: 700,
                   cursor: 'pointer',
                   textTransform: 'capitalize',
                   display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  transition: 'all 0.15s',
+                  transition: 'background 0.15s, color 0.15s',
                   whiteSpace: 'nowrap',
                 }}
               >
                 {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
                 {count > 0 && (
                   <span style={{
-                    background: isActive ? (cfg?.color ?? '#EC1E79') + '22' : '#1f1f1f',
-                    color: isActive ? (cfg?.color ?? '#EC1E79') : '#6b7280',
+                    background: isActive ? 'rgba(236,30,121,0.2)' : '#202022',
+                    color: isActive ? '#EC1E79' : '#6b7280',
                     borderRadius: '999px', padding: '0.1rem 0.45rem',
                     fontSize: '0.7rem', fontWeight: 800,
-                    border: isActive ? `1px solid ${cfg?.color ?? '#EC1E79'}40` : '1px solid transparent',
                   }}>
                     {count}
                   </span>
@@ -1241,10 +1251,10 @@ export default function OrdersPage() {
                 className="date-pill"
                 onClick={() => setDateRange(r)}
                 style={{
-                  padding: '0.375rem 0.875rem',
+                  padding: '0.4rem 0.875rem',
                   borderRadius: '999px',
-                  border: isActive ? '1px solid rgba(236,30,121,0.4)' : '1px solid #1f1f1f',
-                  background: isActive ? 'rgba(236,30,121,0.1)' : '#111',
+                  border: isActive ? '1px solid rgba(236,30,121,0.4)' : '1px solid #202022',
+                  background: isActive ? 'rgba(236,30,121,0.12)' : '#161617',
                   color: isActive ? '#EC1E79' : '#6b7280',
                   fontSize: '0.75rem', fontWeight: 700,
                   cursor: 'pointer', whiteSpace: 'nowrap',
@@ -1265,7 +1275,7 @@ export default function OrdersPage() {
           style={{ marginBottom: '1.25rem', position: 'relative' }}
         >
           <div style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <Search size={16} color="#4b5563" />
+            <Search size={16} color="#6b7280" />
           </div>
           <input
             type="text"
@@ -1274,14 +1284,14 @@ export default function OrdersPage() {
             onChange={e => handleSearchInput(e.target.value)}
             style={{
               width: '100%', boxSizing: 'border-box',
-              background: '#111', border: '1px solid #1f1f1f',
-              borderRadius: '12px', color: '#fff',
+              background: '#0f0f10', border: '1px solid #202022',
+              borderRadius: '11px', color: '#f4f4f5',
               padding: '0.75rem 2.75rem 0.75rem 2.75rem',
               fontSize: '0.875rem', outline: 'none',
               transition: 'border-color 0.15s',
             }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(236,30,121,0.35)' }}
-            onBlur={e => { e.currentTarget.style.borderColor = '#1f1f1f' }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(236,30,121,0.45)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#202022' }}
           />
           {searchInput && (
             <button
@@ -1303,20 +1313,20 @@ export default function OrdersPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.4 }}
           style={{
-            background: '#111', border: '1px solid #1f1f1f',
+            background: '#0f0f10', border: '1px solid #202022',
             borderRadius: '16px', overflow: 'hidden',
           }}
         >
           <div className="orders-table-wrap" style={{ overflowX: 'auto' }}>
             <table className="orders-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #1f1f1f' }}>
+                <tr style={{ borderBottom: '1px solid #202022' }}>
                   {['Order #', 'Customer', 'Items', 'Shipping', 'Total', 'Status', 'Date', 'Actions'].map((col, i) => (
                     <th key={i} className={col === 'Shipping' ? 'orders-col-shipping' : col === 'Items' ? 'orders-col-items' : ''} style={{
                       padding: '0.875rem 1.25rem',
                       textAlign: 'left',
                       fontSize: '0.75rem', fontWeight: 700,
-                      color: '#4b5563',
+                      color: '#6b7280',
                       textTransform: 'uppercase', letterSpacing: '0.07em',
                       whiteSpace: 'nowrap',
                     }}>
@@ -1337,16 +1347,16 @@ export default function OrdersPage() {
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
                       >
                         <div style={{
-                          width: 64, height: 64, borderRadius: '16px',
-                          background: 'rgba(156,163,175,0.08)', border: '1px solid #1f1f1f',
+                          width: 44, height: 44, borderRadius: '50%',
+                          background: '#161617', border: '1px solid #202022',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <ShoppingBag size={28} color="#4b5563" />
+                          <ShoppingBag size={20} color="#6b7280" />
                         </div>
-                        <div style={{ color: '#6b7280', fontSize: '0.9rem', fontWeight: 600 }}>
+                        <div style={{ color: '#f4f4f5', fontSize: '0.9rem', fontWeight: 700 }}>
                           {search ? 'No orders match your search' : statusFilter !== 'all' ? `No ${statusFilter} orders found` : 'No orders yet'}
                         </div>
-                        <div style={{ color: '#4b5563', fontSize: '0.8125rem' }}>
+                        <div style={{ color: '#9ca3af', fontSize: '0.8125rem' }}>
                           {search
                             ? 'Try a different name or email address'
                             : statusFilter !== 'all'
@@ -1357,10 +1367,10 @@ export default function OrdersPage() {
                           <button
                             onClick={() => { clearSearch(); setStatusFilter('all') }}
                             style={{
-                              padding: '0.5rem 1rem',
-                              background: 'transparent', border: '1px solid #2a2a2a',
-                              borderRadius: '8px', color: '#9ca3af',
-                              fontSize: '0.8125rem', fontWeight: 600,
+                              padding: '0.6rem 1.1rem',
+                              background: '#161617', border: '1px solid #202022',
+                              borderRadius: '11px', color: '#e4e4e7',
+                              fontSize: '0.85rem', fontWeight: 600,
                               cursor: 'pointer',
                             }}
                           >
@@ -1381,15 +1391,15 @@ export default function OrdersPage() {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.025, duration: 0.25 }}
-                        style={{ borderBottom: '1px solid #1a1a1a' }}
+                        style={{ borderBottom: '1px solid #1a1a1c' }}
                       >
                         {/* Order # */}
                         <td style={{ padding: '1rem 1.25rem' }}>
                           <span style={{
                             fontFamily: 'monospace', fontSize: '0.8125rem',
                             color: '#EC1E79', fontWeight: 700,
-                            background: 'rgba(236,30,121,0.08)', padding: '0.25rem 0.5rem',
-                            borderRadius: '6px', border: '1px solid rgba(236,30,121,0.15)',
+                            background: 'rgba(236,30,121,0.12)', padding: '0.25rem 0.55rem',
+                            borderRadius: '999px',
                           }}>
                             #{order.id.slice(0, 8).toUpperCase()}
                           </span>
@@ -1397,7 +1407,7 @@ export default function OrdersPage() {
 
                         {/* Customer */}
                         <td style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff', marginBottom: '0.2rem' }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#f4f4f5', marginBottom: '0.2rem' }}>
                             {order.name}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{order.email}</div>
@@ -1406,8 +1416,8 @@ export default function OrdersPage() {
                         {/* Items */}
                         <td className="orders-col-items" style={{ padding: '1rem 1.25rem' }}>
                           <span style={{
-                            background: '#1a1a1a', border: '1px solid #2a2a2a',
-                            borderRadius: '6px', padding: '0.2rem 0.6rem',
+                            background: '#161617', border: '1px solid #202022',
+                            borderRadius: '999px', padding: '0.2rem 0.65rem',
                             fontSize: '0.8125rem', fontWeight: 700, color: '#9ca3af',
                           }}>
                             {itemQty}
@@ -1423,7 +1433,7 @@ export default function OrdersPage() {
 
                         {/* Total */}
                         <td style={{ padding: '1rem 1.25rem' }}>
-                          <span style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#fff' }}>
+                          <span style={{ fontWeight: 800, fontSize: '0.9375rem', color: '#f4f4f5' }}>
                             £{order.total.toFixed(2)}
                           </span>
                         </td>
@@ -1448,10 +1458,10 @@ export default function OrdersPage() {
                               className="action-btn"
                               onClick={() => setSelectedOrder(order)}
                               style={{
-                                padding: '0.375rem 0.875rem',
-                                background: 'rgba(236,30,121,0.08)',
-                                border: '1px solid rgba(236,30,121,0.2)',
-                                borderRadius: '8px', color: '#EC1E79',
+                                padding: '0.4rem 0.9rem',
+                                background: 'rgba(236,30,121,0.12)',
+                                border: '1px solid rgba(236,30,121,0.25)',
+                                borderRadius: '11px', color: '#EC1E79',
                                 fontSize: '0.8125rem', fontWeight: 700,
                                 cursor: 'pointer', whiteSpace: 'nowrap',
                                 transition: 'all 0.15s',
@@ -1467,10 +1477,10 @@ export default function OrdersPage() {
                                 onClick={e => { e.stopPropagation(); handleCopyAddress(order) }}
                                 title="Copy shipping address"
                                 style={{
-                                  width: 30, height: 30,
-                                  background: '#1a1a1a',
-                                  border: '1px solid #2a2a2a',
-                                  borderRadius: '7px', color: '#6b7280',
+                                  width: 32, height: 32,
+                                  background: '#161617',
+                                  border: '1px solid #202022',
+                                  borderRadius: '11px', color: '#6b7280',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   cursor: 'pointer', flexShrink: 0,
                                   transition: 'all 0.15s',
@@ -1493,11 +1503,11 @@ export default function OrdersPage() {
                                 }}
                                 onClick={e => e.stopPropagation()}
                                 style={{
-                                  background: '#1a1a1a',
-                                  border: `1px solid #2a2a2a`,
-                                  borderRadius: '8px',
-                                  color: STATUS_CONFIG[order.status]?.color ?? '#fff',
-                                  padding: '0.375rem 1.875rem 0.375rem 0.625rem',
+                                  background: '#161617',
+                                  border: `1px solid #202022`,
+                                  borderRadius: '11px',
+                                  color: STATUS_CONFIG[order.status]?.color ?? '#f4f4f5',
+                                  padding: '0.4rem 1.875rem 0.4rem 0.7rem',
                                   fontSize: '0.75rem', fontWeight: 700,
                                   cursor: 'pointer', outline: 'none',
                                   appearance: 'none', WebkitAppearance: 'none',
@@ -1508,7 +1518,7 @@ export default function OrdersPage() {
                                 }}
                               >
                                 {['pending', 'paid', 'shipped', 'delivered', 'cancelled'].map(s => (
-                                  <option key={s} value={s} style={{ background: '#161616', color: '#fff' }}>
+                                  <option key={s} value={s} style={{ background: '#161617', color: '#f4f4f5' }}>
                                     {s.charAt(0).toUpperCase() + s.slice(1)}
                                   </option>
                                 ))}
@@ -1528,7 +1538,7 @@ export default function OrdersPage() {
           {!loading && pagination.totalPages > 1 && (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '1rem 1.5rem', borderTop: '1px solid #1f1f1f',
+              padding: '1rem 1.5rem', borderTop: '1px solid #202022',
               flexWrap: 'wrap', gap: '0.75rem',
             }}>
               <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
@@ -1541,8 +1551,8 @@ export default function OrdersPage() {
                   whileHover={{ scale: pagination.page <= 1 ? 1 : 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   style={{
-                    width: 36, height: 36, borderRadius: '8px',
-                    background: '#1a1a1a', border: '1px solid #2a2a2a',
+                    width: 36, height: 36, borderRadius: '11px',
+                    background: '#161617', border: '1px solid #202022',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer',
                     opacity: pagination.page <= 1 ? 0.4 : 1,
@@ -1566,7 +1576,7 @@ export default function OrdersPage() {
                     pages.push(total)
                   }
                   return pages.map((p) => p < 0 ? (
-                    <span key={p} style={{ color: '#4b5563', padding: '0 0.25rem', fontSize: '0.875rem' }}>...</span>
+                    <span key={p} style={{ color: '#6b7280', padding: '0 0.25rem', fontSize: '0.875rem' }}>...</span>
                   ) : (
                     <motion.button
                       key={p}
@@ -1574,12 +1584,13 @@ export default function OrdersPage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       style={{
-                        width: 36, height: 36, borderRadius: '8px',
-                        background: p === current ? '#EC1E79' : '#1a1a1a',
-                        border: `1px solid ${p === current ? '#EC1E79' : '#2a2a2a'}`,
-                        color: p === current ? '#000' : '#9ca3af',
-                        fontSize: '0.875rem', fontWeight: 700,
+                        width: 36, height: 36, borderRadius: '11px',
+                        background: p === current ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
+                        border: p === current ? 'none' : '1px solid #202022',
+                        color: p === current ? '#fff' : '#9ca3af',
+                        fontSize: '0.875rem', fontWeight: 800,
                         cursor: 'pointer',
+                        boxShadow: p === current ? '0 8px 22px -10px rgba(236,30,121,0.6)' : 'none',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                     >
@@ -1594,8 +1605,8 @@ export default function OrdersPage() {
                   whileHover={{ scale: pagination.page >= pagination.totalPages ? 1 : 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   style={{
-                    width: 36, height: 36, borderRadius: '8px',
-                    background: '#1a1a1a', border: '1px solid #2a2a2a',
+                    width: 36, height: 36, borderRadius: '11px',
+                    background: '#161617', border: '1px solid #202022',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: pagination.page >= pagination.totalPages ? 'not-allowed' : 'pointer',
                     opacity: pagination.page >= pagination.totalPages ? 0.4 : 1,

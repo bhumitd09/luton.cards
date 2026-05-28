@@ -35,9 +35,9 @@ function timeAgo(dateString?: string): string {
 
 function formatSectionHeader(title: string, subtitle: string) {
   return (
-    <div style={{ marginBottom: '1.25rem' }}>
-      <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', margin: 0 }}>{title}</h2>
-      <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0.2rem 0 0' }}>{subtitle}</p>
+    <div style={{ marginBottom: '1.35rem' }}>
+      <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f4f4f5', margin: 0, letterSpacing: '-0.01em' }}>{title}</h2>
+      <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: '0.25rem 0 0', lineHeight: 1.5 }}>{subtitle}</p>
     </div>
   )
 }
@@ -57,11 +57,16 @@ function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void 
       whileTap={!isLoading ? { scale: 0.97 } : {}}
       style={{
         display: 'flex', alignItems: 'center', gap: '0.4rem',
-        padding: '0.45rem 0.875rem',
-        borderRadius: '8px', border: 'none', cursor: isLoading ? 'default' : 'pointer',
-        fontWeight: 600, fontSize: '0.8125rem',
-        background: isSaved ? 'rgba(236,30,121,0.15)' : isError ? 'rgba(239,68,68,0.15)' : '#EC1E79',
-        color: isSaved ? '#EC1E79' : isError ? '#ef4444' : '#000',
+        padding: '0.6rem 1.1rem',
+        borderRadius: '11px', border: 'none', cursor: isLoading ? 'default' : 'pointer',
+        fontWeight: 800, fontSize: '0.85rem',
+        background: isSaved
+          ? 'rgba(16,185,129,0.1)'
+          : isError
+            ? 'rgba(239,68,68,0.1)'
+            : 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)',
+        color: isSaved ? '#10b981' : isError ? '#ef4444' : '#fff',
+        boxShadow: isSaved || isError ? 'none' : '0 8px 22px -10px rgba(236,30,121,0.6)',
         transition: 'all 0.2s ease',
         flexShrink: 0,
       }}
@@ -140,11 +145,11 @@ function TextField({
   return (
     <div style={{ marginBottom: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-        <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          {multiline ? <AlignLeft size={13} color="#6b7280" /> : <Type size={13} color="#6b7280" />}
+        <label style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          {multiline ? <AlignLeft size={12} color="#6b7280" /> : <Type size={12} color="#6b7280" />}
           {label}
         </label>
-        <span style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
+        <span style={{ fontSize: '11px', color: '#6b7280', textAlign: 'right' }}>
           {existing?.updatedAt ? `Updated ${timeAgo(existing.updatedAt)}` : 'Not saved yet'}
         </span>
       </div>
@@ -156,14 +161,11 @@ function TextField({
             onChange={e => setValue(e.target.value)}
             rows={3}
             style={{
-              flex: 1, background: '#161616', border: '1px solid #1f1f1f',
-              borderRadius: '10px', color: '#fff', padding: '0.75rem',
-              fontSize: '0.875rem', resize: 'vertical', outline: 'none',
+              flex: 1, background: '#0c0c0d', border: '1px solid #202022',
+              borderRadius: '11px', color: '#fff', padding: '0.6rem 0.8rem',
+              fontSize: '0.9rem', resize: 'vertical', outline: 'none',
               fontFamily: 'inherit', lineHeight: 1.6,
-              transition: 'border-color 0.2s',
             }}
-            onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = '#EC1E79' }}
-            onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = '#1f1f1f' }}
           />
         ) : (
           <input
@@ -171,13 +173,10 @@ function TextField({
             value={value}
             onChange={e => setValue(e.target.value)}
             style={{
-              flex: 1, background: '#161616', border: '1px solid #1f1f1f',
-              borderRadius: '10px', color: '#fff', padding: '0.65rem 0.875rem',
-              fontSize: '0.875rem', outline: 'none',
-              transition: 'border-color 0.2s',
+              flex: 1, background: '#0c0c0d', border: '1px solid #202022',
+              borderRadius: '11px', color: '#fff', padding: '0.6rem 0.8rem',
+              fontSize: '0.9rem', outline: 'none',
             }}
-            onFocus={e => { (e.target as HTMLInputElement).style.borderColor = '#EC1E79' }}
-            onBlur={e => { (e.target as HTMLInputElement).style.borderColor = '#1f1f1f' }}
           />
         )}
         <SaveButton state={saveState} onClick={handleSave} />
@@ -270,11 +269,11 @@ function MarqueeEditor({
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-        <label style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Tag size={13} color="#6b7280" />
+        <label style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Tag size={12} color="#6b7280" />
           Ticker Items
         </label>
-        <span style={{ fontSize: '0.6875rem', color: '#4b5563' }}>
+        <span style={{ fontSize: '11px', color: '#6b7280', textAlign: 'right' }}>
           {existing?.updatedAt ? `Updated ${timeAgo(existing.updatedAt)}` : 'Not saved yet'}
         </span>
       </div>
@@ -291,18 +290,18 @@ function MarqueeEditor({
               transition={{ duration: 0.2 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
-                background: '#161616', border: '1px solid #1f1f1f',
-                borderRadius: '10px', padding: '0.5rem 0.75rem',
+                background: '#161617', border: '1px solid #202022',
+                borderRadius: '11px', padding: '0.5rem 0.75rem',
               }}
             >
-              <span style={{ flex: 1, fontSize: '0.875rem', color: '#fff' }}>{item}</span>
+              <span style={{ flex: 1, fontSize: '0.9rem', color: '#f4f4f5' }}>{item}</span>
               <div style={{ display: 'flex', gap: '0.25rem' }}>
                 <button
                   onClick={() => moveUp(idx)}
                   disabled={idx === 0}
                   style={{
                     background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer',
-                    padding: '2px', color: idx === 0 ? '#2d2d2d' : '#6b7280',
+                    padding: '2px', color: idx === 0 ? '#2d2d2d' : '#9ca3af',
                     display: 'flex', alignItems: 'center',
                   }}
                 >
@@ -314,7 +313,7 @@ function MarqueeEditor({
                   style={{
                     background: 'none', border: 'none',
                     cursor: idx === items.length - 1 ? 'default' : 'pointer',
-                    padding: '2px', color: idx === items.length - 1 ? '#2d2d2d' : '#6b7280',
+                    padding: '2px', color: idx === items.length - 1 ? '#2d2d2d' : '#9ca3af',
                     display: 'flex', alignItems: 'center',
                   }}
                 >
@@ -324,7 +323,7 @@ function MarqueeEditor({
                   onClick={() => removeItem(idx)}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    padding: '2px', color: '#6b7280', display: 'flex', alignItems: 'center',
+                    padding: '2px', color: '#9ca3af', display: 'flex', alignItems: 'center',
                   }}
                 >
                   <X size={15} />
@@ -336,8 +335,8 @@ function MarqueeEditor({
 
         {items.length === 0 && (
           <div style={{
-            padding: '1rem', background: '#161616', border: '1px dashed #1f1f1f',
-            borderRadius: '10px', textAlign: 'center', color: '#4b5563', fontSize: '0.8125rem',
+            padding: '1rem', background: '#161617', border: '1px dashed #202022',
+            borderRadius: '11px', textAlign: 'center', color: '#6b7280', fontSize: '0.8125rem',
           }}>
             No items yet. Add some below.
           </div>
@@ -353,13 +352,10 @@ function MarqueeEditor({
           onKeyDown={e => { if (e.key === 'Enter') addItem() }}
           placeholder="New ticker item..."
           style={{
-            flex: 1, background: '#161616', border: '1px solid #1f1f1f',
-            borderRadius: '10px', color: '#fff', padding: '0.65rem 0.875rem',
-            fontSize: '0.875rem', outline: 'none',
-            transition: 'border-color 0.2s',
+            flex: 1, background: '#0c0c0d', border: '1px solid #202022',
+            borderRadius: '11px', color: '#fff', padding: '0.6rem 0.8rem',
+            fontSize: '0.9rem', outline: 'none',
           }}
-          onFocus={e => { (e.target as HTMLInputElement).style.borderColor = '#EC1E79' }}
-          onBlur={e => { (e.target as HTMLInputElement).style.borderColor = '#1f1f1f' }}
         />
         <motion.button
           onClick={addItem}
@@ -367,9 +363,9 @@ function MarqueeEditor({
           whileTap={{ scale: 0.97 }}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.35rem',
-            padding: '0.65rem 0.875rem', borderRadius: '10px',
+            padding: '0.6rem 1rem', borderRadius: '11px',
             background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)',
-            color: '#EC1E79', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem',
+            color: '#EC1E79', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem',
           }}
         >
           <Plus size={15} />
@@ -393,9 +389,9 @@ function SectionCard({ children, delay = 0 }: { children: React.ReactNode; delay
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.45 }}
       style={{
-        background: '#111', border: '1px solid #1f1f1f',
-        borderRadius: '16px', padding: '1.5rem',
-        marginBottom: '1.5rem',
+        background: '#0f0f10', border: '1px solid #202022',
+        borderRadius: '16px', padding: '1.25rem 1.35rem',
+        marginBottom: '1.25rem',
       }}
     >
       {children}
@@ -429,37 +425,36 @@ export default function ContentPage() {
   }, [])
 
   return (
-    <div style={{ padding: '2rem', color: '#fff', maxWidth: '860px' }}>
+    <div style={{ padding: '2rem', color: '#f4f4f5', maxWidth: '860px' }}>
       {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}
+        style={{ marginBottom: '2rem' }}
       >
         <div style={{
-          width: '44px', height: '44px',
-          background: 'rgba(236,30,121,0.1)', border: '1px solid rgba(236,30,121,0.2)',
-          borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: '0.4rem',
+          color: '#EC1E79', marginBottom: '0.5rem',
         }}>
-          <FileText size={20} color="#EC1E79" />
-        </div>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0 }}>
+          <FileText size={13} color="#EC1E79" />
+          <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
             Content
-          </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0.2rem 0 0' }}>
-            Page content and website copy
-          </p>
+          </span>
         </div>
+        <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', margin: 0, color: '#fff' }}>
+          Page Content
+        </h1>
+        <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.2rem 0 0' }}>
+          Page content and website copy
+        </p>
       </motion.div>
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {[1, 2, 3].map(i => (
             <div key={i} style={{
-              height: '160px', background: '#111', border: '1px solid #1f1f1f',
+              height: '160px', background: '#0f0f10', border: '1px solid #202022',
               borderRadius: '16px', animation: 'pulse 1.5s ease-in-out infinite',
             }} />
           ))}

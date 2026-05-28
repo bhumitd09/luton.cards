@@ -131,10 +131,10 @@ function StatCard({
       transition={{ delay, duration: 0.5 }}
       whileHover={{ y: -3, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
       style={{
-        background: '#111',
-        border: '1px solid #1f1f1f',
-        borderRadius: '14px',
-        padding: '1.5rem',
+        background: '#0f0f10',
+        border: '1px solid #202022',
+        borderRadius: '16px',
+        padding: '1.25rem 1.35rem',
         cursor: 'default',
         position: 'relative',
         overflow: 'hidden',
@@ -151,12 +151,12 @@ function StatCard({
         <div style={{
           width: 44, height: 44,
           background: `${color}18`, border: `1px solid ${color}28`,
-          borderRadius: '12px',
+          borderRadius: '11px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <Icon size={20} color={color} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#34d399', fontSize: '0.75rem', fontWeight: 700 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#10b981', fontSize: '0.75rem', fontWeight: 700 }}>
           <ArrowUpRight size={13} />
           <span>Live</span>
         </div>
@@ -164,16 +164,16 @@ function StatCard({
 
       {loading ? (
         <div>
-          <div style={{ height: 36, background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 8, marginBottom: 8, width: '65%' }} />
-          <div style={{ height: 14, background: '#1a1a1a', borderRadius: 6, width: '80%' }} />
+          <div style={{ height: 36, background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 8, marginBottom: 8, width: '65%' }} />
+          <div style={{ height: 14, background: '#161617', borderRadius: 6, width: '80%' }} />
         </div>
       ) : (
         <>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '0.3rem' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#f4f4f5', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '0.3rem' }}>
             {displayValue}
           </div>
-          <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#9ca3af', marginBottom: sub ? '0.2rem' : 0 }}>{label}</div>
-          {sub && <div style={{ fontSize: '0.75rem', color: '#4b5563' }}>{sub}</div>}
+          <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: sub ? '0.3rem' : 0 }}>{label}</div>
+          {sub && <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{sub}</div>}
         </>
       )}
     </motion.div>
@@ -189,13 +189,13 @@ function BarRow({ label, count, total, color, delay }: { label: string; count: n
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#d1d5db' }}>{label}</span>
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#f4f4f5' }}>{label}</span>
         </div>
-        <span style={{ fontSize: '0.8125rem', color: '#6b7280', fontWeight: 600 }}>
-          {count} <span style={{ color: '#4b5563' }}>({pct}%)</span>
+        <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 600 }}>
+          {count} <span style={{ color: '#6b7280' }}>({pct}%)</span>
         </span>
       </div>
-      <div style={{ height: 8, background: '#1f1f1f', borderRadius: '999px', overflow: 'hidden' }}>
+      <div style={{ height: 8, background: '#161617', borderRadius: '999px', overflow: 'hidden' }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -236,7 +236,7 @@ function DonutRing({
         { value: lowStock,   color: '#f59e0b', label: 'Low Stock' },
         { value: outOfStock, color: '#ef4444', label: 'Out of Stock' },
       ]
-    : [{ value: 1, color: '#1f1f1f', label: 'No Data' }]
+    : [{ value: 1, color: '#202022', label: 'No Data' }]
 
   const totalValue = segments.reduce((s, seg) => s + seg.value, 0) || 1
   let offset = 0
@@ -245,11 +245,11 @@ function DonutRing({
     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
       <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#1f1f1f" strokeWidth={16} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#202022" strokeWidth={16} />
           {loading ? (
             <circle
               cx={size / 2} cy={size / 2} r={radius}
-              fill="none" stroke="#1a1a1a"
+              fill="none" stroke="#161617"
               strokeWidth={16}
               strokeDasharray={circumference}
               strokeDashoffset={0}
@@ -286,10 +286,10 @@ function DonutRing({
           textAlign: 'center',
         }}>
           {loading ? (
-            <div style={{ width: 40, height: 20, background: '#1a1a1a', borderRadius: 4 }} />
+            <div style={{ width: 40, height: 20, background: '#161617', borderRadius: 4 }} />
           ) : (
             <>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{total}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f4f4f5', lineHeight: 1 }}>{total}</div>
               <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: 600, marginTop: 2 }}>total</div>
             </>
           )}
@@ -308,7 +308,7 @@ function DonutRing({
               <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 600 }}>{item.label}</span>
             </div>
             {loading ? (
-              <div style={{ width: 30, height: 14, background: '#1a1a1a', borderRadius: 4 }} />
+              <div style={{ width: 30, height: 14, background: '#161617', borderRadius: 4 }} />
             ) : (
               <span style={{ fontSize: '0.875rem', fontWeight: 800, color: item.color }}>{item.value}</span>
             )}
@@ -335,8 +335,8 @@ function CategoryBarChart({
       {loading
         ? [...Array(4)].map((_, i) => (
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%', justifyContent: 'flex-end' }}>
-              <div style={{ width: '100%', background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: '4px 4px 0 0', height: `${40 + i * 15}px` }} />
-              <div style={{ width: 40, height: 12, background: '#1a1a1a', borderRadius: 4 }} />
+              <div style={{ width: '100%', background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: '4px 4px 0 0', height: `${40 + i * 15}px` }} />
+              <div style={{ width: 40, height: 12, background: '#161617', borderRadius: 4 }} />
             </div>
           ))
         : data.map((item, i) => {
@@ -371,7 +371,7 @@ const STATUS_COLORS: Record<string, { color: string; bg: string; border: string 
   pending:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.25)'  },
   paid:      { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.25)'  },
   shipped:   { color: '#818cf8', bg: 'rgba(129,140,248,0.1)', border: 'rgba(129,140,248,0.25)' },
-  delivered: { color: '#34d399', bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.25)'  },
+  delivered: { color: '#10b981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)'  },
   cancelled: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.25)'   },
 }
 
@@ -418,10 +418,10 @@ function CategoryBadge({ category }: { category: string }) {
 
 function SkeletonCard() {
   return (
-    <div style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '14px', padding: '1.5rem' }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: '#1a1a1a', marginBottom: '1.25rem' }} />
-      <div style={{ height: 36, background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 8, marginBottom: 8, width: '60%' }} />
-      <div style={{ height: 14, background: '#1a1a1a', borderRadius: 6, width: '80%' }} />
+    <div style={{ background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px', padding: '1.25rem 1.35rem' }}>
+      <div style={{ width: 44, height: 44, borderRadius: 11, background: '#161617', marginBottom: '1.25rem' }} />
+      <div style={{ height: 36, background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 8, marginBottom: 8, width: '60%' }} />
+      <div style={{ height: 14, background: '#161617', borderRadius: 6, width: '80%' }} />
     </div>
   )
 }
@@ -496,13 +496,13 @@ export default function AnalyticsPage() {
           0%   { background-position: -200% 0; }
           100% { background-position: 200% 0; }
         }
-        .recent-row:hover  { background: #161616 !important; }
+        .recent-row:hover  { background: #161617 !important; }
         .recent-row        { transition: background 0.15s ease; }
-        .low-stock-row:hover { background: #161616 !important; }
+        .low-stock-row:hover { background: #161617 !important; }
         .low-stock-row     { transition: background 0.15s ease; }
       `}</style>
 
-      <div style={{ padding: '2rem', color: '#fff', maxWidth: '1400px' }}>
+      <div style={{ padding: '2rem', color: '#f4f4f5', maxWidth: '1400px', minHeight: '100vh', background: '#0a0a0a' }}>
 
         {/* ── Header ── */}
         <motion.div
@@ -511,13 +511,16 @@ export default function AnalyticsPage() {
           transition={{ duration: 0.4 }}
           style={{ marginBottom: '2rem' }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.3rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Activity size={16} color="#EC1E79" />
-            </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.025em' }}>Analytics</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <Activity size={13} color="#EC1E79" />
+            <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#EC1E79' }}>
+              Analytics
+            </span>
           </div>
-          <p style={{ color: '#6b7280', fontSize: '0.9rem', marginLeft: '2.75rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', color: '#fff', margin: 0 }}>
+            Store Overview
+          </h1>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginTop: '0.4rem', marginBottom: 0 }}>
             Store performance, inventory health and revenue overview
           </p>
         </motion.div>
@@ -578,12 +581,12 @@ export default function AnalyticsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25, duration: 0.5 }}
-            style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '14px', padding: '1.5rem' }}
+            style={{ background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px', padding: '1.25rem 1.35rem' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div>
-                <h2 style={{ fontWeight: 700, fontSize: '1rem' }}>Category Performance</h2>
-                {!loading && <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: 2 }}>{catTotal} total products</p>}
+                <h2 style={{ fontWeight: 800, fontSize: '1rem', color: '#f4f4f5', margin: 0 }}>Category Performance</h2>
+                {!loading && <p style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: 4, marginBottom: 0 }}>{catTotal} total products</p>}
               </div>
               {!loading && (
                 <span style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)', color: '#818cf8', borderRadius: '999px', padding: '0.2rem 0.65rem', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -601,8 +604,8 @@ export default function AnalyticsPage() {
             {loading ? (
               [...Array(4)].map((_, i) => (
                 <div key={i} style={{ marginBottom: '1.125rem' }}>
-                  <div style={{ height: 14, background: '#1a1a1a', borderRadius: 6, marginBottom: 8, width: '70%' }} />
-                  <div style={{ height: 8, background: '#1a1a1a', borderRadius: 999 }} />
+                  <div style={{ height: 14, background: '#161617', borderRadius: 6, marginBottom: 8, width: '70%' }} />
+                  <div style={{ height: 8, background: '#161617', borderRadius: 999 }} />
                 </div>
               ))
             ) : (
@@ -615,15 +618,15 @@ export default function AnalyticsPage() {
             )}
 
             {!loading && data && (
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #1f1f1f' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #1a1a1c' }}>
                 {catBarData.map(item => (
                   <div key={item.label} style={{
                     flex: 1, minWidth: 60, padding: '0.625rem 0.5rem',
                     background: `${item.color}0d`, border: `1px solid ${item.color}20`,
-                    borderRadius: '10px', textAlign: 'center',
+                    borderRadius: '11px', textAlign: 'center',
                   }}>
                     <div style={{ fontSize: '1.125rem', fontWeight: 900, color: item.color }}>{item.count}</div>
-                    <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
+                    <div style={{ fontSize: '0.65rem', color: '#9ca3af', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -635,12 +638,12 @@ export default function AnalyticsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '14px', padding: '1.5rem' }}
+            style={{ background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px', padding: '1.25rem 1.35rem' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div>
-                <h2 style={{ fontWeight: 700, fontSize: '1rem' }}>Stock Health</h2>
-                {!loading && <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: 2 }}>Inventory distribution</p>}
+                <h2 style={{ fontWeight: 800, fontSize: '1rem', color: '#f4f4f5', margin: 0 }}>Stock Health</h2>
+                {!loading && <p style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: 4, marginBottom: 0 }}>Inventory distribution</p>}
               </div>
               {!loading && (
                 <span style={{ background: 'rgba(236,30,121,0.1)', border: '1px solid rgba(236,30,121,0.2)', color: '#EC1E79', borderRadius: '999px', padding: '0.2rem 0.65rem', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -662,7 +665,7 @@ export default function AnalyticsPage() {
 
             {/* Summary pills */}
             {!loading && (
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #1f1f1f' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #1a1a1c' }}>
                 {[
                   { label: 'In Stock',  value: inStock,    color: '#EC1E79' },
                   { label: 'Low Stock', value: lowStock,   color: '#f59e0b' },
@@ -671,10 +674,10 @@ export default function AnalyticsPage() {
                   <div key={item.label} style={{
                     flex: 1, minWidth: 70, padding: '0.625rem 0.75rem',
                     background: `${item.color}0d`, border: `1px solid ${item.color}20`,
-                    borderRadius: '10px', textAlign: 'center',
+                    borderRadius: '11px', textAlign: 'center',
                   }}>
                     <div style={{ fontSize: '1.25rem', fontWeight: 900, color: item.color }}>{item.value}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 600, marginTop: 2 }}>{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -682,16 +685,16 @@ export default function AnalyticsPage() {
 
             {/* Revenue metrics */}
             {!loading && data && (
-              <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #1f1f1f', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #1a1a1c', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 600 }}>Catalogue Value</span>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#f4f4f5' }}>
                     £{(data.catalogueValue ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 600 }}>Avg Order Value</span>
-                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#34d399' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#10b981' }}>
                     £{avgOrderValue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -709,10 +712,10 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.5 }}
-          style={{ background: '#111', border: '1px solid #1f1f1f', borderRadius: '14px', padding: '1.5rem', marginBottom: '1.5rem' }}
+          style={{ background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px', padding: '1.25rem 1.35rem', marginBottom: '1.5rem' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontWeight: 700, fontSize: '1rem' }}>Recent Orders</h2>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', color: '#f4f4f5', margin: 0 }}>Recent Orders</h2>
             <Link href="/admin/orders" style={{ textDecoration: 'none' }}>
               <motion.div
                 whileHover={{ x: 3 }}
@@ -726,12 +729,12 @@ export default function AnalyticsPage() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
               <thead>
-                <tr style={{ background: '#0a0a0a', borderBottom: '1px solid #1f1f1f' }}>
+                <tr style={{ background: '#161617', borderBottom: '1px solid #202022' }}>
                   {['Order ID', 'Customer', 'Total', 'Status', 'Date'].map((col, i) => (
                     <th key={i} style={{
                       padding: '0.625rem 1rem',
                       textAlign: 'left', fontSize: '0.7rem', fontWeight: 700,
-                      color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.07em',
+                      color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.07em',
                       whiteSpace: 'nowrap',
                     }}>
                       {col}
@@ -745,15 +748,21 @@ export default function AnalyticsPage() {
                     <tr key={i}>
                       {[...Array(5)].map((_, j) => (
                         <td key={j} style={{ padding: '0.875rem 1rem' }}>
-                          <div style={{ height: 14, background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 6, width: j === 0 ? 80 : j === 1 ? 120 : 70 }} />
+                          <div style={{ height: 14, background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 6, width: j === 0 ? 80 : j === 1 ? 120 : 70 }} />
                         </td>
                       ))}
                     </tr>
                   ))
                 ) : !data?.recentOrders?.length ? (
                   <tr>
-                    <td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: '#4b5563', fontSize: '0.875rem' }}>
-                      No orders yet
+                    <td colSpan={5} style={{ padding: 0 }}>
+                      <div style={{ padding: '3rem 1rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#161617', border: '1px solid #202022', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <ShoppingCart size={20} color="#6b7280" />
+                        </div>
+                        <div style={{ color: '#f4f4f5', fontWeight: 700, fontSize: '0.9rem' }}>No orders yet</div>
+                        <div style={{ color: '#9ca3af', fontSize: '0.8125rem' }}>Orders will appear here as they come in</div>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -764,24 +773,24 @@ export default function AnalyticsPage() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.4 + idx * 0.05 }}
-                      style={{ background: '#111', borderBottom: '1px solid #1a1a1a' }}
+                      style={{ background: '#0f0f10', borderBottom: '1px solid #1a1a1c' }}
                     >
                       <td style={{ padding: '0.875rem 1rem' }}>
                         <span style={{
                           fontFamily: 'monospace', fontSize: '0.8125rem',
                           color: '#EC1E79', fontWeight: 700,
-                          background: 'rgba(236,30,121,0.08)', padding: '0.2rem 0.5rem',
-                          borderRadius: '6px', border: '1px solid rgba(236,30,121,0.15)',
+                          background: 'rgba(236,30,121,0.12)', padding: '0.2rem 0.5rem',
+                          borderRadius: '6px', border: '1px solid rgba(236,30,121,0.2)',
                         }}>
                           #{order.id.slice(0, 8).toUpperCase()}
                         </span>
                       </td>
                       <td style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{order.name}</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#f4f4f5' }}>{order.name}</div>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{order.email}</div>
                       </td>
                       <td style={{ padding: '0.875rem 1rem' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#f4f4f5' }}>
                           £{order.total.toFixed(2)}
                         </span>
                       </td>
@@ -806,21 +815,21 @@ export default function AnalyticsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.5 }}
-          style={{ background: '#111', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '14px', padding: '1.5rem' }}
+          style={{ background: '#0f0f10', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '16px', padding: '1.25rem 1.35rem' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
-                width: 36, height: 36, borderRadius: '10px',
+                width: 36, height: 36, borderRadius: '11px',
                 background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <AlertTriangle size={18} color="#f59e0b" />
               </div>
               <div>
-                <h2 style={{ fontWeight: 700, fontSize: '1rem' }}>Low Stock Alert</h2>
+                <h2 style={{ fontWeight: 800, fontSize: '1rem', color: '#f4f4f5', margin: 0 }}>Low Stock Alert</h2>
                 {!loading && (
-                  <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: 2 }}>
+                  <p style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: 4, marginBottom: 0 }}>
                     {lowStockItems.length} product{lowStockItems.length !== 1 ? 's' : ''} with stock &le; 2
                   </p>
                 )}
@@ -833,7 +842,7 @@ export default function AnalyticsPage() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
                   background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
-                  color: '#f59e0b', padding: '0.5rem 1rem', borderRadius: '8px',
+                  color: '#f59e0b', padding: '0.5rem 1rem', borderRadius: '11px',
                   cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
                   whiteSpace: 'nowrap',
                 }}
@@ -847,7 +856,7 @@ export default function AnalyticsPage() {
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {[...Array(4)].map((_, i) => (
-                <div key={i} style={{ height: 52, background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 10 }} />
+                <div key={i} style={{ height: 52, background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite', borderRadius: 11 }} />
               ))}
             </div>
           ) : lowStockItems.length === 0 ? (
@@ -856,14 +865,14 @@ export default function AnalyticsPage() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
             }}>
               <div style={{
-                width: 48, height: 48, borderRadius: '12px',
-                background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
+                width: 44, height: 44, borderRadius: '50%',
+                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <Package size={22} color="#34d399" />
+                <Package size={20} color="#10b981" />
               </div>
-              <div style={{ color: '#34d399', fontWeight: 700, fontSize: '0.9rem' }}>All products are well stocked</div>
-              <div style={{ color: '#4b5563', fontSize: '0.8125rem' }}>No products have critically low stock</div>
+              <div style={{ color: '#10b981', fontWeight: 700, fontSize: '0.9rem' }}>All products are well stocked</div>
+              <div style={{ color: '#9ca3af', fontSize: '0.8125rem' }}>No products have critically low stock</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -877,8 +886,8 @@ export default function AnalyticsPage() {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '0.875rem 1rem',
-                    background: '#0a0a0a', border: '1px solid #1f1f1f',
-                    borderRadius: '10px', flexWrap: 'wrap', gap: '0.75rem',
+                    background: '#161617', border: '1px solid #202022',
+                    borderRadius: '11px', flexWrap: 'wrap', gap: '0.75rem',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
@@ -891,7 +900,7 @@ export default function AnalyticsPage() {
                       <AlertTriangle size={14} color={item.stock === 0 ? '#ef4444' : '#f59e0b'} />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#f4f4f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.name}
                       </div>
                       <div style={{ marginTop: 3 }}>
@@ -914,8 +923,8 @@ export default function AnalyticsPage() {
                         whileTap={{ scale: 0.95 }}
                         style={{
                           padding: '0.4rem 0.875rem',
-                          background: 'transparent', border: '1px solid #2a2a2a',
-                          borderRadius: '8px', color: '#9ca3af',
+                          background: '#0f0f10', border: '1px solid #202022',
+                          borderRadius: '11px', color: '#e4e4e7',
                           fontSize: '0.75rem', fontWeight: 700,
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem',
                           whiteSpace: 'nowrap',

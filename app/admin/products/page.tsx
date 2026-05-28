@@ -65,12 +65,12 @@ type FormData = typeof EMPTY_FORM
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '0.65rem 0.875rem',
-  background: '#161616',
-  border: '1px solid #1f1f1f',
-  borderRadius: '8px',
+  padding: '0.6rem 0.8rem',
+  background: '#0c0c0d',
+  border: '1px solid #202022',
+  borderRadius: '11px',
   color: '#fff',
-  fontSize: '0.875rem',
+  fontSize: '0.9rem',
   outline: 'none',
   boxSizing: 'border-box',
   transition: 'border-color 0.15s ease',
@@ -78,12 +78,12 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
-  fontSize: '0.75rem',
-  fontWeight: 600,
+  fontSize: '0.7rem',
+  fontWeight: 700,
   color: '#9ca3af',
-  marginBottom: '0.35rem',
+  marginBottom: '0.4rem',
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.06em',
 }
 
 // ─── Stock Badge ─────────────────────────────────────────────────────────────
@@ -91,16 +91,17 @@ const labelStyle: React.CSSProperties = {
 function StockBadge({ stock }: { stock: number }) {
   const config =
     stock === 0
-      ? { bg: 'rgba(239,68,68,0.12)', color: '#ef4444', label: 'Out' }
+      ? { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)', color: '#ef4444', label: 'Out' }
       : stock <= 2
-      ? { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', label: 'Low' }
-      : { bg: 'rgba(52,211,153,0.12)', color: '#34d399', label: 'In Stock' }
+      ? { bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)', color: '#f59e0b', label: 'Low' }
+      : { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', color: '#10b981', label: 'In Stock' }
 
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
       background: config.bg, color: config.color,
-      padding: '0.2rem 0.55rem', borderRadius: '6px',
+      border: `1px solid ${config.border}`,
+      padding: '0.2rem 0.6rem', borderRadius: '999px',
       fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.03em',
     }}>
       <span style={{
@@ -119,9 +120,10 @@ function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () =>
     <button
       onClick={onChange}
       style={{
-        width: '38px', height: '22px', borderRadius: '11px',
-        background: checked ? '#EC1E79' : '#2a2a2a',
-        border: 'none', cursor: 'pointer', position: 'relative',
+        width: '38px', height: '22px', borderRadius: '999px',
+        background: checked ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
+        border: checked ? 'none' : '1px solid #202022',
+        cursor: 'pointer', position: 'relative',
         transition: 'background 0.2s ease', flexShrink: 0,
         padding: 0,
       }}
@@ -145,13 +147,13 @@ function SkeletonRow() {
       display: 'grid',
       gridTemplateColumns: '48px 1fr 110px 90px 80px 70px 60px 60px 90px',
       gap: '1rem', alignItems: 'center',
-      padding: '0.875rem 1.25rem',
-      borderBottom: '1px solid #161616',
+      padding: '0.875rem 1.35rem',
+      borderBottom: '1px solid #1a1a1c',
     }}>
       {[48, 200, 90, 70, 70, 50, 38, 38, 80].map((w, i) => (
         <div key={i} style={{
           height: '14px', width: `${w}px`, maxWidth: '100%',
-          background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)',
+          background: 'linear-gradient(90deg, #161617 25%, #202022 50%, #161617 75%)',
           backgroundSize: '200% 100%',
           borderRadius: '6px',
           animation: 'shimmer 1.4s infinite',
@@ -188,10 +190,10 @@ function ImageUrlInput({ images, onChange }: { images: string[]; onChange: (imgs
           type="button"
           onClick={add}
           style={{
-            padding: '0.65rem 1rem', background: '#1f1f1f',
-            border: '1px solid #2a2a2a', borderRadius: '8px',
-            color: '#9ca3af', cursor: 'pointer', fontSize: '0.8rem',
-            fontWeight: 600, whiteSpace: 'nowrap',
+            padding: '0.6rem 1rem', background: '#161617',
+            border: '1px solid #202022', borderRadius: '11px',
+            color: '#e4e4e7', cursor: 'pointer', fontSize: '0.85rem',
+            fontWeight: 700, whiteSpace: 'nowrap',
           }}
         >
           Add
@@ -205,8 +207,8 @@ function ImageUrlInput({ images, onChange }: { images: string[]; onChange: (imgs
                 src={url}
                 alt=""
                 style={{
-                  width: '64px', height: '64px', borderRadius: '8px',
-                  objectFit: 'cover', border: '1px solid #2a2a2a',
+                  width: '64px', height: '64px', borderRadius: '11px',
+                  objectFit: 'cover', border: '1px solid #202022',
                   display: 'block',
                 }}
                 onError={e => {
@@ -312,6 +314,8 @@ function ProductModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
@@ -328,27 +332,30 @@ function ProductModal({
         onClick={e => e.stopPropagation()}
         className="products-slide-over"
         style={{
-          background: '#111', border: '1px solid #1f1f1f', borderRadius: '20px',
-          padding: '2rem', width: '100%', maxWidth: '600px',
+          background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px',
+          padding: '1.75rem', width: '100%', maxWidth: '600px',
           maxHeight: '92vh', overflowY: 'auto', color: '#fff',
           boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
         }}
       >
         {/* Modal Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: '1.5rem', paddingBottom: '1.25rem', borderBottom: '1px solid #1a1a1c',
+        }}>
           <div>
-            <h2 style={{ fontWeight: 800, fontSize: '1.2rem', margin: 0 }}>
+            <h2 style={{ fontWeight: 900, fontSize: '1.2rem', margin: 0, letterSpacing: '-0.025em', color: '#f4f4f5' }}>
               {product ? 'Edit Product' : 'Add New Product'}
             </h2>
-            <p style={{ color: '#4b5563', fontSize: '0.8125rem', margin: '0.25rem 0 0' }}>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
               {product ? `Editing: ${product.name}` : 'Fill in the details below'}
             </p>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: '#1a1a1a', border: '1px solid #2a2a2a', cursor: 'pointer',
-              color: '#6b7280', padding: '6px', borderRadius: '8px', display: 'flex',
+              background: '#161617', border: '1px solid #202022', cursor: 'pointer',
+              color: '#9ca3af', padding: '7px', borderRadius: '11px', display: 'flex',
             }}
           >
             <X size={18} />
@@ -357,8 +364,8 @@ function ProductModal({
 
         {error && (
           <div style={{
-            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-            borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: '11px', padding: '0.75rem 1rem', marginBottom: '1.25rem',
             color: '#fca5a5', fontSize: '0.875rem', display: 'flex', gap: '0.5rem', alignItems: 'center',
           }}>
             <AlertTriangle size={15} style={{ flexShrink: 0 }} />
@@ -409,7 +416,7 @@ function ProductModal({
             <div style={{ position: 'relative' }}>
               <span style={{
                 position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                color: '#4b5563', fontSize: '0.875rem', fontWeight: 600, pointerEvents: 'none',
+                color: '#6b7280', fontSize: '0.9rem', fontWeight: 600, pointerEvents: 'none',
               }}>£</span>
               <input
                 style={{ ...inputStyle, paddingLeft: '1.75rem' }}
@@ -427,7 +434,7 @@ function ProductModal({
             <div style={{ position: 'relative' }}>
               <span style={{
                 position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)',
-                color: '#4b5563', fontSize: '0.875rem', fontWeight: 600, pointerEvents: 'none',
+                color: '#6b7280', fontSize: '0.9rem', fontWeight: 600, pointerEvents: 'none',
               }}>£</span>
               <input
                 style={{ ...inputStyle, paddingLeft: '1.75rem' }}
@@ -481,7 +488,7 @@ function ProductModal({
           <div style={{ gridColumn: '1/-1' }}>
             <label style={labelStyle}>Tags (comma-separated)</label>
             <div style={{ position: 'relative' }}>
-              <Tag size={14} color="#4b5563" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              <Tag size={14} color="#6b7280" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               <input
                 style={{ ...inputStyle, paddingLeft: '2rem' }}
                 value={form.tags}
@@ -504,8 +511,8 @@ function ProductModal({
           {/* Featured + Active */}
           <div style={{
             gridColumn: '1/-1', display: 'flex', gap: '1.5rem',
-            padding: '1rem', background: '#0d0d0d', borderRadius: '10px',
-            border: '1px solid #1a1a1a',
+            padding: '1rem', background: '#161617', borderRadius: '11px',
+            border: '1px solid #202022',
           }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', flex: 1 }}>
               <input
@@ -519,8 +526,8 @@ function ProductModal({
                 onChange={() => update('featured', !form.featured)}
               />
               <div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#d1d5db' }}>Featured</div>
-                <div style={{ fontSize: '0.75rem', color: '#4b5563' }}>Show on homepage</div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f4f4f5' }}>Featured</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Show on homepage</div>
               </div>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', flex: 1 }}>
@@ -535,21 +542,21 @@ function ProductModal({
                 onChange={() => update('active', !form.active)}
               />
               <div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#d1d5db' }}>Active</div>
-                <div style={{ fontSize: '0.75rem', color: '#4b5563' }}>Visible in shop</div>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f4f4f5' }}>Active</div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Visible in shop</div>
               </div>
             </label>
           </div>
         </div>
 
         {/* Footer Buttons */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #1a1a1c' }}>
           <button
             onClick={onClose}
             style={{
-              flex: 1, padding: '0.75rem', borderRadius: '10px',
-              background: '#1a1a1a', border: '1px solid #2a2a2a',
-              color: '#9ca3af', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem',
+              flex: 1, padding: '0.6rem 1.1rem', borderRadius: '11px',
+              background: '#161617', border: '1px solid #202022',
+              color: '#e4e4e7', fontWeight: 800, cursor: 'pointer', fontSize: '0.85rem',
               transition: 'background 0.15s ease',
             }}
           >
@@ -561,20 +568,22 @@ function ProductModal({
             whileHover={{ scale: saving ? 1 : 1.02 }}
             whileTap={{ scale: saving ? 1 : 0.98 }}
             style={{
-              flex: 2, padding: '0.75rem', borderRadius: '10px',
-              background: saving ? '#00a885' : '#EC1E79',
-              border: 'none', color: '#000', fontWeight: 700,
+              flex: 2, padding: '0.6rem 1.1rem', borderRadius: '11px',
+              background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+              border: 'none', color: '#fff', fontWeight: 800,
               cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem', display: 'flex', alignItems: 'center',
+              opacity: saving ? 0.7 : 1,
+              fontSize: '0.85rem', display: 'flex', alignItems: 'center',
               justifyContent: 'center', gap: '0.4rem',
-              transition: 'background 0.15s ease',
+              boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
+              transition: 'opacity 0.15s ease',
             }}
           >
             {saving ? (
               <>
                 <span style={{
-                  width: '14px', height: '14px', border: '2px solid rgba(0,0,0,0.3)',
-                  borderTopColor: '#000', borderRadius: '50%',
+                  width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.35)',
+                  borderTopColor: '#fff', borderRadius: '50%',
                   animation: 'spin 0.7s linear infinite', display: 'inline-block',
                 }} />
                 Saving...
@@ -772,12 +781,11 @@ export default function AdminProductsPage() {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        .product-row:hover { background: #161616 !important; }
+        .product-row:hover { background: #161617 !important; }
         .action-btn:hover { opacity: 1 !important; }
-        .pill-btn:hover { border-color: #2f2f2f !important; background: #1a1a1a !important; }
+        .pill-btn:hover { border-color: #2a2a2c !important; background: #161617 !important; }
         .delete-hover:hover { background: rgba(239,68,68,0.15) !important; border-color: rgba(239,68,68,0.35) !important; color: #ef4444 !important; }
-        .edit-hover:hover { background: rgba(129,140,248,0.15) !important; border-color: rgba(129,140,248,0.35) !important; color: #818cf8 !important; }
-        input:focus, select:focus, textarea:focus { border-color: #2f2f2f !important; }
+        .edit-hover:hover { background: rgba(236,30,121,0.15) !important; border-color: rgba(236,30,121,0.35) !important; color: #EC1E79 !important; }
         @media (max-width: 768px) {
           .products-header { flex-direction: column !important; align-items: flex-start !important; }
           .products-slide-over { width: min(460px, 100vw) !important; max-width: 100vw !important; }
@@ -786,7 +794,7 @@ export default function AdminProductsPage() {
         }
       `}</style>
 
-      <div className="products-page-padding" style={{ padding: '2rem 2.25rem', color: '#fff', minHeight: '100vh' }}>
+      <div className="products-page-padding" style={{ padding: '2rem 2.25rem', color: '#f4f4f5', background: '#0a0a0a', minHeight: '100vh' }}>
 
         {/* ── Header ── */}
         <div className="products-header" style={{
@@ -794,20 +802,35 @@ export default function AdminProductsPage() {
           marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
         }}>
           <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              marginBottom: '0.55rem',
+            }}>
+              <Package size={12} color="#EC1E79" />
+              <span style={{
+                fontSize: '10px', fontWeight: 800, color: '#EC1E79',
+                textTransform: 'uppercase', letterSpacing: '0.16em',
+              }}>
+                Catalogue
+              </span>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+              <h1 style={{
+                fontSize: 'clamp(1.4rem,2.5vw,1.75rem)', fontWeight: 900, margin: 0,
+                letterSpacing: '-0.025em', color: '#fff',
+              }}>
                 Products
               </h1>
               <span style={{
                 background: 'rgba(236,30,121,0.12)', color: '#EC1E79',
-                border: '1px solid rgba(236,30,121,0.2)',
-                padding: '0.2rem 0.65rem', borderRadius: '20px',
-                fontSize: '0.75rem', fontWeight: 700,
+                border: '1px solid rgba(236,30,121,0.25)',
+                padding: '0.2rem 0.65rem', borderRadius: '999px',
+                fontSize: '0.75rem', fontWeight: 800,
               }}>
                 {total}
               </span>
             </div>
-            <p style={{ color: '#4b5563', fontSize: '0.875rem', margin: '0.3rem 0 0' }}>
+            <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.35rem 0 0' }}>
               Manage your Pokemon card catalogue
             </p>
           </div>
@@ -818,10 +841,10 @@ export default function AdminProductsPage() {
             whileTap={{ scale: 0.97 }}
             style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
-              background: '#EC1E79', color: '#000',
-              padding: '0.7rem 1.25rem', borderRadius: '10px',
-              border: 'none', cursor: 'pointer', fontWeight: 700,
-              fontSize: '0.875rem', boxShadow: '0 4px 14px rgba(236,30,121,0.25)',
+              background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', color: '#fff',
+              padding: '0.6rem 1.1rem', borderRadius: '11px',
+              border: 'none', cursor: 'pointer', fontWeight: 800,
+              fontSize: '0.85rem', boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
             }}
           >
             <Plus size={16} />
@@ -837,8 +860,8 @@ export default function AdminProductsPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               style={{
-                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-                borderRadius: '12px', padding: '0.875rem 1rem',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                borderRadius: '11px', padding: '0.875rem 1rem',
                 marginBottom: '1.25rem', color: '#fca5a5',
                 fontSize: '0.875rem', display: 'flex',
                 alignItems: 'center', justifyContent: 'space-between',
@@ -857,13 +880,13 @@ export default function AdminProductsPage() {
 
         {/* ── Filters Bar ── */}
         <div style={{
-          background: '#111', border: '1px solid #1f1f1f', borderRadius: '14px',
+          background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px',
           padding: '1rem 1.25rem', marginBottom: '1.25rem',
           display: 'flex', flexWrap: 'wrap', gap: '0.875rem', alignItems: 'center',
         }}>
           {/* Search */}
           <div style={{ position: 'relative', flex: '1', minWidth: '220px', maxWidth: '320px' }}>
-            <Search size={14} color="#4b5563" style={{
+            <Search size={14} color="#6b7280" style={{
               position: 'absolute', left: '12px', top: '50%',
               transform: 'translateY(-50%)', pointerEvents: 'none',
             }} />
@@ -874,8 +897,8 @@ export default function AdminProductsPage() {
               onChange={e => handleSearchChange(e.target.value)}
               style={{
                 width: '100%', padding: '0.6rem 2rem 0.6rem 2.25rem',
-                background: '#161616', border: '1px solid #1f1f1f',
-                borderRadius: '9px', color: '#fff', fontSize: '0.875rem',
+                background: '#0c0c0d', border: '1px solid #202022',
+                borderRadius: '11px', color: '#fff', fontSize: '0.9rem',
                 outline: 'none', boxSizing: 'border-box',
               }}
             />
@@ -885,7 +908,7 @@ export default function AdminProductsPage() {
                 style={{
                   position: 'absolute', right: '10px', top: '50%',
                   transform: 'translateY(-50%)', background: 'none',
-                  border: 'none', cursor: 'pointer', color: '#4b5563',
+                  border: 'none', cursor: 'pointer', color: '#6b7280',
                   display: 'flex',
                 }}
               >
@@ -895,7 +918,7 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Divider */}
-          <div style={{ width: '1px', height: '28px', background: '#1f1f1f', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '28px', background: '#1a1a1c', flexShrink: 0 }} />
 
           {/* Game Pills */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -905,10 +928,10 @@ export default function AdminProductsPage() {
                 className="pill-btn"
                 onClick={() => setGameFilter(pill.value)}
                 style={{
-                  padding: '0.35rem 0.8rem', borderRadius: '8px',
+                  padding: '0.35rem 0.8rem', borderRadius: '999px',
                   border: '1px solid',
-                  borderColor: gameFilter === pill.value ? 'rgba(236,30,121,0.5)' : '#1f1f1f',
-                  background: gameFilter === pill.value ? '#EC1E79' : 'transparent',
+                  borderColor: gameFilter === pill.value ? 'transparent' : '#202022',
+                  background: gameFilter === pill.value ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : 'transparent',
                   color: gameFilter === pill.value ? '#fff' : '#9ca3af',
                   cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
                   transition: 'all 0.15s ease',
@@ -920,7 +943,7 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Divider */}
-          <div style={{ width: '1px', height: '28px', background: '#1f1f1f', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '28px', background: '#1a1a1c', flexShrink: 0 }} />
 
           {/* Category Pills */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -930,12 +953,12 @@ export default function AdminProductsPage() {
                 className="pill-btn"
                 onClick={() => setCategoryFilter(pill.value)}
                 style={{
-                  padding: '0.35rem 0.8rem', borderRadius: '8px',
+                  padding: '0.35rem 0.8rem', borderRadius: '999px',
                   border: '1px solid',
-                  borderColor: categoryFilter === pill.value ? 'rgba(255,255,255,0.25)' : '#1f1f1f',
-                  background: categoryFilter === pill.value ? 'rgba(255,255,255,0.06)' : 'transparent',
-                  color: categoryFilter === pill.value ? '#fff' : '#9ca3af',
-                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600,
+                  borderColor: categoryFilter === pill.value ? '#2a2a2c' : '#202022',
+                  background: categoryFilter === pill.value ? '#161617' : 'transparent',
+                  color: categoryFilter === pill.value ? '#f4f4f5' : '#9ca3af',
+                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -945,17 +968,17 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Divider */}
-          <div style={{ width: '1px', height: '28px', background: '#1f1f1f', flexShrink: 0 }} />
+          <div style={{ width: '1px', height: '28px', background: '#1a1a1c', flexShrink: 0 }} />
 
           {/* Stock Filter */}
           <select
             value={stockFilter}
             onChange={e => setStockFilter(e.target.value as StockFilter)}
             style={{
-              padding: '0.4rem 0.8rem', borderRadius: '8px',
-              border: '1px solid #1f1f1f', background: '#161616',
+              padding: '0.45rem 0.8rem', borderRadius: '11px',
+              border: '1px solid #202022', background: '#0c0c0d',
               color: '#9ca3af', fontSize: '0.8125rem', cursor: 'pointer',
-              outline: 'none', fontWeight: 600,
+              outline: 'none', fontWeight: 700,
             }}
           >
             {STOCK_OPTIONS.map(opt => (
@@ -971,12 +994,12 @@ export default function AdminProductsPage() {
                 className="pill-btn"
                 onClick={() => setActiveFilter(val)}
                 style={{
-                  padding: '0.35rem 0.8rem', borderRadius: '8px',
+                  padding: '0.35rem 0.8rem', borderRadius: '999px',
                   border: '1px solid',
-                  borderColor: activeFilter === val ? '#2f2f2f' : '#1f1f1f',
-                  background: activeFilter === val ? '#1f1f1f' : 'transparent',
-                  color: activeFilter === val ? '#fff' : '#4b5563',
-                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600,
+                  borderColor: activeFilter === val ? '#2a2a2c' : '#202022',
+                  background: activeFilter === val ? '#161617' : 'transparent',
+                  color: activeFilter === val ? '#f4f4f5' : '#6b7280',
+                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
                   transition: 'all 0.15s ease', textTransform: 'capitalize',
                 }}
               >
@@ -988,7 +1011,7 @@ export default function AdminProductsPage() {
 
         {/* ── Table ── */}
         <div style={{
-          background: '#111', border: '1px solid #1f1f1f',
+          background: '#0f0f10', border: '1px solid #202022',
           borderRadius: '16px', overflow: 'hidden',
         }}>
           {/* Table Header
@@ -1001,9 +1024,9 @@ export default function AdminProductsPage() {
               ? '48px 1fr 120px 100px 90px 90px 110px 52px 60px 96px'
               : '48px 1fr 120px 100px 90px 90px 52px 60px 96px',
             gap: '0.75rem', alignItems: 'center',
-            padding: '0.75rem 1.25rem',
-            borderBottom: '1px solid #1a1a1a',
-            fontSize: '0.7rem', fontWeight: 700, color: '#4b5563',
+            padding: '0.75rem 1.35rem',
+            borderBottom: '1px solid #1a1a1c',
+            fontSize: '0.7rem', fontWeight: 700, color: '#6b7280',
             textTransform: 'uppercase', letterSpacing: '0.06em',
           }}>
             <span />
@@ -1032,15 +1055,15 @@ export default function AdminProductsPage() {
               }}
             >
               <div style={{
-                width: '64px', height: '64px', borderRadius: '16px',
-                background: '#161616', border: '1px solid #1f1f1f',
+                width: '44px', height: '44px', borderRadius: '999px',
+                background: '#161617', border: '1px solid #202022',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <Package size={28} color="#4b5563" />
+                <Package size={20} color="#6b7280" />
               </div>
               <div>
-                <p style={{ color: '#9ca3af', fontWeight: 600, fontSize: '1rem', margin: 0 }}>No products found</p>
-                <p style={{ color: '#4b5563', fontSize: '0.875rem', margin: '0.4rem 0 0' }}>
+                <p style={{ color: '#f4f4f5', fontWeight: 800, fontSize: '1rem', margin: 0 }}>No products found</p>
+                <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.4rem 0 0' }}>
                   {debouncedSearch || categoryFilter !== 'all' || stockFilter !== 'all'
                     ? 'Try adjusting your filters'
                     : 'Add your first product to get started'}
@@ -1050,10 +1073,11 @@ export default function AdminProductsPage() {
                 <button
                   onClick={() => setEditProduct('new')}
                   style={{
-                    marginTop: '0.5rem', padding: '0.65rem 1.25rem',
-                    background: '#EC1E79', color: '#000', border: 'none',
-                    borderRadius: '10px', cursor: 'pointer', fontWeight: 700,
-                    fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    marginTop: '0.5rem', padding: '0.6rem 1.1rem',
+                    background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', color: '#fff', border: 'none',
+                    borderRadius: '11px', cursor: 'pointer', fontWeight: 800,
+                    fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                    boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                   }}
                 >
                   <Plus size={15} /> Add First Product
@@ -1077,16 +1101,16 @@ export default function AdminProductsPage() {
                       ? '48px 1fr 120px 100px 90px 90px 110px 52px 60px 96px'
                       : '48px 1fr 120px 100px 90px 90px 52px 60px 96px',
                     gap: '0.75rem', alignItems: 'center',
-                    padding: '0.875rem 1.25rem',
-                    borderBottom: '1px solid #161616',
+                    padding: '0.875rem 1.35rem',
+                    borderBottom: '1px solid #1a1a1c',
                     transition: 'background 0.15s ease',
-                    background: deleteId === product.id ? 'rgba(239,68,68,0.04)' : 'transparent',
+                    background: deleteId === product.id ? 'rgba(239,68,68,0.06)' : 'transparent',
                   }}
                 >
                   {/* Thumbnail */}
                   <div style={{
-                    width: '40px', height: '40px', borderRadius: '8px',
-                    background: '#161616', border: '1px solid #1f1f1f',
+                    width: '40px', height: '40px', borderRadius: '11px',
+                    background: '#161617', border: '1px solid #202022',
                     overflow: 'hidden', flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
@@ -1102,21 +1126,21 @@ export default function AdminProductsPage() {
                         }}
                       />
                     ) : null}
-                    {!product.images?.[0] && <ImageIcon size={16} color="#4b5563" />}
+                    {!product.images?.[0] && <ImageIcon size={16} color="#6b7280" />}
                   </div>
 
                   {/* Name + tags */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontWeight: 600, fontSize: '0.875rem',
+                      fontWeight: 700, fontSize: '0.875rem',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      color: product.active ? '#fff' : '#6b7280',
+                      color: product.active ? '#f4f4f5' : '#6b7280',
                     }}>
                       {product.name}
                     </div>
                     {product.tags.length > 0 && (
                       <div style={{
-                        fontSize: '0.7rem', color: '#4b5563', marginTop: '0.2rem',
+                        fontSize: '0.7rem', color: '#6b7280', marginTop: '0.2rem',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>
                         {product.tags.slice(0, 3).join(' · ')}
@@ -1126,12 +1150,12 @@ export default function AdminProductsPage() {
 
                   {/* Category */}
                   {(() => {
-                    const cat = CATEGORY_COLORS[product.category] ?? { bg: '#1a1a1a', color: '#9ca3af', label: product.category }
+                    const cat = CATEGORY_COLORS[product.category] ?? { bg: '#161617', color: '#9ca3af', label: product.category }
                     return (
                       <span style={{
                         display: 'inline-flex', alignItems: 'center',
                         background: cat.bg, color: cat.color,
-                        padding: '0.25rem 0.6rem', borderRadius: '6px',
+                        padding: '0.25rem 0.65rem', borderRadius: '999px',
                         fontSize: '0.7rem', fontWeight: 700,
                         letterSpacing: '0.03em', width: 'fit-content',
                       }}>
@@ -1146,7 +1170,7 @@ export default function AdminProductsPage() {
                       £{product.price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     {product.comparePrice && (
-                      <div style={{ fontSize: '0.7rem', color: '#4b5563', textDecoration: 'line-through' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#6b7280', textDecoration: 'line-through' }}>
                         £{product.comparePrice.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     )}
@@ -1163,13 +1187,14 @@ export default function AdminProductsPage() {
                     {product.grade ? (
                       <span style={{
                         background: 'rgba(129,140,248,0.1)', color: '#818cf8',
-                        padding: '0.2rem 0.5rem', borderRadius: '5px',
-                        fontSize: '0.7rem', fontWeight: 600,
+                        border: '1px solid rgba(129,140,248,0.25)',
+                        padding: '0.2rem 0.5rem', borderRadius: '999px',
+                        fontSize: '0.7rem', fontWeight: 700,
                       }}>
                         {product.grader} {product.grade}
                       </span>
                     ) : (
-                      <span style={{ color: '#2a2a2a' }}>—</span>
+                      <span style={{ color: '#6b7280' }}>—</span>
                     )}
                   </div>
 
@@ -1179,10 +1204,10 @@ export default function AdminProductsPage() {
                       {product.vendor ? (
                         <div style={{
                           display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                          background: product.vendorId === me?.id ? 'rgba(236,30,121,0.12)' : '#1a1a1a',
-                          border: '1px solid', borderColor: product.vendorId === me?.id ? 'rgba(236,30,121,0.25)' : '#262626',
+                          background: product.vendorId === me?.id ? 'rgba(236,30,121,0.12)' : '#161617',
+                          border: '1px solid', borderColor: product.vendorId === me?.id ? 'rgba(236,30,121,0.25)' : '#202022',
                           padding: '0.2rem 0.5rem', borderRadius: '999px',
-                          color: product.vendorId === me?.id ? '#FF80B8' : '#9ca3af',
+                          color: product.vendorId === me?.id ? '#FF4DA6' : '#9ca3af',
                           fontWeight: 700,
                           maxWidth: '100%',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -1192,8 +1217,8 @@ export default function AdminProductsPage() {
                       ) : (
                         <span style={{
                           fontSize: '0.65rem', color: '#6b7280',
-                          background: '#1a1a1a', padding: '0.15rem 0.45rem', borderRadius: '999px',
-                          border: '1px dashed #2a2a2a', fontWeight: 700,
+                          background: '#161617', padding: '0.15rem 0.45rem', borderRadius: '999px',
+                          border: '1px dashed #2a2a2c', fontWeight: 700,
                         }}>
                           Unassigned
                         </span>
@@ -1215,7 +1240,7 @@ export default function AdminProductsPage() {
                       <Star
                         size={17}
                         fill={product.featured ? '#f59e0b' : 'none'}
-                        color={product.featured ? '#f59e0b' : '#2a2a2a'}
+                        color={product.featured ? '#f59e0b' : '#3a3a3c'}
                         style={{ transition: 'all 0.15s ease' }}
                       />
                     </button>
@@ -1243,7 +1268,7 @@ export default function AdminProductsPage() {
                           <button
                             onClick={() => handleDelete(product.id)}
                             style={{
-                              background: '#ef4444', border: 'none', borderRadius: '6px',
+                              background: '#ef4444', border: 'none', borderRadius: '8px',
                               padding: '5px 8px', cursor: 'pointer', color: '#fff',
                               fontSize: '0.7rem', fontWeight: 700,
                             }}
@@ -1253,8 +1278,8 @@ export default function AdminProductsPage() {
                           <button
                             onClick={() => setDeleteId(null)}
                             style={{
-                              background: '#1f1f1f', border: '1px solid #2a2a2a',
-                              borderRadius: '6px', padding: '5px 8px',
+                              background: '#161617', border: '1px solid #202022',
+                              borderRadius: '8px', padding: '5px 8px',
                               cursor: 'pointer', color: '#9ca3af',
                               fontSize: '0.7rem', fontWeight: 700,
                             }}
@@ -1269,11 +1294,11 @@ export default function AdminProductsPage() {
                           className="edit-hover"
                           onClick={() => setEditProduct(product)}
                           style={{
-                            background: 'rgba(129,140,248,0.08)',
-                            border: '1px solid rgba(129,140,248,0.15)',
-                            borderRadius: '8px', padding: '6px',
+                            background: '#161617',
+                            border: '1px solid #202022',
+                            borderRadius: '9px', padding: '6px',
                             cursor: 'pointer', display: 'flex',
-                            color: '#818cf8', transition: 'all 0.15s ease',
+                            color: '#9ca3af', transition: 'all 0.15s ease',
                           }}
                           title="Edit product"
                         >
@@ -1282,9 +1307,9 @@ export default function AdminProductsPage() {
                         <button
                           onClick={() => handleDuplicate(product.id)}
                           style={{
-                            background: 'rgba(236,30,121,0.08)',
-                            border: '1px solid rgba(236,30,121,0.15)',
-                            borderRadius: '8px', padding: '6px',
+                            background: 'rgba(236,30,121,0.1)',
+                            border: '1px solid rgba(236,30,121,0.25)',
+                            borderRadius: '9px', padding: '6px',
                             cursor: 'pointer', display: 'flex',
                             color: '#EC1E79', transition: 'all 0.15s ease',
                           }}
@@ -1296,11 +1321,11 @@ export default function AdminProductsPage() {
                           className="delete-hover"
                           onClick={() => setDeleteId(product.id)}
                           style={{
-                            background: 'rgba(239,68,68,0.08)',
-                            border: '1px solid rgba(239,68,68,0.15)',
-                            borderRadius: '8px', padding: '6px',
+                            background: '#161617',
+                            border: '1px solid #202022',
+                            borderRadius: '9px', padding: '6px',
                             cursor: 'pointer', display: 'flex',
-                            color: '#ef4444', transition: 'all 0.15s ease',
+                            color: '#9ca3af', transition: 'all 0.15s ease',
                           }}
                           title="Delete product"
                         >
@@ -1314,10 +1339,10 @@ export default function AdminProductsPage() {
                           fontSize: '0.7rem',
                           fontWeight: 700,
                           color: '#6b7280',
-                          background: '#1a1a1a',
-                          border: '1px solid #2a2a2a',
-                          borderRadius: '8px',
-                          padding: '4px 8px',
+                          background: '#161617',
+                          border: '1px solid #202022',
+                          borderRadius: '999px',
+                          padding: '4px 10px',
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -1337,7 +1362,7 @@ export default function AdminProductsPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             marginTop: '1.25rem', padding: '0.75rem 0',
           }}>
-            <span style={{ color: '#4b5563', fontSize: '0.875rem' }}>
+            <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
               Page {page} of {totalPages} · {total} products
             </span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1346,11 +1371,11 @@ export default function AdminProductsPage() {
                 disabled={page === 1}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.5rem 1rem', borderRadius: '9px',
-                  background: '#111', border: '1px solid #1f1f1f',
-                  color: page === 1 ? '#2a2a2a' : '#9ca3af',
+                  padding: '0.6rem 1.1rem', borderRadius: '11px',
+                  background: '#161617', border: '1px solid #202022',
+                  color: page === 1 ? '#3a3a3c' : '#e4e4e7',
                   cursor: page === 1 ? 'default' : 'pointer',
-                  fontSize: '0.875rem', fontWeight: 600,
+                  fontSize: '0.85rem', fontWeight: 800,
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -1361,11 +1386,11 @@ export default function AdminProductsPage() {
                 disabled={page === totalPages}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.5rem 1rem', borderRadius: '9px',
-                  background: '#111', border: '1px solid #1f1f1f',
-                  color: page === totalPages ? '#2a2a2a' : '#9ca3af',
+                  padding: '0.6rem 1.1rem', borderRadius: '11px',
+                  background: '#161617', border: '1px solid #202022',
+                  color: page === totalPages ? '#3a3a3c' : '#e4e4e7',
                   cursor: page === totalPages ? 'default' : 'pointer',
-                  fontSize: '0.875rem', fontWeight: 600,
+                  fontSize: '0.85rem', fontWeight: 800,
                   transition: 'all 0.15s ease',
                 }}
               >

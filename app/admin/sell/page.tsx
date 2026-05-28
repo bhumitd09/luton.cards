@@ -24,8 +24,8 @@ const STATUSES = [
   { value: 'reviewing', label: 'Reviewing', color: '#f59e0b' },
   { value: 'offered', label: 'Offered', color: '#3b82f6' },
   { value: 'accepted', label: 'Accepted', color: '#10b981' },
-  { value: 'declined', label: 'Declined', color: '#6b7280' },
-  { value: 'closed', label: 'Closed', color: '#374151' },
+  { value: 'declined', label: 'Declined', color: '#ef4444' },
+  { value: 'closed', label: 'Closed', color: '#6b7280' },
 ]
 
 function statusMeta(status: string) {
@@ -76,21 +76,39 @@ export default function AdminSellPage() {
   }
 
   return (
-    <div style={{ padding: '2rem', color: '#fff' }}>
+    <div style={{ padding: '2rem', color: '#fff', background: '#0a0a0a' }}>
       <style>{`
-        .sell-table { width: 100%; border-collapse: collapse; background: #111; border-radius: 12px; overflow: hidden; }
-        .sell-table th, .sell-table td { padding: 0.85rem 1rem; text-align: left; font-size: 0.875rem; border-bottom: 1px solid #1f1f1f; }
-        .sell-table th { background: #161616; color: #9ca3af; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.08em; }
-        .sell-table tr:hover td { background: rgba(236,30,121,0.04); cursor: pointer; }
+        .sell-table { width: 100%; border-collapse: collapse; background: #0f0f10; border: 1px solid #202022; border-radius: 16px; overflow: hidden; }
+        .sell-table th, .sell-table td { padding: 0.85rem 1rem; text-align: left; font-size: 0.875rem; border-bottom: 1px solid #1a1a1c; }
+        .sell-table tr:last-child td { border-bottom: none; }
+        .sell-table th { background: #161617; color: #9ca3af; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.08em; }
+        .sell-table tr:hover td { background: rgba(236,30,121,0.05); cursor: pointer; }
         .pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em; }
-        .filter-btn { padding: 0.4rem 0.9rem; border-radius: 999px; border: 1px solid #1f1f1f; background: transparent; color: #9ca3af; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.15s; }
-        .filter-btn.active { background: #EC1E79; color: #fff; border-color: #EC1E79; }
+        .filter-btn { padding: 0.4rem 0.9rem; border-radius: 999px; border: 1px solid #202022; background: #0f0f10; color: #9ca3af; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.15s; }
+        .filter-btn.active { background: rgba(236,30,121,0.12); color: #EC1E79; border-color: #EC1E79; }
       `}</style>
 
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', margin: '0 0 0.5rem' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.4rem',
+        color: '#EC1E79',
+        fontSize: '10px',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        letterSpacing: '0.16em',
+        marginBottom: '0.5rem',
+      }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" />
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+        </svg>
+        Buy-back
+      </div>
+      <h1 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.025em', margin: 0 }}>
         Buy-back Submissions
       </h1>
-      <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: '0 0 2rem' }}>
+      <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: '0.4rem 0 2rem' }}>
         Cards customers want to sell to Luton Cards.
       </p>
 
@@ -109,11 +127,22 @@ export default function AdminSellPage() {
       </div>
 
       {loading ? (
-        <p style={{ color: '#6b7280' }}>Loading…</p>
+        <p style={{ color: '#9ca3af' }}>Loading…</p>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: '4rem 1rem', textAlign: 'center', color: '#6b7280', background: '#111', borderRadius: '12px', border: '1px solid #1f1f1f' }}>
-          <p style={{ fontSize: '1rem', fontWeight: 700, color: '#9ca3af', margin: '0 0 0.5rem' }}>No submissions{statusFilter !== 'all' ? ` in "${statusFilter}"` : ''} yet</p>
-          <p style={{ fontSize: '0.85rem', margin: 0 }}>When someone submits the /sell form, it&apos;ll show up here.</p>
+        <div style={{ padding: '4rem 1rem', textAlign: 'center', background: '#0f0f10', borderRadius: '16px', border: '1px solid #202022' }}>
+          <div style={{
+            width: '44px', height: '44px',
+            background: '#161617',
+            border: '1px solid #202022',
+            borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1rem',
+            color: '#6b7280',
+          }}>
+            <ImageIcon size={20} />
+          </div>
+          <p style={{ fontSize: '1rem', fontWeight: 700, color: '#f4f4f5', margin: '0 0 0.35rem' }}>No submissions{statusFilter !== 'all' ? ` in "${statusFilter}"` : ''} yet</p>
+          <p style={{ fontSize: '0.85rem', color: '#9ca3af', margin: 0 }}>When someone submits the /sell form, it&apos;ll show up here.</p>
         </div>
       ) : (
         <table className="sell-table">
@@ -139,7 +168,7 @@ export default function AdminSellPage() {
                   <td style={{ textTransform: 'capitalize', color: '#9ca3af' }}>{s.game.replace('-', ' ')}</td>
                   <td style={{ color: '#9ca3af' }}>{s.images.length}</td>
                   <td>
-                    <span className="pill" style={{ background: `${meta.color}22`, color: meta.color }}>
+                    <span className="pill" style={{ background: `${meta.color}1f`, color: meta.color, border: `1px solid ${meta.color}40` }}>
                       {meta.label}
                     </span>
                   </td>
@@ -148,7 +177,16 @@ export default function AdminSellPage() {
                       type="button"
                       onClick={e => { e.stopPropagation(); deleteSubmission(s.id) }}
                       aria-label="Delete"
-                      style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}
+                      style={{
+                        background: 'rgba(239,68,68,0.1)',
+                        border: '1px solid rgba(239,68,68,0.25)',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        borderRadius: '9px',
+                        padding: '0.4rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                      }}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -173,6 +211,8 @@ export default function AdminSellPage() {
             }}
           >
             <motion.div
+              role="dialog"
+              aria-modal="true"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -180,25 +220,34 @@ export default function AdminSellPage() {
               onClick={e => e.stopPropagation()}
               style={{
                 width: '100%', maxWidth: '560px',
-                background: '#0d0d0d', height: '100vh',
+                background: '#0f0f10', height: '100vh',
                 overflowY: 'auto', padding: '2rem',
-                borderLeft: '1px solid #1f1f1f',
+                borderLeft: '1px solid #202022',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div>
-                  <p style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, margin: '0 0 0.5rem' }}>
+                  <p style={{ fontSize: '10px', color: '#EC1E79', textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 800, margin: '0 0 0.5rem' }}>
                     Submission
                   </p>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.025em' }}>
                     {active.name}
                   </h2>
                   <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: '0.25rem 0 0' }}>
                     {new Date(active.createdAt).toLocaleString()}
                   </p>
                 </div>
-                <button onClick={() => setActive(null)} aria-label="Close" style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>
-                  <X size={22} />
+                <button onClick={() => setActive(null)} aria-label="Close" style={{
+                  background: '#161617',
+                  border: '1px solid #202022',
+                  color: '#9ca3af',
+                  cursor: 'pointer',
+                  borderRadius: '9px',
+                  padding: '0.35rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}>
+                  <X size={20} />
                 </button>
               </div>
 
@@ -214,7 +263,7 @@ export default function AdminSellPage() {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
                   Game
                 </label>
                 <p style={{ fontSize: '0.95rem', color: '#fff', margin: 0, textTransform: 'capitalize' }}>
@@ -223,7 +272,7 @@ export default function AdminSellPage() {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
                   What they&apos;re selling
                 </label>
                 <p style={{ fontSize: '0.95rem', color: '#fff', whiteSpace: 'pre-wrap', lineHeight: 1.6, margin: 0 }}>
@@ -233,7 +282,7 @@ export default function AdminSellPage() {
 
               {active.estimate && (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
                     Estimated value
                   </label>
                   <p style={{ fontSize: '0.95rem', color: '#fff', margin: 0 }}>{active.estimate}</p>
@@ -242,7 +291,7 @@ export default function AdminSellPage() {
 
               {active.images.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
+                  <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
                     <ImageIcon size={12} style={{ display: 'inline', marginRight: 4 }} />
                     Photos ({active.images.length})
                   </label>
@@ -250,7 +299,7 @@ export default function AdminSellPage() {
                     {active.images.map((src, i) => (
                       // eslint-disable-next-line @next/next/no-img-element
                       <a href={src} key={i} target="_blank" rel="noopener noreferrer">
-                        <img src={src} alt={`Photo ${i + 1}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', border: '1px solid #1f1f1f', display: 'block' }} />
+                        <img src={src} alt={`Photo ${i + 1}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '11px', border: '1px solid #202022', display: 'block' }} />
                       </a>
                     ))}
                   </div>
@@ -258,16 +307,16 @@ export default function AdminSellPage() {
               )}
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
                   Status
                 </label>
                 <select
                   value={active.status}
                   onChange={e => updateSubmission(active.id, { status: e.target.value })}
                   style={{
-                    width: '100%', padding: '0.65rem 0.85rem',
-                    background: '#161616', border: '1px solid #1f1f1f',
-                    borderRadius: '8px', color: '#fff', fontSize: '0.875rem',
+                    width: '100%', padding: '0.6rem 0.8rem',
+                    background: '#0c0c0d', border: '1px solid #202022',
+                    borderRadius: '11px', color: '#fff', fontSize: '0.875rem',
                     outline: 'none', fontFamily: 'inherit',
                   }}
                 >
@@ -278,7 +327,7 @@ export default function AdminSellPage() {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.5rem' }}>
                   Internal notes
                 </label>
                 <textarea
@@ -287,9 +336,9 @@ export default function AdminSellPage() {
                   rows={5}
                   placeholder="Notes for the team about this submission (saved on blur)"
                   style={{
-                    width: '100%', padding: '0.65rem 0.85rem',
-                    background: '#161616', border: '1px solid #1f1f1f',
-                    borderRadius: '8px', color: '#fff', fontSize: '0.875rem',
+                    width: '100%', padding: '0.6rem 0.8rem',
+                    background: '#0c0c0d', border: '1px solid #202022',
+                    borderRadius: '11px', color: '#fff', fontSize: '0.875rem',
                     outline: 'none', resize: 'vertical', fontFamily: 'inherit',
                     lineHeight: 1.6, boxSizing: 'border-box',
                   }}

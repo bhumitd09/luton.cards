@@ -34,7 +34,7 @@ function StarRating({ rating, interactive = false, onRate }: {
           style={{
             fontSize: interactive ? '1.5rem' : '0.9rem',
             cursor: interactive ? 'pointer' : 'default',
-            color: n <= (hovered || rating) ? '#EC1E79' : '#374151',
+            color: n <= (hovered || rating) ? '#EC1E79' : '#2a2a2c',
             lineHeight: 1,
           }}
         >
@@ -48,16 +48,16 @@ function StarRating({ rating, interactive = false, onRate }: {
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return (
     <div style={{
-      background: '#111',
-      border: '1px solid #1f1f1f',
-      borderRadius: '12px',
-      padding: '1.25rem 1.5rem',
+      background: '#0f0f10',
+      border: '1px solid #202022',
+      borderRadius: '16px',
+      padding: '1.25rem 1.35rem',
       flex: 1,
     }}>
-      <div style={{ fontSize: '1.75rem', fontWeight: 700, color: accent ? '#EC1E79' : '#fff' }}>
+      <div style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: accent ? '#EC1E79' : '#f4f4f5' }}>
         {value}
       </div>
-      <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>{label}</div>
+      <div style={{ fontSize: '0.8125rem', color: '#9ca3af', marginTop: '0.25rem' }}>{label}</div>
     </div>
   )
 }
@@ -204,31 +204,48 @@ export default function ReviewsAdminPage() {
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '960px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', maxWidth: '960px', margin: '0 auto', background: '#0a0a0a' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '1.75rem', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', margin: 0 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            color: '#EC1E79',
+            fontSize: '10px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.16em',
+            marginBottom: '0.5rem',
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <path d="M12 2l2.9 6.1 6.6.9-4.8 4.7 1.1 6.6L12 18.1 6.2 20.3l1.1-6.6L2.5 9l6.6-.9L12 2z" />
+            </svg>
+            Moderation
+          </div>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', color: '#fff', margin: 0 }}>
             Reviews &amp; Testimonials
           </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.4rem 0 0' }}>
             Manage customer reviews and testimonials
           </p>
         </div>
         <button
           onClick={openAdd}
           style={{
-            background: '#EC1E79',
-            color: '#000',
+            background: 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)',
+            color: '#fff',
             border: 'none',
-            borderRadius: '10px',
-            padding: '0.625rem 1.25rem',
-            fontSize: '0.875rem',
-            fontWeight: 700,
+            borderRadius: '11px',
+            padding: '0.6rem 1.1rem',
+            fontSize: '0.85rem',
+            fontWeight: 800,
             cursor: 'pointer',
+            boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
           }}
         >
-          + Add Review
+          + Add review
         </button>
       </div>
 
@@ -248,11 +265,11 @@ export default function ReviewsAdminPage() {
             style={{
               padding: '0.375rem 1rem',
               borderRadius: '999px',
-              border: filter === f ? '1px solid #EC1E79' : '1px solid #1f1f1f',
-              background: filter === f ? 'rgba(236,30,121,0.12)' : '#111',
+              border: filter === f ? '1px solid #EC1E79' : '1px solid #202022',
+              background: filter === f ? 'rgba(236,30,121,0.12)' : '#0f0f10',
               color: filter === f ? '#EC1E79' : '#9ca3af',
               fontSize: '0.8125rem',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               textTransform: 'capitalize',
             }}
@@ -264,17 +281,31 @@ export default function ReviewsAdminPage() {
 
       {/* Review list */}
       {loading ? (
-        <div style={{ color: '#6b7280', padding: '3rem', textAlign: 'center' }}>Loading reviews…</div>
+        <div style={{ color: '#9ca3af', padding: '3rem', textAlign: 'center' }}>Loading reviews…</div>
       ) : filtered.length === 0 ? (
         <div style={{
-          background: '#111',
-          border: '1px solid #1f1f1f',
-          borderRadius: '12px',
-          padding: '3rem',
+          background: '#0f0f10',
+          border: '1px solid #202022',
+          borderRadius: '16px',
+          padding: '4rem 3rem',
           textAlign: 'center',
-          color: '#6b7280',
         }}>
-          {emptyMessages[filter]}
+          <div style={{
+            width: '44px', height: '44px',
+            background: '#161617',
+            border: '1px solid #202022',
+            borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1rem',
+            color: '#6b7280',
+            fontSize: '1.1rem',
+          }}>
+            ★
+          </div>
+          <p style={{ color: '#f4f4f5', fontWeight: 700, margin: 0 }}>{emptyMessages[filter]}</p>
+          <p style={{ color: '#9ca3af', fontSize: '0.8125rem', marginTop: '0.35rem' }}>
+            Reviews you add or moderate will appear here.
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -285,10 +316,10 @@ export default function ReviewsAdminPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               style={{
-                background: '#111',
-                border: '1px solid #1f1f1f',
-                borderRadius: '12px',
-                padding: '1.25rem',
+                background: '#0f0f10',
+                border: '1px solid #202022',
+                borderRadius: '16px',
+                padding: '1.25rem 1.35rem',
               }}
             >
               {/* Top row */}
@@ -296,22 +327,22 @@ export default function ReviewsAdminPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <StarRating rating={review.rating} />
                   <div>
-                    <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.9375rem' }}>{review.name}</span>
+                    <span style={{ color: '#f4f4f5', fontWeight: 700, fontSize: '0.9375rem' }}>{review.name}</span>
                     {review.location && (
-                      <span style={{ color: '#6b7280', fontSize: '0.8125rem', marginLeft: '0.5rem' }}>
+                      <span style={{ color: '#9ca3af', fontSize: '0.8125rem', marginLeft: '0.5rem' }}>
                         {review.location}
                       </span>
                     )}
                   </div>
                 </div>
-                <span style={{ color: '#4b5563', fontSize: '0.75rem' }}>
+                <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>
                   {new Date(review.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </span>
               </div>
 
               {/* Body */}
               <p style={{
-                color: 'rgba(255,255,255,0.7)',
+                color: '#d4d4d8',
                 fontSize: '0.9rem',
                 fontStyle: 'italic',
                 lineHeight: 1.65,
@@ -324,12 +355,12 @@ export default function ReviewsAdminPage() {
               {review.productRef && (
                 <div style={{ marginBottom: '0.75rem' }}>
                   <span style={{
-                    background: '#1f1f1f',
+                    background: '#161617',
                     color: '#9ca3af',
                     fontSize: '0.75rem',
                     padding: '0.2rem 0.6rem',
                     borderRadius: '999px',
-                    border: '1px solid #374151',
+                    border: '1px solid #202022',
                   }}>
                     {review.productRef}
                   </span>
@@ -341,24 +372,24 @@ export default function ReviewsAdminPage() {
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <span style={{
                     fontSize: '0.75rem',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     padding: '0.2rem 0.6rem',
                     borderRadius: '999px',
-                    background: review.approved ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)',
-                    color: review.approved ? '#4ade80' : '#fbbf24',
-                    border: review.approved ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(245,158,11,0.3)',
+                    background: review.approved ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                    color: review.approved ? '#10b981' : '#f59e0b',
+                    border: review.approved ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(245,158,11,0.25)',
                   }}>
                     {review.approved ? 'Approved' : 'Pending'}
                   </span>
                   {review.featured && (
                     <span style={{
                       fontSize: '0.75rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       padding: '0.2rem 0.6rem',
                       borderRadius: '999px',
                       background: 'rgba(236,30,121,0.12)',
                       color: '#EC1E79',
-                      border: '1px solid rgba(236,30,121,0.3)',
+                      border: '1px solid rgba(236,30,121,0.25)',
                     }}>
                       Featured
                     </span>
@@ -372,12 +403,12 @@ export default function ReviewsAdminPage() {
                     onClick={() => toggleApproved(review)}
                     title={review.approved ? 'Unapprove' : 'Approve'}
                     style={{
-                      background: review.approved ? 'rgba(34,197,94,0.1)' : '#1f1f1f',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
+                      background: review.approved ? 'rgba(16,185,129,0.1)' : '#161617',
+                      border: review.approved ? '1px solid rgba(16,185,129,0.25)' : '1px solid #202022',
+                      borderRadius: '11px',
                       padding: '0.4rem 0.6rem',
                       cursor: 'pointer',
-                      color: review.approved ? '#4ade80' : '#9ca3af',
+                      color: review.approved ? '#10b981' : '#9ca3af',
                       fontSize: '0.875rem',
                       lineHeight: 1,
                     }}
@@ -389,9 +420,9 @@ export default function ReviewsAdminPage() {
                     onClick={() => toggleFeatured(review)}
                     title={review.featured ? 'Unfeature' : 'Feature'}
                     style={{
-                      background: review.featured ? 'rgba(236,30,121,0.1)' : '#1f1f1f',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
+                      background: review.featured ? 'rgba(236,30,121,0.12)' : '#161617',
+                      border: review.featured ? '1px solid rgba(236,30,121,0.25)' : '1px solid #202022',
+                      borderRadius: '11px',
                       padding: '0.4rem 0.6rem',
                       cursor: 'pointer',
                       color: review.featured ? '#EC1E79' : '#9ca3af',
@@ -406,12 +437,12 @@ export default function ReviewsAdminPage() {
                     onClick={() => openEdit(review)}
                     title="Edit"
                     style={{
-                      background: '#1f1f1f',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
+                      background: '#161617',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
                       padding: '0.4rem 0.6rem',
                       cursor: 'pointer',
-                      color: '#9ca3af',
+                      color: '#e4e4e7',
                       fontSize: '0.875rem',
                       lineHeight: 1,
                     }}
@@ -423,9 +454,9 @@ export default function ReviewsAdminPage() {
                     onClick={() => handleDelete(review.id)}
                     title="Delete"
                     style={{
-                      background: 'rgba(239,68,68,0.08)',
+                      background: 'rgba(239,68,68,0.1)',
                       border: '1px solid rgba(239,68,68,0.25)',
-                      borderRadius: '8px',
+                      borderRadius: '11px',
                       padding: '0.4rem 0.6rem',
                       cursor: 'pointer',
                       color: '#ef4444',
@@ -464,6 +495,8 @@ export default function ReviewsAdminPage() {
             {/* Panel */}
             <motion.div
               key="panel"
+              role="dialog"
+              aria-modal="true"
               initial={{ x: 440 }}
               animate={{ x: 0 }}
               exit={{ x: 440 }}
@@ -474,8 +507,8 @@ export default function ReviewsAdminPage() {
                 right: 0,
                 bottom: 0,
                 width: '420px',
-                background: '#111',
-                borderLeft: '1px solid #1f1f1f',
+                background: '#0f0f10',
+                borderLeft: '1px solid #202022',
                 zIndex: 50,
                 overflowY: 'auto',
                 display: 'flex',
@@ -484,25 +517,28 @@ export default function ReviewsAdminPage() {
             >
               {/* Panel header */}
               <div style={{
-                padding: '1.25rem 1.5rem',
-                borderBottom: '1px solid #1f1f1f',
+                padding: '1.25rem 1.35rem',
+                borderBottom: '1px solid #1a1a1c',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexShrink: 0,
               }}>
-                <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>
-                  {editingId ? 'Edit Review' : 'Add Review'}
+                <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#fff' }}>
+                  {editingId ? 'Edit review' : 'Add review'}
                 </h2>
                 <button
                   onClick={closeForm}
+                  aria-label="Close"
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#6b7280',
-                    fontSize: '1.25rem',
+                    background: '#161617',
+                    border: '1px solid #202022',
+                    color: '#9ca3af',
+                    fontSize: '1rem',
                     cursor: 'pointer',
                     lineHeight: 1,
+                    borderRadius: '9px',
+                    padding: '0.35rem 0.5rem',
                   }}
                 >
                   ✕
@@ -513,7 +549,7 @@ export default function ReviewsAdminPage() {
               <form onSubmit={handleSubmit} style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
                 {/* Name */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Name <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -524,10 +560,10 @@ export default function ReviewsAdminPage() {
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
-                      background: '#0a0a0a',
-                      border: '1px solid #1f1f1f',
-                      borderRadius: '8px',
-                      padding: '0.625rem 0.875rem',
+                      background: '#0c0c0d',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
+                      padding: '0.6rem 0.8rem',
                       color: '#fff',
                       fontSize: '0.875rem',
                       outline: 'none',
@@ -537,7 +573,7 @@ export default function ReviewsAdminPage() {
 
                 {/* Location */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Location
                   </label>
                   <input
@@ -547,10 +583,10 @@ export default function ReviewsAdminPage() {
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
-                      background: '#0a0a0a',
-                      border: '1px solid #1f1f1f',
-                      borderRadius: '8px',
-                      padding: '0.625rem 0.875rem',
+                      background: '#0c0c0d',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
+                      padding: '0.6rem 0.8rem',
                       color: '#fff',
                       fontSize: '0.875rem',
                       outline: 'none',
@@ -560,7 +596,7 @@ export default function ReviewsAdminPage() {
 
                 {/* Rating */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Rating
                   </label>
                   <StarRating
@@ -572,7 +608,7 @@ export default function ReviewsAdminPage() {
 
                 {/* Review body */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Review <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <textarea
@@ -584,10 +620,10 @@ export default function ReviewsAdminPage() {
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
-                      background: '#0a0a0a',
-                      border: '1px solid #1f1f1f',
-                      borderRadius: '8px',
-                      padding: '0.625rem 0.875rem',
+                      background: '#0c0c0d',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
+                      padding: '0.6rem 0.8rem',
                       color: '#fff',
                       fontSize: '0.875rem',
                       outline: 'none',
@@ -599,7 +635,7 @@ export default function ReviewsAdminPage() {
 
                 {/* Product ref */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Product Reference
                   </label>
                   <input
@@ -609,10 +645,10 @@ export default function ReviewsAdminPage() {
                     style={{
                       width: '100%',
                       boxSizing: 'border-box',
-                      background: '#0a0a0a',
-                      border: '1px solid #1f1f1f',
-                      borderRadius: '8px',
-                      padding: '0.625rem 0.875rem',
+                      background: '#0c0c0d',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
+                      padding: '0.6rem 0.8rem',
                       color: '#fff',
                       fontSize: '0.875rem',
                       outline: 'none',
@@ -633,7 +669,7 @@ export default function ReviewsAdminPage() {
                           width: '40px',
                           height: '22px',
                           borderRadius: '999px',
-                          background: form[key] ? '#EC1E79' : '#374151',
+                          background: form[key] ? '#EC1E79' : '#2a2a2c',
                           position: 'relative',
                           transition: 'background 0.2s',
                           flexShrink: 0,
@@ -650,7 +686,7 @@ export default function ReviewsAdminPage() {
                           transition: 'left 0.2s',
                         }} />
                       </div>
-                      <span style={{ color: '#9ca3af', fontSize: '0.875rem', fontWeight: 600 }}>{label}</span>
+                      <span style={{ color: '#e4e4e7', fontSize: '0.875rem', fontWeight: 600 }}>{label}</span>
                     </label>
                   ))}
                 </div>
@@ -660,16 +696,17 @@ export default function ReviewsAdminPage() {
                   type="submit"
                   disabled={saving}
                   style={{
-                    background: '#EC1E79',
-                    color: '#000',
+                    background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+                    color: '#fff',
                     border: 'none',
-                    borderRadius: '10px',
-                    padding: '0.75rem',
-                    fontSize: '0.9375rem',
-                    fontWeight: 700,
+                    borderRadius: '11px',
+                    padding: '0.7rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 800,
                     cursor: saving ? 'not-allowed' : 'pointer',
                     opacity: saving ? 0.7 : 1,
                     marginTop: '0.5rem',
+                    boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                   }}
                 >
                   {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Add Review'}
