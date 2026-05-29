@@ -68,11 +68,11 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   return (
     <div style={{
       position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999,
-      background: '#EC1E79', color: '#000',
-      padding: '0.65rem 1.1rem', borderRadius: '10px',
-      fontWeight: 700, fontSize: '0.875rem',
+      background: 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)', color: '#fff',
+      padding: '0.65rem 1.1rem', borderRadius: '11px',
+      fontWeight: 800, fontSize: '0.875rem',
       display: 'flex', alignItems: 'center', gap: '0.4rem',
-      boxShadow: '0 4px 24px rgba(236,30,121,0.35)',
+      boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
       animation: 'slideIn 0.2s ease',
     }}>
       <Check size={15} />
@@ -116,8 +116,8 @@ function UploadModal({
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#111', border: '1px solid #1f1f1f',
-          borderRadius: '20px', padding: '2rem',
+          background: '#0f0f10', border: '1px solid #202022',
+          borderRadius: '16px', padding: '1.5rem',
           width: '100%', maxWidth: '560px',
           display: 'flex', flexDirection: 'column', gap: '1.25rem',
         }}
@@ -126,12 +126,12 @@ function UploadModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
               width: '36px', height: '36px',
-              background: 'rgba(236,30,121,0.1)', border: '1px solid rgba(236,30,121,0.2)',
+              background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)',
               borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Upload size={16} color="#EC1E79" />
             </div>
-            <h2 style={{ fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>Upload Images</h2>
+            <h2 style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.01em', margin: 0, color: '#f4f4f5' }}>Upload Images</h2>
           </div>
           <button
             onClick={onClose}
@@ -152,9 +152,9 @@ function UploadModal({
           <button
             onClick={onClose}
             style={{
-              padding: '0.65rem 1.25rem', background: 'transparent',
-              border: '1px solid #1f1f1f', borderRadius: '10px',
-              color: '#9ca3af', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
+              padding: '0.6rem 1.1rem', background: '#161617',
+              border: '1px solid #202022', borderRadius: '11px',
+              color: '#e4e4e7', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
             }}
           >
             Cancel
@@ -163,10 +163,11 @@ function UploadModal({
             onClick={handleDone}
             disabled={pendingImages.length === 0}
             style={{
-              padding: '0.65rem 1.5rem',
-              background: pendingImages.length === 0 ? '#006652' : '#EC1E79',
-              border: 'none', borderRadius: '10px',
-              color: '#000', fontWeight: 700, fontSize: '0.875rem',
+              padding: '0.6rem 1.4rem',
+              background: pendingImages.length === 0 ? '#161617' : 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+              border: pendingImages.length === 0 ? '1px solid #202022' : 'none', borderRadius: '11px',
+              color: pendingImages.length === 0 ? '#6b7280' : '#fff', fontWeight: 800, fontSize: '0.85rem',
+              boxShadow: pendingImages.length === 0 ? 'none' : '0 8px 22px -10px rgba(236,30,121,0.6)',
               cursor: pendingImages.length === 0 ? 'not-allowed' : 'pointer',
             }}
           >
@@ -230,9 +231,9 @@ function PreviewModal({
   }
 
   const inputStyle: React.CSSProperties = {
-    flex: 1, padding: '0.6rem 0.875rem',
-    background: '#0a0a0a', border: '1px solid #2a2a2a',
-    borderRadius: '8px', color: '#fff', fontSize: '0.875rem',
+    flex: 1, padding: '0.6rem 0.8rem',
+    background: '#0c0c0d', border: '1px solid #202022',
+    borderRadius: '11px', color: '#fff', fontSize: '0.875rem',
     outline: 'none', boxSizing: 'border-box',
   }
 
@@ -249,8 +250,8 @@ function PreviewModal({
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#111', border: '1px solid #1f1f1f',
-          borderRadius: '20px', overflow: 'hidden',
+          background: '#0f0f10', border: '1px solid #202022',
+          borderRadius: '16px', overflow: 'hidden',
           maxWidth: '800px', width: '100%',
           display: 'flex', flexDirection: 'column',
         }}
@@ -259,10 +260,10 @@ function PreviewModal({
         <div style={{
           padding: '1rem 1.25rem',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid #1f1f1f',
+          borderBottom: '1px solid #1a1a1c',
         }}>
           <div>
-            <p style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem', margin: 0 }}>
+            <p style={{ fontWeight: 800, color: '#f4f4f5', fontSize: '0.9375rem', letterSpacing: '-0.01em', margin: 0 }}>
               {item.filename}
             </p>
             <p style={{ color: '#6b7280', fontSize: '0.8rem', margin: '0.15rem 0 0' }}>
@@ -291,7 +292,7 @@ function PreviewModal({
         </div>
 
         {/* Footer actions */}
-        <div style={{ padding: '1.25rem', borderTop: '1px solid #1f1f1f', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ padding: '1.25rem', borderTop: '1px solid #1a1a1c', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {/* URL copy */}
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <input
@@ -302,9 +303,10 @@ function PreviewModal({
             <button
               onClick={() => onCopy(item.url)}
               style={{
-                padding: '0.6rem 1rem', background: '#EC1E79',
-                border: 'none', borderRadius: '8px',
-                color: '#000', fontWeight: 700, fontSize: '0.8125rem',
+                padding: '0.6rem 1.1rem', background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+                border: 'none', borderRadius: '11px',
+                color: '#fff', fontWeight: 800, fontSize: '0.8125rem',
+                boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem',
                 flexShrink: 0,
               }}
@@ -326,9 +328,9 @@ function PreviewModal({
               onClick={handleAltSave}
               disabled={savingAlt}
               style={{
-                padding: '0.6rem 1rem', background: '#1f1f1f',
-                border: '1px solid #2a2a2a', borderRadius: '8px',
-                color: '#9ca3af', fontWeight: 600, fontSize: '0.8125rem',
+                padding: '0.6rem 1.1rem', background: '#161617',
+                border: '1px solid #202022', borderRadius: '11px',
+                color: '#e4e4e7', fontWeight: 700, fontSize: '0.8125rem',
                 cursor: savingAlt ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', gap: '0.35rem',
                 flexShrink: 0,
@@ -345,10 +347,10 @@ function PreviewModal({
             disabled={deleting}
             style={{
               alignSelf: 'flex-start',
-              padding: '0.6rem 1rem',
+              padding: '0.6rem 1.1rem',
               background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '8px', color: '#ef4444',
-              fontWeight: 600, fontSize: '0.8125rem', cursor: deleting ? 'not-allowed' : 'pointer',
+              borderRadius: '11px', color: '#ef4444',
+              fontWeight: 700, fontSize: '0.8125rem', cursor: deleting ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', gap: '0.35rem',
             }}
           >
@@ -410,15 +412,15 @@ function GridCard({
       onMouseLeave={() => { setHovered(false); setConfirmDelete(false) }}
       onClick={() => bulkMode ? onSelect(item.id) : onPreview(item)}
       style={{
-        background: '#111',
-        border: `1px solid ${selected ? 'rgba(236,30,121,0.5)' : hovered ? '#2a2a2a' : '#1f1f1f'}`,
-        borderRadius: '14px', overflow: 'hidden', position: 'relative',
+        background: '#0f0f10',
+        border: `1px solid ${selected ? 'rgba(236,30,121,0.5)' : hovered ? '#2c2c2e' : '#202022'}`,
+        borderRadius: '16px', overflow: 'hidden', position: 'relative',
         cursor: 'pointer',
         transform: hovered ? 'translateY(-2px)' : 'none',
         transition: 'transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
         boxShadow: selected
           ? '0 0 0 2px rgba(236,30,121,0.25)'
-          : hovered ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
+          : hovered ? '0 12px 28px -12px rgba(0,0,0,0.6)' : 'none',
       }}
     >
       {/* Checkbox in bulk mode */}
@@ -434,7 +436,7 @@ function GridCard({
             cursor: 'pointer',
           }}
         >
-          {selected && <Check size={12} color="#000" />}
+          {selected && <Check size={12} color="#fff" />}
         </div>
       )}
 
@@ -462,9 +464,10 @@ function GridCard({
             <button
               onClick={handleCopy}
               style={{
-                background: '#EC1E79', color: '#000', border: 'none',
+                background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', color: '#fff', border: 'none',
                 cursor: 'pointer', padding: '0.5rem 0.875rem',
-                borderRadius: '8px', fontWeight: 700, fontSize: '0.8125rem',
+                borderRadius: '11px', fontWeight: 800, fontSize: '0.8125rem',
+                boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
               }}
             >
@@ -476,10 +479,10 @@ function GridCard({
                 <button
                   onClick={handleDelete} disabled={deleting}
                   style={{
-                    background: 'rgba(239,68,68,0.9)', color: '#fff',
+                    background: '#ef4444', color: '#fff',
                     border: 'none', cursor: deleting ? 'default' : 'pointer',
-                    padding: '0.5rem 0.75rem', borderRadius: '8px',
-                    fontWeight: 700, fontSize: '0.8125rem',
+                    padding: '0.5rem 0.75rem', borderRadius: '11px',
+                    fontWeight: 800, fontSize: '0.8125rem',
                     display: 'flex', alignItems: 'center', gap: '0.25rem',
                   }}
                 >
@@ -491,7 +494,7 @@ function GridCard({
                   style={{
                     background: 'rgba(0,0,0,0.6)', color: '#fff',
                     border: '1px solid #374151', cursor: 'pointer',
-                    padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center',
+                    padding: '0.5rem', borderRadius: '11px', display: 'flex', alignItems: 'center',
                   }}
                 >
                   <X size={13} />
@@ -501,10 +504,10 @@ function GridCard({
               <button
                 onClick={handleDelete}
                 style={{
-                  background: 'rgba(239,68,68,0.15)', color: '#ef4444',
-                  border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.25)',
                   cursor: 'pointer', padding: '0.5rem',
-                  borderRadius: '8px', display: 'flex', alignItems: 'center',
+                  borderRadius: '11px', display: 'flex', alignItems: 'center',
                 }}
               >
                 <Trash2 size={14} />
@@ -517,14 +520,14 @@ function GridCard({
       {/* Info */}
       <div style={{ padding: '0.625rem 0.75rem' }}>
         <p style={{
-          fontSize: '0.8125rem', fontWeight: 600, color: '#e5e7eb',
+          fontSize: '0.8125rem', fontWeight: 700, color: '#f4f4f5',
           margin: '0 0 0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }} title={item.filename}>
           {truncateFilename(item.filename)}
         </p>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>{formatBytes(item.size)}</span>
-          <span style={{ fontSize: '0.6875rem', color: '#374151' }}>{timeAgo(item.createdAt)}</span>
+          <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>{formatBytes(item.size)}</span>
+          <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>{timeAgo(item.createdAt)}</span>
         </div>
       </div>
     </div>
@@ -571,9 +574,9 @@ function ListRow({
         gridTemplateColumns: bulkMode ? '28px 56px 1fr auto auto auto auto' : '56px 1fr auto auto auto auto',
         gap: '1rem', alignItems: 'center',
         padding: '0.75rem 1rem',
-        background: selected ? 'rgba(236,30,121,0.05)' : '#111',
-        border: `1px solid ${selected ? 'rgba(236,30,121,0.3)' : '#1f1f1f'}`,
-        borderRadius: '10px', cursor: 'pointer',
+        background: selected ? 'rgba(236,30,121,0.12)' : '#0f0f10',
+        border: `1px solid ${selected ? 'rgba(236,30,121,0.3)' : '#202022'}`,
+        borderRadius: '11px', cursor: 'pointer',
         transition: 'background 0.1s ease, border-color 0.1s ease',
       }}
     >
@@ -588,7 +591,7 @@ function ListRow({
             flexShrink: 0, cursor: 'pointer',
           }}
         >
-          {selected && <Check size={10} color="#000" />}
+          {selected && <Check size={10} color="#fff" />}
         </div>
       )}
 
@@ -597,25 +600,25 @@ function ListRow({
         alt={item.alt ?? item.filename}
         style={{
           width: '48px', height: '48px', objectFit: 'cover',
-          borderRadius: '8px', background: '#0a0a0a', flexShrink: 0,
+          borderRadius: '12px', background: '#0a0a0a', flexShrink: 0,
         }}
         onError={e => { (e.target as HTMLImageElement).style.opacity = '0.2' }}
       />
 
       <span style={{
-        fontSize: '0.875rem', fontWeight: 600, color: '#e5e7eb',
+        fontSize: '0.875rem', fontWeight: 700, color: '#f4f4f5',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }} title={item.filename}>
         {item.filename}
       </span>
 
-      <span style={{ fontSize: '0.8rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '0.8rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>
         {formatBytes(item.size)}
       </span>
-      <span style={{ fontSize: '0.8rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '0.8rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>
         {item.mimeType.split('/')[1]?.toUpperCase() ?? item.mimeType}
       </span>
-      <span style={{ fontSize: '0.8rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '0.8rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>
         {timeAgo(item.createdAt)}
       </span>
 
@@ -623,10 +626,10 @@ function ListRow({
         <button
           onClick={() => onCopy(item.url)}
           style={{
-            padding: '0.4rem 0.7rem', background: 'rgba(236,30,121,0.1)',
-            border: '1px solid rgba(236,30,121,0.25)', borderRadius: '7px',
+            padding: '0.45rem 0.75rem', background: 'rgba(236,30,121,0.12)',
+            border: '1px solid rgba(236,30,121,0.25)', borderRadius: '11px',
             color: '#EC1E79', cursor: 'pointer', fontSize: '0.75rem',
-            fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem',
+            fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem',
           }}
         >
           <Copy size={12} /> Copy
@@ -634,9 +637,9 @@ function ListRow({
         <button
           onClick={handleDelete} disabled={deleting}
           style={{
-            padding: '0.4rem 0.5rem',
-            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-            borderRadius: '7px', color: '#ef4444',
+            padding: '0.45rem 0.55rem',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: '11px', color: '#ef4444',
             cursor: deleting ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center',
           }}
@@ -763,34 +766,32 @@ export default function MediaPage() {
   const totalPages = pagination?.totalPages ?? 1
 
   return (
-    <div style={{ padding: '2rem', color: '#fff', maxWidth: '1400px' }}>
+    <div style={{ padding: '2rem', color: '#f4f4f5', maxWidth: '1400px' }}>
       {/* Page header */}
       <div style={{
         marginBottom: '1.75rem',
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: '1rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{
-            width: '44px', height: '44px',
-            background: 'rgba(236,30,121,0.1)', border: '1px solid rgba(236,30,121,0.2)',
-            borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        <div>
+          <p style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+            fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em',
+            color: '#EC1E79', margin: '0 0 0.45rem',
           }}>
-            <ImageIcon size={20} color="#EC1E79" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0 }}>
-              Media Library
-            </h1>
-            <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.2rem 0 0' }}>
-              {loading ? 'Loading...' : (
-                <>
-                  <span style={{ color: '#9ca3af', fontWeight: 600 }}>{totalItems}</span>
-                  {' image'}{totalItems !== 1 ? 's' : ''}{' saved'}
-                </>
-              )}
-            </p>
-          </div>
+            <ImageIcon size={11} /> Library
+          </p>
+          <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', margin: 0, color: '#f4f4f5' }}>
+            Media Library
+          </h1>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
+            {loading ? 'Loading...' : (
+              <>
+                <span style={{ color: '#f4f4f5', fontWeight: 700 }}>{totalItems}</span>
+                {' image'}{totalItems !== 1 ? 's' : ''}{' saved'}
+              </>
+            )}
+          </p>
         </div>
 
         {/* Toolbar right side */}
@@ -807,9 +808,9 @@ export default function MediaPage() {
               value={searchInput}
               onChange={e => handleSearchChange(e.target.value)}
               style={{
-                padding: '0.6rem 0.75rem 0.6rem 2.1rem',
-                background: '#111', border: '1px solid #1f1f1f',
-                borderRadius: '9px', color: '#fff', fontSize: '0.875rem',
+                padding: '0.6rem 0.8rem 0.6rem 2.1rem',
+                background: '#0c0c0d', border: '1px solid #202022',
+                borderRadius: '11px', color: '#fff', fontSize: '0.875rem',
                 outline: 'none', width: '200px',
               }}
             />
@@ -817,15 +818,15 @@ export default function MediaPage() {
 
           {/* Grid / List toggle */}
           <div style={{
-            display: 'flex', background: '#111', border: '1px solid #1f1f1f',
-            borderRadius: '9px', overflow: 'hidden',
+            display: 'flex', background: '#161617', border: '1px solid #202022',
+            borderRadius: '11px', overflow: 'hidden',
           }}>
             <button
               onClick={() => setViewMode('grid')}
               style={{
                 padding: '0.55rem 0.75rem', border: 'none', cursor: 'pointer',
-                background: viewMode === 'grid' ? 'rgba(236,30,121,0.15)' : 'transparent',
-                color: viewMode === 'grid' ? '#EC1E79' : '#6b7280',
+                background: viewMode === 'grid' ? 'rgba(236,30,121,0.12)' : 'transparent',
+                color: viewMode === 'grid' ? '#EC1E79' : '#9ca3af',
                 display: 'flex', alignItems: 'center',
               }}
             >
@@ -835,8 +836,8 @@ export default function MediaPage() {
               onClick={() => setViewMode('list')}
               style={{
                 padding: '0.55rem 0.75rem', border: 'none', cursor: 'pointer',
-                background: viewMode === 'list' ? 'rgba(236,30,121,0.15)' : 'transparent',
-                color: viewMode === 'list' ? '#EC1E79' : '#6b7280',
+                background: viewMode === 'list' ? 'rgba(236,30,121,0.12)' : 'transparent',
+                color: viewMode === 'list' ? '#EC1E79' : '#9ca3af',
                 display: 'flex', alignItems: 'center',
               }}
             >
@@ -848,11 +849,11 @@ export default function MediaPage() {
           <button
             onClick={() => { setBulkMode(v => !v); setSelected(new Set()) }}
             style={{
-              padding: '0.6rem 1rem',
-              background: bulkMode ? 'rgba(236,30,121,0.1)' : '#111',
-              border: `1px solid ${bulkMode ? 'rgba(236,30,121,0.3)' : '#1f1f1f'}`,
-              borderRadius: '9px', color: bulkMode ? '#EC1E79' : '#9ca3af',
-              cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem',
+              padding: '0.6rem 1.1rem',
+              background: bulkMode ? 'rgba(236,30,121,0.12)' : '#161617',
+              border: `1px solid ${bulkMode ? 'rgba(236,30,121,0.25)' : '#202022'}`,
+              borderRadius: '11px', color: bulkMode ? '#EC1E79' : '#e4e4e7',
+              cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem',
             }}
           >
             {bulkMode ? 'Cancel' : 'Select'}
@@ -863,9 +864,10 @@ export default function MediaPage() {
             onClick={() => setShowUploadModal(true)}
             style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
-              background: '#EC1E79', color: '#000',
-              padding: '0.65rem 1.25rem', borderRadius: '9px',
-              border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem',
+              background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', color: '#fff',
+              padding: '0.6rem 1.1rem', borderRadius: '11px',
+              border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.85rem',
+              boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
             }}
           >
             <Upload size={15} />
@@ -879,15 +881,15 @@ export default function MediaPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: '1rem',
           padding: '0.75rem 1rem',
-          background: 'rgba(236,30,121,0.05)', border: '1px solid rgba(236,30,121,0.15)',
-          borderRadius: '10px', marginBottom: '1.25rem',
+          background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)',
+          borderRadius: '11px', marginBottom: '1.25rem',
         }}>
           <button
             onClick={handleSelectAll}
             style={{
-              padding: '0.45rem 0.875rem', background: '#111',
-              border: '1px solid #2a2a2a', borderRadius: '7px',
-              color: '#9ca3af', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600,
+              padding: '0.45rem 0.875rem', background: '#161617',
+              border: '1px solid #202022', borderRadius: '11px',
+              color: '#e4e4e7', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
             }}
           >
             {selected.size === media.length ? 'Deselect All' : 'Select All'}
@@ -900,10 +902,10 @@ export default function MediaPage() {
               onClick={handleBulkDelete} disabled={bulkDeleting}
               style={{
                 padding: '0.45rem 0.875rem',
-                background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: '7px', color: '#ef4444',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                borderRadius: '11px', color: '#ef4444',
                 cursor: bulkDeleting ? 'not-allowed' : 'pointer',
-                fontSize: '0.8125rem', fontWeight: 600,
+                fontSize: '0.8125rem', fontWeight: 700,
                 display: 'flex', alignItems: 'center', gap: '0.4rem',
               }}
             >
@@ -927,15 +929,15 @@ export default function MediaPage() {
             <div
               key={i}
               style={{
-                background: '#111', border: '1px solid #1f1f1f',
-                borderRadius: '14px', overflow: 'hidden', opacity: 1 - i * 0.06,
+                background: '#0f0f10', border: '1px solid #202022',
+                borderRadius: '16px', overflow: 'hidden', opacity: 1 - i * 0.06,
               }}
             >
-              <div style={{ width: '100%', paddingBottom: viewMode === 'grid' ? '70%' : '0', height: viewMode === 'list' ? '64px' : undefined, background: '#161616' }} />
+              <div style={{ width: '100%', paddingBottom: viewMode === 'grid' ? '70%' : '0', height: viewMode === 'list' ? '64px' : undefined, background: '#161617' }} />
               {viewMode === 'grid' && (
                 <div style={{ padding: '0.625rem 0.75rem' }}>
-                  <div style={{ height: '12px', background: '#1f1f1f', borderRadius: '6px', marginBottom: '0.4rem' }} />
-                  <div style={{ height: '10px', background: '#1a1a1a', borderRadius: '6px', width: '55%' }} />
+                  <div style={{ height: '12px', background: '#202022', borderRadius: '6px', marginBottom: '0.4rem' }} />
+                  <div style={{ height: '10px', background: '#1a1a1c', borderRadius: '6px', width: '55%' }} />
                 </div>
               )}
             </div>
@@ -944,30 +946,31 @@ export default function MediaPage() {
       ) : media.length === 0 ? (
         <div style={{
           textAlign: 'center', padding: '5rem 2rem',
-          background: '#111', border: '1px solid #1f1f1f', borderRadius: '16px',
+          background: '#0f0f10', border: '1px solid #202022', borderRadius: '16px',
         }}>
           <div style={{
-            width: '64px', height: '64px',
-            background: 'rgba(236,30,121,0.08)', border: '1px solid rgba(236,30,121,0.12)',
-            borderRadius: '18px',
+            width: '44px', height: '44px',
+            background: '#161617', border: '1px solid #202022',
+            borderRadius: '999px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 1.25rem',
           }}>
-            <FileImage size={28} color="#EC1E79" />
+            <FileImage size={20} color="#6b7280" />
           </div>
-          <p style={{ fontWeight: 700, color: '#fff', fontSize: '1rem', marginBottom: '0.4rem' }}>
+          <p style={{ fontWeight: 800, color: '#f4f4f5', fontSize: '1rem', marginBottom: '0.4rem' }}>
             {search ? 'No images found' : 'No media yet'}
           </p>
-          <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
             {search ? `No results for "${search}"` : 'Upload images to build your library.'}
           </p>
           {!search && (
             <button
               onClick={() => setShowUploadModal(true)}
               style={{
-                background: '#EC1E79', color: '#000', border: 'none',
-                padding: '0.65rem 1.25rem', borderRadius: '10px',
-                fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
+                background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', color: '#fff', border: 'none',
+                padding: '0.6rem 1.1rem', borderRadius: '11px',
+                fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
+                boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                 display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
               }}
             >
@@ -1022,32 +1025,32 @@ export default function MediaPage() {
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
             style={{
-              background: '#111', border: '1px solid #1f1f1f',
-              color: page === 1 ? '#374151' : '#9ca3af',
-              padding: '0.5rem 0.75rem', borderRadius: '8px',
+              background: '#161617', border: '1px solid #202022',
+              color: page === 1 ? '#6b7280' : '#e4e4e7',
+              padding: '0.55rem 0.85rem', borderRadius: '11px',
               cursor: page === 1 ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', gap: '0.3rem',
-              fontSize: '0.875rem', fontWeight: 600,
+              fontSize: '0.85rem', fontWeight: 700,
             }}
           >
             <ChevronLeft size={15} /> Prev
           </button>
 
           <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
-            Page <span style={{ color: '#fff', fontWeight: 700 }}>{page}</span> of{' '}
-            <span style={{ color: '#fff', fontWeight: 700 }}>{totalPages}</span>
+            Page <span style={{ color: '#f4f4f5', fontWeight: 800 }}>{page}</span> of{' '}
+            <span style={{ color: '#f4f4f5', fontWeight: 800 }}>{totalPages}</span>
           </span>
 
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             style={{
-              background: '#111', border: '1px solid #1f1f1f',
-              color: page === totalPages ? '#374151' : '#9ca3af',
-              padding: '0.5rem 0.75rem', borderRadius: '8px',
+              background: '#161617', border: '1px solid #202022',
+              color: page === totalPages ? '#6b7280' : '#e4e4e7',
+              padding: '0.55rem 0.85rem', borderRadius: '11px',
               cursor: page === totalPages ? 'default' : 'pointer',
               display: 'flex', alignItems: 'center', gap: '0.3rem',
-              fontSize: '0.875rem', fontWeight: 600,
+              fontSize: '0.85rem', fontWeight: 700,
             }}
           >
             Next <ChevronRight size={15} />

@@ -122,8 +122,11 @@ export default function AdminImportPage() {
             >
               <ArrowLeft size={13} /> Back to Products
             </Link>
-            <h1 className="m-0 text-[1.85rem] font-black tracking-[-0.025em]">Bulk Import Products</h1>
-            <p className="m-0 mt-1.5 text-sm text-neutral-400">
+            <div className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
+              <Upload size={12} /> Bulk Import
+            </div>
+            <h1 className="m-0 text-[clamp(1.4rem,2.5vw,1.75rem)] font-black tracking-[-0.025em] text-[#f4f4f5]">Bulk Import Products</h1>
+            <p className="m-0 mt-2 text-sm text-[#9ca3af]">
               Paste a CSV or JSON list of cards to add them all in one go. Up to 500 per import.
             </p>
           </div>
@@ -133,7 +136,7 @@ export default function AdminImportPage() {
           {/* left: form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {/* format + mode pills */}
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
+            <div className="rounded-2xl border border-[#202022] bg-[#0f0f10] p-5">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Format">
                   <div className="flex gap-2">
@@ -159,41 +162,52 @@ export default function AdminImportPage() {
             </div>
 
             {/* paste box */}
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
-              <div className="mb-2.5 flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-400">
+            <div className="rounded-2xl border border-[#202022] bg-[#0f0f10] p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">
                   Paste {format.toUpperCase()} here
                 </label>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={loadTemplate}
-                    className="inline-flex items-center gap-1 rounded-md bg-neutral-800 px-2.5 py-1 text-[11px] font-bold text-neutral-300 transition-colors hover:bg-neutral-700"
+                    className="inline-flex items-center gap-1 rounded-[11px] border border-[#202022] bg-[#161617] px-2.5 py-1.5 text-[11px] font-bold text-[#e4e4e7] transition-colors hover:border-[#2a2a2e]"
                   >
                     <Download size={11} /> Load template
                   </button>
                   <button
                     type="button"
                     onClick={copyTemplate}
-                    className="inline-flex items-center gap-1 rounded-md bg-neutral-800 px-2.5 py-1 text-[11px] font-bold text-neutral-300 transition-colors hover:bg-neutral-700"
+                    className="inline-flex items-center gap-1 rounded-[11px] border border-[#202022] bg-[#161617] px-2.5 py-1.5 text-[11px] font-bold text-[#e4e4e7] transition-colors hover:border-[#2a2a2e]"
                   >
-                    {copied ? <Check size={11} /> : <Copy size={11} />}
+                    {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
                     {copied ? 'Copied' : 'Copy template'}
                   </button>
                 </div>
               </div>
-              <textarea
-                value={data}
-                onChange={e => setData(e.target.value)}
-                placeholder={template}
-                spellCheck={false}
-                className="block w-full resize-y rounded-xl border border-neutral-800 bg-neutral-950 px-3.5 py-3 font-mono text-[12.5px] leading-[1.55] text-neutral-200 outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
-                style={{ minHeight: 320 }}
-              />
+              <div className="overflow-hidden rounded-[14px] border border-dashed border-[#2a2a2e] bg-[#0c0c0d]">
+                <div className="flex items-center gap-3 border-b border-dashed border-[#2a2a2e] px-3.5 py-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#161617] text-[#EC1E79]">
+                    <Upload size={16} />
+                  </div>
+                  <div className="text-[12px] leading-tight text-[#9ca3af]">
+                    Paste your {format.toUpperCase()} rows below, or use a template above.
+                    <span className="ml-1 text-[#6b7280]">Up to 500 rows.</span>
+                  </div>
+                </div>
+                <textarea
+                  value={data}
+                  onChange={e => setData(e.target.value)}
+                  placeholder={template}
+                  spellCheck={false}
+                  className="block w-full resize-y border-0 bg-transparent px-3.5 py-3 font-mono text-[12.5px] leading-[1.55] text-[#f4f4f5] outline-none placeholder:text-[#3a3a3d]"
+                  style={{ minHeight: 300 }}
+                />
+              </div>
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              <div className="flex items-start gap-2 rounded-[11px] border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                 <AlertCircle size={16} className="mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -205,13 +219,13 @@ export default function AdminImportPage() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5"
+                  className="rounded-2xl border border-[#202022] bg-[#0f0f10] p-5"
                 >
-                  <div className="mb-4 flex items-center gap-2">
-                    <div className="flex size-8 items-center justify-center rounded-full bg-[#EC1E79]/15 text-[#EC1E79]">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <div className="flex size-9 items-center justify-center rounded-full bg-[rgba(236,30,121,0.12)] text-[#EC1E79]">
                       <CheckCircle2 size={18} />
                     </div>
-                    <h3 className="m-0 text-base font-extrabold tracking-[-0.01em]">Import complete</h3>
+                    <h3 className="m-0 text-base font-extrabold tracking-[-0.01em] text-[#f4f4f5]">Import complete</h3>
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-center">
                     <Stat label="Created" value={result.created} color="text-emerald-400" />
@@ -219,7 +233,7 @@ export default function AdminImportPage() {
                     <Stat label="Skipped" value={result.skipped} color="text-amber-400" />
                   </div>
                   {result.errors.length > 0 && (
-                    <details className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3" open>
+                    <details className="mt-5 rounded-[11px] border border-amber-500/25 bg-amber-500/10 p-3" open>
                       <summary className="cursor-pointer text-[12px] font-bold uppercase tracking-[0.08em] text-amber-300">
                         {result.errors.length} {result.errors.length === 1 ? 'error' : 'errors'} (click to expand)
                       </summary>
@@ -237,14 +251,14 @@ export default function AdminImportPage() {
                   <div className="mt-5 flex gap-2">
                     <Link
                       href="/admin/products"
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#EC1E79] px-4 py-2 text-[13px] font-extrabold text-white transition-colors hover:bg-[#c81c6b]"
+                      className="inline-flex items-center gap-1.5 rounded-[11px] bg-[linear-gradient(135deg,#EC1E79,#FF4DA6)] px-4 py-2.5 text-[13px] font-extrabold text-white shadow-[0_8px_22px_-10px_rgba(236,30,121,0.6)] transition-transform hover:-translate-y-0.5"
                     >
                       View Products
                     </Link>
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-700 px-4 py-2 text-[13px] font-bold text-neutral-300 transition-colors hover:bg-neutral-800"
+                      className="inline-flex items-center gap-1.5 rounded-[11px] border border-[#202022] bg-[#161617] px-4 py-2.5 text-[13px] font-bold text-[#e4e4e7] transition-colors hover:border-[#2a2a2e]"
                     >
                       Import another batch
                     </button>
@@ -257,7 +271,7 @@ export default function AdminImportPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#EC1E79] px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_8px_24px_-8px_rgba(236,30,121,0.55)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-[linear-gradient(135deg,#EC1E79,#FF4DA6)] px-5 py-3.5 text-sm font-extrabold text-white shadow-[0_8px_22px_-10px_rgba(236,30,121,0.6)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
               >
                 {submitting ? (
                   <>Importing…</>
@@ -272,10 +286,10 @@ export default function AdminImportPage() {
 
           {/* right: cheatsheet */}
           <aside className="space-y-4">
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
+            <div className="rounded-2xl border border-[#202022] bg-[#0f0f10] p-5">
               <div className="mb-3 flex items-center gap-2">
                 <FileText size={14} className="text-[#EC1E79]" />
-                <h3 className="m-0 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+                <h3 className="m-0 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#e4e4e7]">
                   Field reference
                 </h3>
               </div>
@@ -297,14 +311,14 @@ export default function AdminImportPage() {
               </dl>
             </div>
 
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
-              <h3 className="m-0 mb-2 text-[12px] font-extrabold uppercase tracking-[0.1em] text-neutral-300">
+            <div className="rounded-2xl border border-[#202022] bg-[#0f0f10] p-5">
+              <h3 className="m-0 mb-2 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#e4e4e7]">
                 On conflict
               </h3>
-              <p className="m-0 mb-3 text-[12.5px] leading-[1.55] text-neutral-400">
-                Products are matched by <span className="font-mono text-neutral-300">slug</span>.
+              <p className="m-0 mb-3 text-[12.5px] leading-[1.55] text-[#9ca3af]">
+                Products are matched by <span className="font-mono text-[#e4e4e7]">slug</span>.
               </p>
-              <ul className="space-y-1.5 text-[12.5px] text-neutral-400">
+              <ul className="space-y-1.5 text-[12.5px] text-[#9ca3af]">
                 <li>
                   <span className="font-bold text-emerald-400">Update if exists</span> — re-importing the same
                   cards updates price/stock/etc.
@@ -325,7 +339,7 @@ export default function AdminImportPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-neutral-400">{label}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#9ca3af]">{label}</span>
       {children}
     </div>
   )
@@ -345,10 +359,10 @@ function PillButton({
       type="button"
       onClick={onClick}
       className={[
-        'rounded-lg px-3 py-1.5 text-[12.5px] font-bold transition-colors',
+        'rounded-[11px] px-3 py-1.5 text-[12.5px] font-bold transition-colors',
         active
-          ? 'bg-[#EC1E79] text-white shadow-[0_4px_14px_-4px_rgba(236,30,121,0.55)]'
-          : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white',
+          ? 'bg-[linear-gradient(135deg,#EC1E79,#FF4DA6)] text-white shadow-[0_8px_22px_-10px_rgba(236,30,121,0.6)]'
+          : 'border border-[#202022] bg-[#161617] text-[#9ca3af] hover:text-white',
       ].join(' ')}
     >
       {children}
@@ -358,9 +372,9 @@ function PillButton({
 
 function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-950/60 px-3 py-4">
+    <div className="rounded-[11px] border border-[#202022] bg-[#161617] px-3 py-4">
       <div className={`text-[1.75rem] font-black tracking-[-0.03em] ${color}`}>{value}</div>
-      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-500">{label}</div>
+      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#6b7280]">{label}</div>
     </div>
   )
 }
@@ -376,9 +390,9 @@ function FieldRef({
 }) {
   return (
     <div className="flex items-baseline gap-2">
-      <code className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-[11.5px] text-[#EC1E79]">{name}</code>
+      <code className="rounded-md border border-[rgba(236,30,121,0.25)] bg-[rgba(236,30,121,0.12)] px-1.5 py-0.5 font-mono text-[11.5px] text-[#EC1E79]">{name}</code>
       {required && <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">req</span>}
-      <span className="text-neutral-400">— {children}</span>
+      <span className="text-[#9ca3af]">— {children}</span>
     </div>
   )
 }

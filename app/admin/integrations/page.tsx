@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Plug } from 'lucide-react'
 
 interface SyncLog {
   id: string
@@ -157,21 +158,23 @@ export default function IntegrationsPage() {
   }
 
   function statusBadge(status: string) {
-    const colors: Record<string, { bg: string; color: string }> = {
-      success: { bg: 'rgba(236,30,121,0.15)', color: '#EC1E79' },
-      partial: { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
-      error: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
+    const colors: Record<string, { bg: string; color: string; border: string }> = {
+      success: { bg: 'rgba(16,185,129,0.1)', color: '#10b981', border: 'rgba(16,185,129,0.25)' },
+      partial: { bg: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: 'rgba(245,158,11,0.25)' },
+      error: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444', border: 'rgba(239,68,68,0.25)' },
     }
-    const c = colors[status] || { bg: '#1f1f1f', color: '#6b7280' }
+    const c = colors[status] || { bg: '#161617', color: '#9ca3af', border: '#202022' }
     return (
       <span style={{
         background: c.bg,
         color: c.color,
-        fontSize: '0.75rem',
+        border: `1px solid ${c.border}`,
+        fontSize: '0.6875rem',
         fontWeight: 700,
-        padding: '2px 8px',
+        padding: '3px 10px',
         borderRadius: '999px',
         textTransform: 'capitalize',
+        letterSpacing: '0.02em',
       }}>
         {status}
       </span>
@@ -183,53 +186,61 @@ export default function IntegrationsPage() {
     fontSize: '0.8125rem',
     fontWeight: 600,
     color: '#9ca3af',
-    marginBottom: '0.375rem',
+    marginBottom: '0.5rem',
   }
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    background: '#0a0a0a',
-    border: '1px solid #2a2a2a',
-    borderRadius: '8px',
+    background: '#0c0c0d',
+    border: '1px solid #202022',
+    borderRadius: '11px',
     color: '#fff',
-    padding: '0.625rem 0.875rem',
+    padding: '0.6rem 0.8rem',
     fontSize: '0.875rem',
     outline: 'none',
     boxSizing: 'border-box',
   }
 
   const sectionTitleStyle: React.CSSProperties = {
-    fontSize: '0.875rem',
-    fontWeight: 700,
-    color: '#fff',
+    fontSize: '0.6875rem',
+    fontWeight: 800,
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: '0.12em',
     marginBottom: '1rem',
-    paddingBottom: '0.625rem',
-    borderBottom: '1px solid #1f1f1f',
+    paddingBottom: '0.75rem',
+    borderBottom: '1px solid #1a1a1c',
   }
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       {/* Page header */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+          <Plug size={12} color="#EC1E79" />
+          <span style={{ fontSize: '10px', fontWeight: 800, color: '#EC1E79', textTransform: 'uppercase', letterSpacing: '0.16em' }}>
+            Integrations
+          </span>
+        </div>
+        <h1 style={{ fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.025em' }}>
           Integrations
         </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.375rem 0 0' }}>
+        <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
           Connect external platforms to sync inventory and data.
         </p>
       </div>
 
       {/* Integration card */}
       <div style={{
-        background: '#111',
-        border: '1px solid #1f1f1f',
+        background: '#0f0f10',
+        border: '1px solid #202022',
         borderRadius: '16px',
         overflow: 'hidden',
       }}>
         {/* Card header */}
         <div style={{
-          padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid #1f1f1f',
+          padding: '1.25rem 1.35rem',
+          borderBottom: '1px solid #1a1a1c',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -237,30 +248,53 @@ export default function IntegrationsPage() {
           gap: '0.75rem',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-            <img
-              src="https://collecttcg.co.uk/logo/CollectTCG.png"
-              alt="CollectTCG"
-              style={{ height: '32px', width: 'auto', display: 'block' }}
-              onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-            />
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: '#161617',
+              border: '1px solid #202022',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              overflow: 'hidden',
+            }}>
+              <img
+                src="https://collecttcg.co.uk/logo/CollectTCG.png"
+                alt="CollectTCG"
+                style={{ maxHeight: '28px', maxWidth: '32px', width: 'auto', display: 'block' }}
+                onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+              />
+            </div>
             <div>
-              <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem' }}>
+              <div style={{ fontWeight: 800, color: '#f4f4f5', fontSize: '0.9375rem', letterSpacing: '-0.01em' }}>
                 CollectTCG Inventory Sync
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '1px' }}>
+              <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '2px' }}>
                 collecttcg.co.uk
               </div>
             </div>
           </div>
           <span style={{
-            background: isConfigured ? 'rgba(236,30,121,0.15)' : '#1a1a1a',
-            color: isConfigured ? '#EC1E79' : '#6b7280',
-            fontSize: '0.75rem',
+            background: isConfigured ? 'rgba(16,185,129,0.1)' : '#161617',
+            color: isConfigured ? '#10b981' : '#9ca3af',
+            fontSize: '0.6875rem',
             fontWeight: 700,
-            padding: '3px 10px',
+            padding: '4px 12px',
             borderRadius: '999px',
-            border: isConfigured ? '1px solid rgba(236,30,121,0.3)' : '1px solid #2a2a2a',
+            letterSpacing: '0.02em',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            border: isConfigured ? '1px solid rgba(16,185,129,0.25)' : '1px solid #202022',
           }}>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '999px',
+              background: isConfigured ? '#10b981' : '#6b7280',
+            }} />
             {isConfigured ? 'Connected' : 'Not configured'}
           </span>
         </div>
@@ -268,8 +302,8 @@ export default function IntegrationsPage() {
         {/* Tab bar */}
         <div style={{
           display: 'flex',
-          borderBottom: '1px solid #1f1f1f',
-          padding: '0 1.5rem',
+          borderBottom: '1px solid #1a1a1c',
+          padding: '0 1.35rem',
         }}>
           {(['settings', 'logs'] as const).map(tab => (
             <button
@@ -282,8 +316,8 @@ export default function IntegrationsPage() {
                 padding: '0.875rem 1rem 0.875rem 0',
                 marginRight: '1.5rem',
                 fontSize: '0.875rem',
-                fontWeight: 600,
-                color: activeTab === tab ? '#EC1E79' : '#6b7280',
+                fontWeight: 700,
+                color: activeTab === tab ? '#f4f4f5' : '#6b7280',
                 borderBottom: activeTab === tab ? '2px solid #EC1E79' : '2px solid transparent',
                 textTransform: 'capitalize',
                 transition: 'color 0.15s',
@@ -296,7 +330,7 @@ export default function IntegrationsPage() {
 
         {/* Settings tab */}
         {activeTab === 'settings' && (
-          <div style={{ padding: '1.5rem' }}>
+          <div style={{ padding: '1.35rem' }}>
 
             {/* API Connection */}
             <div style={{ marginBottom: '2rem' }}>
@@ -350,14 +384,15 @@ export default function IntegrationsPage() {
                     onClick={handleTest}
                     disabled={testing || !apiUrl || !apiKey}
                     style={{
-                      background: '#1a1a1a',
-                      border: '1px solid #2a2a2a',
-                      borderRadius: '8px',
-                      color: testing || !apiUrl || !apiKey ? '#4b5563' : '#9ca3af',
+                      background: '#161617',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
+                      color: testing || !apiUrl || !apiKey ? '#6b7280' : '#e4e4e7',
                       cursor: testing || !apiUrl || !apiKey ? 'not-allowed' : 'pointer',
-                      padding: '0.5rem 1.125rem',
+                      padding: '0.6rem 1.1rem',
                       fontSize: '0.875rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
+                      opacity: testing || !apiUrl || !apiKey ? 0.6 : 1,
                     }}
                   >
                     {testing ? 'Testing...' : 'Test Connection'}
@@ -366,21 +401,22 @@ export default function IntegrationsPage() {
                     onClick={handleSave}
                     disabled={saving}
                     style={{
-                      background: '#EC1E79',
+                      background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
                       border: 'none',
-                      borderRadius: '8px',
-                      color: '#000',
+                      borderRadius: '11px',
+                      color: '#fff',
                       cursor: saving ? 'not-allowed' : 'pointer',
-                      padding: '0.5rem 1.25rem',
+                      padding: '0.6rem 1.25rem',
                       fontSize: '0.875rem',
-                      fontWeight: 700,
+                      fontWeight: 800,
+                      boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                       opacity: saving ? 0.7 : 1,
                     }}
                   >
                     {saving ? 'Saving...' : 'Save Settings'}
                   </button>
                   {saveMsg && (
-                    <span style={{ fontSize: '0.8125rem', color: saveMsg.includes('Failed') ? '#ef4444' : '#EC1E79', fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.8125rem', color: saveMsg.includes('Failed') ? '#ef4444' : '#10b981', fontWeight: 700 }}>
                       {saveMsg}
                     </span>
                   )}
@@ -389,12 +425,12 @@ export default function IntegrationsPage() {
                 {/* Test result */}
                 {testResult && (
                   <div style={{
-                    background: testResult.connected ? 'rgba(236,30,121,0.08)' : 'rgba(239,68,68,0.08)',
-                    border: `1px solid ${testResult.connected ? 'rgba(236,30,121,0.25)' : 'rgba(239,68,68,0.25)'}`,
-                    borderRadius: '8px',
+                    background: testResult.connected ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                    border: `1px solid ${testResult.connected ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                    borderRadius: '11px',
                     padding: '0.85rem 1rem',
                     fontSize: '0.82rem',
-                    color: testResult.connected ? '#EC1E79' : '#ef4444',
+                    color: testResult.connected ? '#10b981' : '#ef4444',
                     fontWeight: 500,
                     fontFamily: testResult.connected ? 'inherit' : 'ui-monospace, SFMono-Regular, Menlo, monospace',
                     whiteSpace: 'pre-wrap',
@@ -413,7 +449,7 @@ export default function IntegrationsPage() {
             {/* Webhook section */}
             <div style={{ marginBottom: '2rem' }}>
               <div style={sectionTitleStyle}>Webhook (optional, for real-time sync)</div>
-              <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 1rem', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: '0 0 1rem', lineHeight: 1.6 }}>
                 Add this URL as a webhook in your CollectTCG account. When stock changes, CollectTCG will POST to this URL and your inventory updates instantly.
               </p>
               <div style={{ display: 'grid', gap: '1rem' }}>
@@ -429,14 +465,14 @@ export default function IntegrationsPage() {
                     <button
                       onClick={handleCopy}
                       style={{
-                        background: '#1a1a1a',
-                        border: '1px solid #2a2a2a',
-                        borderRadius: '8px',
-                        color: copied ? '#EC1E79' : '#9ca3af',
+                        background: '#161617',
+                        border: '1px solid #202022',
+                        borderRadius: '11px',
+                        color: copied ? '#10b981' : '#e4e4e7',
                         cursor: 'pointer',
-                        padding: '0.625rem 1rem',
+                        padding: '0.6rem 1rem',
                         fontSize: '0.8125rem',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         whiteSpace: 'nowrap',
                         flexShrink: 0,
                       }}
@@ -482,7 +518,7 @@ export default function IntegrationsPage() {
             {/* Manual sync */}
             <div>
               <div style={sectionTitleStyle}>Manual Sync</div>
-              <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 1rem', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: '0 0 1rem', lineHeight: 1.6 }}>
                 Pull all products from CollectTCG now. New products will be created; existing ones will be updated.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -490,14 +526,15 @@ export default function IntegrationsPage() {
                   onClick={handleSync}
                   disabled={syncing || !isConfigured}
                   style={{
-                    background: isConfigured && !syncing ? '#EC1E79' : '#1a1a1a',
-                    border: isConfigured && !syncing ? 'none' : '1px solid #2a2a2a',
-                    borderRadius: '10px',
-                    color: isConfigured && !syncing ? '#000' : '#4b5563',
+                    background: isConfigured && !syncing ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
+                    border: isConfigured && !syncing ? 'none' : '1px solid #202022',
+                    borderRadius: '11px',
+                    color: isConfigured && !syncing ? '#fff' : '#6b7280',
                     cursor: syncing || !isConfigured ? 'not-allowed' : 'pointer',
-                    padding: '0.75rem 1.75rem',
+                    padding: '0.7rem 1.6rem',
                     fontSize: '0.9375rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
+                    boxShadow: isConfigured && !syncing ? '0 8px 22px -10px rgba(236,30,121,0.6)' : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
@@ -509,8 +546,8 @@ export default function IntegrationsPage() {
                         display: 'inline-block',
                         width: '14px',
                         height: '14px',
-                        border: '2px solid rgba(0,0,0,0.3)',
-                        borderTop: '2px solid #000',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTop: '2px solid #fff',
                         borderRadius: '50%',
                         animation: 'spin 0.8s linear infinite',
                       }} />
@@ -530,12 +567,12 @@ export default function IntegrationsPage() {
               {syncResult && (
                 <div style={{
                   marginTop: '1rem',
-                  background: syncResult.error ? 'rgba(239,68,68,0.08)' : 'rgba(236,30,121,0.08)',
-                  border: `1px solid ${syncResult.error ? 'rgba(239,68,68,0.25)' : 'rgba(236,30,121,0.25)'}`,
-                  borderRadius: '8px',
+                  background: syncResult.error ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                  border: `1px solid ${syncResult.error ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`,
+                  borderRadius: '11px',
                   padding: '0.875rem 1rem',
                   fontSize: '0.875rem',
-                  color: syncResult.error ? '#ef4444' : '#EC1E79',
+                  color: syncResult.error ? '#ef4444' : '#10b981',
                   fontWeight: 600,
                 }}>
                   {syncResult.error
@@ -549,15 +586,29 @@ export default function IntegrationsPage() {
 
         {/* Logs tab */}
         {activeTab === 'logs' && (
-          <div style={{ padding: '1.5rem' }}>
+          <div style={{ padding: '1.35rem' }}>
             {logs.length === 0 ? (
               <div style={{
                 textAlign: 'center',
-                padding: '3rem',
-                color: '#4b5563',
-                fontSize: '0.9375rem',
+                padding: '3rem 1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem',
               }}>
-                No syncs yet. Run your first sync above.
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '999px',
+                  background: '#161617',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Plug size={20} color="#6b7280" />
+                </div>
+                <div style={{ color: '#f4f4f5', fontWeight: 700, fontSize: '0.9375rem' }}>No syncs yet</div>
+                <div style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Run your first sync above to see logs here.</div>
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -568,37 +619,44 @@ export default function IntegrationsPage() {
                         <th key={h} style={{
                           textAlign: 'left',
                           padding: '0.5rem 0.75rem',
-                          color: '#4b5563',
+                          color: '#6b7280',
                           fontWeight: 700,
-                          fontSize: '0.75rem',
-                          borderBottom: '1px solid #1f1f1f',
+                          fontSize: '0.6875rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          borderBottom: '1px solid #1a1a1c',
                           whiteSpace: 'nowrap',
                         }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {logs.map((log, i) => (
-                      <tr key={log.id} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                        <td style={{ padding: '0.625rem 0.75rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>
+                    {logs.map((log) => (
+                      <tr
+                        key={log.id}
+                        style={{ borderBottom: '1px solid #1a1a1c', transition: 'background 0.15s ease' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#161617' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                      >
+                        <td style={{ padding: '0.7rem 0.75rem', color: '#9ca3af', whiteSpace: 'nowrap' }}>
                           {formatDate(log.createdAt)}
                         </td>
-                        <td style={{ padding: '0.625rem 0.75rem' }}>
+                        <td style={{ padding: '0.7rem 0.75rem' }}>
                           {statusBadge(log.status)}
                         </td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: '#EC1E79', fontWeight: 600 }}>
+                        <td style={{ padding: '0.7rem 0.75rem', color: '#10b981', fontWeight: 700 }}>
                           {log.created}
                         </td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: '#9ca3af' }}>
+                        <td style={{ padding: '0.7rem 0.75rem', color: '#f4f4f5' }}>
                           {log.updated}
                         </td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: '#6b7280' }}>
+                        <td style={{ padding: '0.7rem 0.75rem', color: '#9ca3af' }}>
                           {log.skipped}
                         </td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '0.7rem 0.75rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
                           {log.duration}ms
                         </td>
-                        <td style={{ padding: '0.625rem 0.75rem', color: '#6b7280', maxWidth: '240px' }}>
+                        <td style={{ padding: '0.7rem 0.75rem', color: '#6b7280', maxWidth: '240px' }}>
                           {log.message ? (
                             <span title={log.message} style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {log.message}

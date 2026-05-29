@@ -34,7 +34,7 @@ function getCategoryStyle(category: string) {
 function getStockColor(stock: number): string {
   if (stock === 0) return '#ef4444'
   if (stock <= 5) return '#f59e0b'
-  return '#34d399'
+  return '#10b981'
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -146,12 +146,12 @@ export default function InventoryPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             style={{
-              background: 'rgba(236,30,121,0.12)',
-              border: '1px solid rgba(236,30,121,0.4)',
-              borderRadius: '10px',
+              background: 'rgba(16,185,129,0.1)',
+              border: '1px solid rgba(16,185,129,0.25)',
+              borderRadius: '11px',
               padding: '0.75rem 1.25rem',
               marginBottom: '1.25rem',
-              color: '#EC1E79',
+              color: '#10b981',
               fontWeight: 600,
               fontSize: '0.875rem',
             }}
@@ -163,23 +163,17 @@ export default function InventoryPage() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'rgba(236,30,121,0.12)',
-            border: '1px solid rgba(236,30,121,0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Boxes size={22} color="#EC1E79" />
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
+            <Boxes size={12} color="#EC1E79" />
+            <span style={{ fontSize: '10px', fontWeight: 800, color: '#EC1E79', textTransform: 'uppercase', letterSpacing: '0.16em' }}>
+              Inventory
+            </span>
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>Inventory</h1>
-            <p style={{ margin: 0, fontSize: '0.875rem', color: '#6b7280', marginTop: '0.125rem' }}>Manage stock levels</p>
-          </div>
+          <h1 style={{ margin: 0, fontSize: 'clamp(1.4rem, 2.5vw, 1.75rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.025em' }}>
+            Inventory
+          </h1>
+          <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#9ca3af' }}>Manage stock levels across your catalogue</p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.625rem' }}>
@@ -190,11 +184,11 @@ export default function InventoryPage() {
               onClick={() => setEditMode(true)}
               style={{
                 padding: '0.625rem 1.25rem',
-                background: 'transparent',
-                border: '1.5px solid #EC1E79',
-                borderRadius: '10px',
-                color: '#EC1E79',
-                fontWeight: 600,
+                background: '#161617',
+                border: '1px solid #202022',
+                borderRadius: '11px',
+                color: '#e4e4e7',
+                fontWeight: 700,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
               }}
@@ -210,11 +204,11 @@ export default function InventoryPage() {
                 disabled={saving}
                 style={{
                   padding: '0.625rem 1.25rem',
-                  background: 'transparent',
-                  border: '1.5px solid #374151',
-                  borderRadius: '10px',
+                  background: '#161617',
+                  border: '1px solid #202022',
+                  borderRadius: '11px',
                   color: '#9ca3af',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: '0.875rem',
                   cursor: 'pointer',
                   opacity: saving ? 0.5 : 1,
@@ -229,12 +223,13 @@ export default function InventoryPage() {
                 disabled={saving}
                 style={{
                   padding: '0.625rem 1.25rem',
-                  background: '#EC1E79',
-                  border: '1.5px solid #EC1E79',
-                  borderRadius: '10px',
-                  color: '#000',
-                  fontWeight: 700,
+                  background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+                  border: 'none',
+                  borderRadius: '11px',
+                  color: '#fff',
+                  fontWeight: 800,
                   fontSize: '0.875rem',
+                  boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
                   cursor: saving ? 'not-allowed' : 'pointer',
                   opacity: saving ? 0.7 : 1,
                 }}
@@ -249,39 +244,39 @@ export default function InventoryPage() {
       {/* Out-of-stock alert banner */}
       {outOfStock > 0 && (
         <div style={{
-          background: '#fef3c7',
-          border: '1px solid #fbbf24',
-          borderRadius: '10px',
+          background: 'rgba(245,158,11,0.1)',
+          border: '1px solid rgba(245,158,11,0.25)',
+          borderRadius: '11px',
           padding: '0.75rem 1.25rem',
           marginBottom: '1.5rem',
-          color: '#92400e',
+          color: '#f59e0b',
           fontWeight: 600,
           fontSize: '0.875rem',
         }}>
-          ⚠️ {outOfStock} {outOfStock === 1 ? 'product is' : 'products are'} out of stock
+          {outOfStock} {outOfStock === 1 ? 'product is' : 'products are'} out of stock
         </div>
       )}
 
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
-          { label: 'Total SKUs', value: products.length, color: '#EC1E79' },
-          { label: 'In Stock', value: inStock, color: '#34d399' },
+          { label: 'Total SKUs', value: products.length, color: '#f4f4f5' },
+          { label: 'In Stock', value: inStock, color: '#10b981' },
           { label: 'Out of Stock', value: outOfStock, color: '#ef4444' },
         ].map(stat => (
           <div
             key={stat.label}
             style={{
-              background: '#111',
-              border: '1px solid #1f1f1f',
-              borderRadius: '12px',
-              padding: '1.25rem',
+              background: '#0f0f10',
+              border: '1px solid #202022',
+              borderRadius: '16px',
+              padding: '1.25rem 1.35rem',
             }}
           >
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
               {stat.label}
             </div>
-            <div style={{ fontSize: '1.875rem', fontWeight: 700, color: stat.color }}>
+            <div style={{ fontSize: '1.875rem', fontWeight: 900, color: stat.color, letterSpacing: '-0.02em' }}>
               {stat.value}
             </div>
           </div>
@@ -301,12 +296,12 @@ export default function InventoryPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               style={{
-                padding: '0.4rem 1rem',
+                padding: '0.45rem 1rem',
                 borderRadius: '999px',
-                border: filter === f.key ? '1.5px solid #EC1E79' : '1.5px solid #1f1f1f',
-                background: filter === f.key ? 'rgba(236,30,121,0.12)' : 'transparent',
-                color: filter === f.key ? '#EC1E79' : '#6b7280',
-                fontWeight: 600,
+                border: filter === f.key ? '1px solid rgba(236,30,121,0.25)' : '1px solid #202022',
+                background: filter === f.key ? 'rgba(236,30,121,0.12)' : '#161617',
+                color: filter === f.key ? '#EC1E79' : '#9ca3af',
+                fontWeight: 700,
                 fontSize: '0.8125rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -327,10 +322,10 @@ export default function InventoryPage() {
             onChange={e => setSearch(e.target.value)}
             style={{
               width: '100%',
-              padding: '0.5rem 0.875rem 0.5rem 2.25rem',
-              background: '#111',
-              border: '1px solid #1f1f1f',
-              borderRadius: '10px',
+              padding: '0.6rem 0.8rem 0.6rem 2.25rem',
+              background: '#0c0c0d',
+              border: '1px solid #202022',
+              borderRadius: '11px',
               color: '#fff',
               fontSize: '0.875rem',
               outline: 'none',
@@ -347,9 +342,9 @@ export default function InventoryPage() {
             <div
               key={i}
               style={{
-                background: '#111',
-                border: '1px solid #1f1f1f',
-                borderRadius: '12px',
+                background: '#0f0f10',
+                border: '1px solid #202022',
+                borderRadius: '16px',
                 padding: '1rem 1.25rem',
                 height: '72px',
                 opacity: 0.5,
@@ -358,14 +353,29 @@ export default function InventoryPage() {
           ))
         ) : filteredProducts.length === 0 ? (
           <div style={{
-            background: '#111',
-            border: '1px solid #1f1f1f',
-            borderRadius: '12px',
-            padding: '3rem',
+            background: '#0f0f10',
+            border: '1px solid #202022',
+            borderRadius: '16px',
+            padding: '3rem 1.5rem',
             textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.75rem',
           }}>
-            <Package size={40} color="#374151" style={{ marginBottom: '0.75rem' }} />
-            <p style={{ color: '#6b7280', margin: 0, fontWeight: 600 }}>No products found</p>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '999px',
+              background: '#161617',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Package size={20} color="#6b7280" />
+            </div>
+            <p style={{ color: '#f4f4f5', margin: 0, fontWeight: 700 }}>No products found</p>
+            <p style={{ color: '#9ca3af', margin: 0, fontSize: '0.875rem' }}>Try adjusting your search or filters.</p>
           </div>
         ) : (
           <AnimatePresence initial={false}>
@@ -382,9 +392,9 @@ export default function InventoryPage() {
                   exit={{ opacity: 0 }}
                   transition={{ delay: index * 0.03 }}
                   style={{
-                    background: '#111',
-                    border: '1px solid #1f1f1f',
-                    borderRadius: '12px',
+                    background: '#0f0f10',
+                    border: '1px solid #202022',
+                    borderRadius: '16px',
                     padding: '0.875rem 1.25rem',
                     display: 'flex',
                     alignItems: 'center',
@@ -392,21 +402,21 @@ export default function InventoryPage() {
                     transition: 'background 0.15s ease',
                     cursor: 'default',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#1a1a1a' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#111' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#161617' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#0f0f10' }}
                 >
                   {/* Thumbnail */}
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: '8px',
-                    background: '#1a1a1a',
+                    borderRadius: '11px',
+                    background: '#161617',
                     flexShrink: 0,
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '1px solid #2a2a2a',
+                    border: '1px solid #202022',
                   }}>
                     {imageUrl ? (
                       <img
@@ -421,7 +431,7 @@ export default function InventoryPage() {
 
                   {/* Name + category */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontWeight: 700, color: '#f4f4f5', fontSize: '0.9375rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {product.name}
                     </div>
                     <div style={{ marginTop: '0.25rem' }}>
@@ -442,7 +452,40 @@ export default function InventoryPage() {
                   </div>
 
                   {/* Stock display or edit input */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+                    {/* Low / out-of-stock pill */}
+                    {!editMode && product.stock === 0 && (
+                      <span style={{
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        background: 'rgba(239,68,68,0.1)',
+                        border: '1px solid rgba(239,68,68,0.25)',
+                        color: '#ef4444',
+                        fontSize: '0.625rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        Out
+                      </span>
+                    )}
+                    {!editMode && product.stock > 0 && product.stock <= 5 && (
+                      <span style={{
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        background: 'rgba(245,158,11,0.1)',
+                        border: '1px solid rgba(245,158,11,0.25)',
+                        color: '#f59e0b',
+                        fontSize: '0.625rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        Low
+                      </span>
+                    )}
                     {editMode ? (
                       <input
                         type="number"
@@ -450,21 +493,22 @@ export default function InventoryPage() {
                         value={currentStock}
                         onChange={e => handleEditStockChange(product.id, Math.max(0, parseInt(e.target.value, 10) || 0))}
                         style={{
-                          background: '#1a1a1a',
-                          border: '1px solid #333',
+                          background: '#0c0c0d',
+                          border: '1px solid #202022',
                           color: '#fff',
-                          padding: '0.4rem 0.6rem',
-                          borderRadius: '8px',
+                          padding: '0.6rem 0.6rem',
+                          borderRadius: '11px',
                           width: '80px',
                           textAlign: 'center',
                           fontSize: '0.9375rem',
                           fontWeight: 700,
                           outline: 'none',
+                          boxSizing: 'border-box',
                         }}
                       />
                     ) : (
                       <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '1.125rem', fontWeight: 700, color: getStockColor(product.stock) }}>
+                        <span style={{ fontSize: '1.125rem', fontWeight: 800, color: getStockColor(product.stock) }}>
                           {product.stock}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: '#6b7280', marginLeft: '0.25rem' }}>units</span>
@@ -481,14 +525,14 @@ export default function InventoryPage() {
                         onClick={() => handleQuickUpdate(product.id, -1)}
                         disabled={product.stock === 0}
                         style={{
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '8px',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '11px',
                           background: 'rgba(239,68,68,0.1)',
                           border: '1px solid rgba(239,68,68,0.25)',
                           color: '#ef4444',
-                          fontWeight: 700,
-                          fontSize: '1rem',
+                          fontWeight: 800,
+                          fontSize: '0.875rem',
                           cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -504,13 +548,13 @@ export default function InventoryPage() {
                         whileTap={{ scale: 0.92 }}
                         onClick={() => handleQuickUpdate(product.id, 1)}
                         style={{
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '8px',
-                          background: 'rgba(236,30,121,0.1)',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '11px',
+                          background: 'rgba(236,30,121,0.12)',
                           border: '1px solid rgba(236,30,121,0.25)',
                           color: '#EC1E79',
-                          fontWeight: 700,
+                          fontWeight: 800,
                           fontSize: '0.875rem',
                           cursor: 'pointer',
                           display: 'flex',

@@ -64,13 +64,13 @@ function CountryPill({ code }: { code: string }) {
     <span style={{
       display: 'inline-flex',
       alignItems: 'center',
-      gap: '0.25rem',
-      background: 'rgba(236,30,121,0.08)',
-      border: '1px solid rgba(236,30,121,0.2)',
+      gap: '0.3rem',
+      background: 'rgba(236,30,121,0.12)',
+      border: '1px solid rgba(236,30,121,0.25)',
       color: '#EC1E79',
       fontSize: '0.75rem',
-      fontWeight: 600,
-      padding: '2px 8px',
+      fontWeight: 700,
+      padding: '2px 9px',
       borderRadius: '999px',
     }}>
       {flag} {code}
@@ -92,11 +92,11 @@ function EditRateForm({ rate, onSave, onCancel }: EditRateFormProps) {
   const [freeAbove, setFreeAbove] = useState(rate.freeAbove !== null ? String(rate.freeAbove) : '')
 
   const inputStyle = {
-    background: '#0a0a0a',
-    border: '1px solid #2a2a2a',
-    borderRadius: '6px',
+    background: '#0c0c0d',
+    border: '1px solid #202022',
+    borderRadius: '11px',
     color: '#fff',
-    padding: '0.375rem 0.625rem',
+    padding: '0.5rem 0.7rem',
     fontSize: '0.8125rem',
     width: '100%',
     outline: 'none',
@@ -108,10 +108,10 @@ function EditRateForm({ rate, onSave, onCancel }: EditRateFormProps) {
       gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
       gap: '0.5rem',
       alignItems: 'center',
-      padding: '0.625rem 0.75rem',
-      background: 'rgba(236,30,121,0.04)',
-      borderRadius: '8px',
-      border: '1px solid rgba(236,30,121,0.15)',
+      padding: '0.7rem 0.8rem',
+      background: 'rgba(236,30,121,0.08)',
+      borderRadius: '12px',
+      border: '1px solid rgba(236,30,121,0.25)',
     }}>
       <input value={name} onChange={e => setName(e.target.value)} placeholder="Rate name" style={inputStyle} />
       <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price £" type="number" step="0.01" style={inputStyle} />
@@ -127,13 +127,13 @@ function EditRateForm({ rate, onSave, onCancel }: EditRateFormProps) {
             maxDays: parseInt(maxDays),
             freeAbove: freeAbove ? parseFloat(freeAbove) : null,
           })}
-          style={{ background: 'rgba(236,30,121,0.15)', border: '1px solid rgba(236,30,121,0.3)', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', color: '#EC1E79', display: 'flex', alignItems: 'center' }}
+          style={{ background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)', borderRadius: '11px', padding: '0.5rem', cursor: 'pointer', color: '#EC1E79', display: 'flex', alignItems: 'center' }}
         >
           <Check size={14} />
         </button>
         <button
           onClick={onCancel}
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center' }}
+          style={{ background: '#161617', border: '1px solid #202022', borderRadius: '11px', padding: '0.5rem', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center' }}
         >
           <X size={14} />
         </button>
@@ -155,11 +155,11 @@ function AddRateForm({ onAdd, onCancel }: AddRateFormProps) {
   const [freeAbove, setFreeAbove] = useState('')
 
   const inputStyle = {
-    background: '#0a0a0a',
-    border: '1px solid #2a2a2a',
-    borderRadius: '6px',
+    background: '#0c0c0d',
+    border: '1px solid #202022',
+    borderRadius: '11px',
     color: '#fff',
-    padding: '0.375rem 0.625rem',
+    padding: '0.5rem 0.7rem',
     fontSize: '0.8125rem',
     width: '100%',
     outline: 'none',
@@ -171,10 +171,10 @@ function AddRateForm({ onAdd, onCancel }: AddRateFormProps) {
       gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
       gap: '0.5rem',
       alignItems: 'center',
-      padding: '0.625rem 0.75rem',
-      background: 'rgba(255,255,255,0.02)',
-      borderRadius: '8px',
-      border: '1px dashed #2a2a2a',
+      padding: '0.7rem 0.8rem',
+      background: '#0c0c0d',
+      borderRadius: '12px',
+      border: '1px dashed #2a2a2e',
     }}>
       <input value={name} onChange={e => setName(e.target.value)} placeholder="Rate name" style={inputStyle} />
       <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price £" type="number" step="0.01" style={inputStyle} />
@@ -193,13 +193,13 @@ function AddRateForm({ onAdd, onCancel }: AddRateFormProps) {
               freeAbove: freeAbove ? parseFloat(freeAbove) : null,
             })
           }}
-          style={{ background: 'rgba(236,30,121,0.15)', border: '1px solid rgba(236,30,121,0.3)', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', color: '#EC1E79', display: 'flex', alignItems: 'center' }}
+          style={{ background: 'rgba(236,30,121,0.12)', border: '1px solid rgba(236,30,121,0.25)', borderRadius: '11px', padding: '0.5rem', cursor: 'pointer', color: '#EC1E79', display: 'flex', alignItems: 'center' }}
         >
           <Check size={14} />
         </button>
         <button
           onClick={onCancel}
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '0.375rem', cursor: 'pointer', color: '#6b7280', display: 'flex', alignItems: 'center' }}
+          style={{ background: '#161617', border: '1px solid #202022', borderRadius: '11px', padding: '0.5rem', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center' }}
         >
           <X size={14} />
         </button>
@@ -351,12 +351,16 @@ export default function ShippingPage() {
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ background: '#0a0a0a', minHeight: '100vh', padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff', margin: 0 }}>Shipping</h1>
-          <p style={{ color: '#6b7280', marginTop: '0.375rem', margin: '0.375rem 0 0' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#EC1E79', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', marginBottom: '0.55rem' }}>
+            <Globe size={12} />
+            Logistics
+          </div>
+          <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,1.75rem)', fontWeight: 900, letterSpacing: '-0.025em', color: '#fff', margin: 0 }}>Shipping</h1>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.5rem 0 0' }}>
             Manage zones, rates and delivery options
           </p>
         </div>
@@ -366,14 +370,16 @@ export default function ShippingPage() {
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            background: '#EC1E79',
-            color: '#000',
+            background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+            color: '#fff',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '11px',
             padding: '0.625rem 1.25rem',
-            fontWeight: 700,
+            fontWeight: 800,
             fontSize: '0.875rem',
             cursor: 'pointer',
+            boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
+            whiteSpace: 'nowrap',
           }}
         >
           <Plus size={16} />
@@ -383,28 +389,40 @@ export default function ShippingPage() {
 
       {/* Loading */}
       {loading && (
-        <div style={{ textAlign: 'center', color: '#4b5563', padding: '3rem' }}>Loading...</div>
+        <div style={{ textAlign: 'center', color: '#6b7280', padding: '3rem' }}>Loading...</div>
       )}
 
       {/* Empty state */}
       {!loading && zones.length === 0 && (
         <div style={{
-          background: '#111',
-          border: '1px solid #1f1f1f',
-          borderRadius: '12px',
+          background: '#0f0f10',
+          border: '1px solid #202022',
+          borderRadius: '16px',
           padding: '3rem',
           textAlign: 'center',
         }}>
-          <Globe size={40} color="#2a2a2a" style={{ margin: '0 auto 1rem' }} />
-          <p style={{ color: '#4b5563', marginBottom: '1.5rem', fontSize: '1rem' }}>No shipping zones set up yet.</p>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '999px',
+            background: '#161617',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem',
+          }}>
+            <Globe size={20} color="#6b7280" />
+          </div>
+          <p style={{ color: '#f4f4f5', fontWeight: 700, fontSize: '1rem', margin: '0 0 0.35rem' }}>No shipping zones set up yet.</p>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0 0 1.5rem' }}>Start with sensible defaults or add a zone manually.</p>
           <button
             onClick={handleSeedDefaults}
             disabled={seedingDefaults}
             style={{
-              background: 'rgba(236,30,121,0.1)',
-              border: '1px solid rgba(236,30,121,0.3)',
-              color: '#EC1E79',
-              borderRadius: '8px',
+              background: '#161617',
+              border: '1px solid #202022',
+              color: '#e4e4e7',
+              borderRadius: '11px',
               padding: '0.625rem 1.5rem',
               fontWeight: 700,
               fontSize: '0.875rem',
@@ -424,9 +442,9 @@ export default function ShippingPage() {
           <div
             key={zone.id}
             style={{
-              background: '#111',
-              border: '1px solid #1f1f1f',
-              borderRadius: '12px',
+              background: '#0f0f10',
+              border: '1px solid #202022',
+              borderRadius: '16px',
               marginBottom: '1.25rem',
               overflow: 'hidden',
             }}
@@ -436,24 +454,24 @@ export default function ShippingPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '1rem',
-              padding: '1rem 1.25rem',
-              borderBottom: isCollapsed ? 'none' : '1px solid #1f1f1f',
+              padding: '1rem 1.35rem',
+              borderBottom: isCollapsed ? 'none' : '1px solid #1a1a1c',
             }}>
               <button
                 onClick={() => toggleZoneCollapse(zone.id)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 0, display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0, display: 'flex', alignItems: 'center' }}
               >
                 {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
               </button>
 
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <span style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{zone.name}</span>
+                  <span style={{ color: '#f4f4f5', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.01em' }}>{zone.name}</span>
                   <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
                     {zone.countries.map(c => <CountryPill key={c} code={c} />)}
                   </div>
                 </div>
-                <div style={{ color: '#4b5563', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
+                <div style={{ color: '#6b7280', fontSize: '0.8125rem', marginTop: '0.3rem' }}>
                   {zone.rates.length} rate{zone.rates.length !== 1 ? 's' : ''}
                 </div>
               </div>
@@ -462,13 +480,13 @@ export default function ShippingPage() {
               <button
                 onClick={() => handleToggleZoneActive(zone)}
                 style={{
-                  background: zone.active ? 'rgba(236,30,121,0.12)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${zone.active ? 'rgba(236,30,121,0.3)' : '#2a2a2a'}`,
-                  color: zone.active ? '#EC1E79' : '#4b5563',
+                  background: zone.active ? 'rgba(16,185,129,0.1)' : '#161617',
+                  border: `1px solid ${zone.active ? 'rgba(16,185,129,0.25)' : '#202022'}`,
+                  color: zone.active ? '#10b981' : '#6b7280',
                   borderRadius: '999px',
                   padding: '0.25rem 0.875rem',
                   fontSize: '0.75rem',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   cursor: 'pointer',
                   letterSpacing: '0.04em',
                 }}
@@ -480,11 +498,11 @@ export default function ShippingPage() {
                 onClick={() => setAddingRateZoneId(zone.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.375rem',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid #2a2a2a',
-                  color: '#9ca3af',
-                  borderRadius: '7px',
-                  padding: '0.4rem 0.875rem',
+                  background: '#161617',
+                  border: '1px solid #202022',
+                  color: '#e4e4e7',
+                  borderRadius: '11px',
+                  padding: '0.45rem 0.875rem',
                   fontSize: '0.8125rem',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -496,9 +514,9 @@ export default function ShippingPage() {
 
               <button
                 onClick={() => handleDeleteZone(zone.id)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', padding: '0.375rem', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0.375rem', borderRadius: '9px', display: 'flex', alignItems: 'center' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#4b5563' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6b7280' }}
               >
                 <Trash2 size={15} />
               </button>
@@ -506,19 +524,19 @@ export default function ShippingPage() {
 
             {/* Rates */}
             {!isCollapsed && (
-              <div style={{ padding: '0.75rem 1.25rem 1rem' }}>
+              <div style={{ padding: '0.85rem 1.35rem 1rem' }}>
                 {/* Rate table header */}
                 {zone.rates.length > 0 && (
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
                     gap: '0.5rem',
-                    padding: '0 0.75rem 0.5rem',
-                    borderBottom: '1px solid #1a1a1a',
+                    padding: '0 0.8rem 0.5rem',
+                    borderBottom: '1px solid #1a1a1c',
                     marginBottom: '0.5rem',
                   }}>
                     {['Name', 'Price', 'Min days', 'Max days', 'Free above', ''].map(h => (
-                      <span key={h} style={{ color: '#4b5563', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
+                      <span key={h} style={{ color: '#6b7280', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
                     ))}
                   </div>
                 )}
@@ -537,15 +555,15 @@ export default function ShippingPage() {
                         gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
                         gap: '0.5rem',
                         alignItems: 'center',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '7px',
+                        padding: '0.55rem 0.8rem',
+                        borderRadius: '11px',
                         transition: 'background 0.1s',
                       }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#161616' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#161617' }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
                       >
-                        <span style={{ color: '#e5e7eb', fontWeight: 600, fontSize: '0.875rem' }}>{rate.name}</span>
-                        <span style={{ color: '#EC1E79', fontWeight: 700, fontSize: '0.875rem' }}>
+                        <span style={{ color: '#f4f4f5', fontWeight: 600, fontSize: '0.875rem' }}>{rate.name}</span>
+                        <span style={{ color: '#EC1E79', fontWeight: 800, fontSize: '0.875rem' }}>
                           {rate.price === 0 ? 'FREE' : `£${rate.price.toFixed(2)}`}
                         </span>
                         <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>{rate.minDays}d</span>
@@ -556,17 +574,17 @@ export default function ShippingPage() {
                         <div style={{ display: 'flex', gap: '0.375rem' }}>
                           <button
                             onClick={() => setEditingRateId(rate.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', padding: '0.25rem', borderRadius: '5px', display: 'flex', alignItems: 'center' }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0.3rem', borderRadius: '8px', display: 'flex', alignItems: 'center' }}
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#EC1E79' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#4b5563' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6b7280' }}
                           >
                             <Pencil size={13} />
                           </button>
                           <button
                             onClick={() => handleDeleteRate(rate.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', padding: '0.25rem', borderRadius: '5px', display: 'flex', alignItems: 'center' }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0.3rem', borderRadius: '8px', display: 'flex', alignItems: 'center' }}
                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#4b5563' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6b7280' }}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -586,7 +604,7 @@ export default function ShippingPage() {
                 )}
 
                 {zone.rates.length === 0 && addingRateZoneId !== zone.id && (
-                  <div style={{ color: '#4b5563', fontSize: '0.875rem', padding: '0.75rem', textAlign: 'center' }}>
+                  <div style={{ color: '#6b7280', fontSize: '0.875rem', padding: '0.85rem', textAlign: 'center' }}>
                     No rates yet. Click &quot;Add Rate&quot; to add one.
                   </div>
                 )}
@@ -605,14 +623,14 @@ export default function ShippingPage() {
       )}
 
       {/* Slide-over panel */}
-      <div style={{
+      <div role="dialog" aria-modal="true" style={{
         position: 'fixed',
         top: 0,
         right: 0,
         height: '100vh',
         width: '420px',
-        background: '#111',
-        borderLeft: '1px solid #1f1f1f',
+        background: '#0f0f10',
+        borderLeft: '1px solid #202022',
         zIndex: 50,
         transform: slideOverOpen ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 0.3s ease',
@@ -620,13 +638,13 @@ export default function ShippingPage() {
         flexDirection: 'column',
       }}>
         {/* Slide-over header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1f1f1f' }}>
-          <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1.125rem', margin: 0 }}>Add Zone</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1a1a1c' }}>
+          <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '-0.02em', margin: 0 }}>Add Zone</h2>
           <button
             onClick={() => setSlideOverOpen(false)}
-            style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            style={{ background: '#161617', border: '1px solid #202022', borderRadius: '9px', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.3rem' }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -641,11 +659,11 @@ export default function ShippingPage() {
               onChange={e => setNewZoneName(e.target.value)}
               placeholder="e.g. UK Mainland"
               style={{
-                background: '#0a0a0a',
-                border: '1px solid #2a2a2a',
-                borderRadius: '8px',
+                background: '#0c0c0d',
+                border: '1px solid #202022',
+                borderRadius: '11px',
                 color: '#fff',
-                padding: '0.625rem 0.875rem',
+                padding: '0.6rem 0.8rem',
                 fontSize: '0.9375rem',
                 width: '100%',
                 outline: 'none',
@@ -669,9 +687,9 @@ export default function ShippingPage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.75rem',
-                      background: selected ? 'rgba(236,30,121,0.08)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${selected ? 'rgba(236,30,121,0.3)' : '#2a2a2a'}`,
-                      borderRadius: '8px',
+                      background: selected ? 'rgba(236,30,121,0.12)' : '#161617',
+                      border: `1px solid ${selected ? 'rgba(236,30,121,0.25)' : '#202022'}`,
+                      borderRadius: '11px',
                       padding: '0.625rem 1rem',
                       color: selected ? '#EC1E79' : '#9ca3af',
                       fontSize: '0.875rem',
@@ -700,11 +718,11 @@ export default function ShippingPage() {
                 placeholder="e.g. US, AU"
                 style={{
                   flex: 1,
-                  background: '#0a0a0a',
-                  border: '1px solid #2a2a2a',
-                  borderRadius: '8px',
+                  background: '#0c0c0d',
+                  border: '1px solid #202022',
+                  borderRadius: '11px',
                   color: '#fff',
-                  padding: '0.5rem 0.75rem',
+                  padding: '0.6rem 0.8rem',
                   fontSize: '0.875rem',
                   outline: 'none',
                 }}
@@ -712,11 +730,11 @@ export default function ShippingPage() {
               <button
                 onClick={addCustomCode}
                 style={{
-                  background: 'rgba(236,30,121,0.1)',
-                  border: '1px solid rgba(236,30,121,0.25)',
-                  color: '#EC1E79',
-                  borderRadius: '8px',
-                  padding: '0.5rem 1rem',
+                  background: '#161617',
+                  border: '1px solid #202022',
+                  color: '#e4e4e7',
+                  borderRadius: '11px',
+                  padding: '0.6rem 1rem',
                   fontWeight: 700,
                   fontSize: '0.875rem',
                   cursor: 'pointer',
@@ -741,13 +759,13 @@ export default function ShippingPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.25rem',
-                      background: 'rgba(236,30,121,0.08)',
-                      border: '1px solid rgba(236,30,121,0.2)',
+                      gap: '0.3rem',
+                      background: 'rgba(236,30,121,0.12)',
+                      border: '1px solid rgba(236,30,121,0.25)',
                       color: '#EC1E79',
                       fontSize: '0.75rem',
-                      fontWeight: 600,
-                      padding: '3px 8px',
+                      fontWeight: 700,
+                      padding: '3px 9px',
                       borderRadius: '999px',
                       cursor: 'pointer',
                     }}
@@ -761,19 +779,20 @@ export default function ShippingPage() {
         </div>
 
         {/* Slide-over footer */}
-        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #1f1f1f' }}>
+        <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid #1a1a1c' }}>
           <button
             onClick={handleAddZone}
             disabled={savingZone || !newZoneName || newZoneCountries.length === 0}
             style={{
               width: '100%',
-              background: '#EC1E79',
-              color: '#000',
+              background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+              color: '#fff',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '11px',
               padding: '0.75rem',
-              fontWeight: 700,
+              fontWeight: 800,
               fontSize: '0.9375rem',
+              boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
               cursor: savingZone || !newZoneName || newZoneCountries.length === 0 ? 'not-allowed' : 'pointer',
               opacity: savingZone || !newZoneName || newZoneCountries.length === 0 ? 0.5 : 1,
             }}

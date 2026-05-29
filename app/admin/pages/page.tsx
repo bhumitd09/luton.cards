@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FileText } from 'lucide-react'
 
 type ContentItem = {
   key: string
@@ -20,18 +21,18 @@ type Tab = typeof TABS[number]
 function SkeletonCard() {
   return (
     <div style={{
-      background: '#111',
-      borderRadius: '12px',
-      padding: '1.5rem',
-      border: '1px solid #1f1f1f',
-      marginBottom: '1.25rem',
+      background: '#0f0f10',
+      borderRadius: '16px',
+      padding: '1.25rem 1.35rem',
+      border: '1px solid #202022',
+      marginBottom: '0.875rem',
     }}>
       {[120, 80, 200].map((w, i) => (
         <div key={i} style={{
           height: i === 2 ? '80px' : '16px',
           width: `${w}px`,
-          background: '#1f1f1f',
-          borderRadius: '6px',
+          background: '#161617',
+          borderRadius: '8px',
           marginBottom: '1rem',
           animation: 'pulse 1.5s ease-in-out infinite',
         }} />
@@ -48,7 +49,7 @@ function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: stri
         {children}
       </label>
       {hint && (
-        <span style={{ fontSize: '0.75rem', color: '#4b5563', display: 'block', marginTop: '0.125rem' }}>
+        <span style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block', marginTop: '0.125rem' }}>
           {hint}
         </span>
       )}
@@ -58,12 +59,12 @@ function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: stri
 
 const inputBase: React.CSSProperties = {
   width: '100%',
-  background: '#0a0a0a',
-  border: '1px solid #2a2a2a',
-  borderRadius: '8px',
-  color: '#e5e7eb',
+  background: '#0c0c0d',
+  border: '1px solid #202022',
+  borderRadius: '11px',
+  color: '#fff',
   fontSize: '0.875rem',
-  padding: '0.625rem 0.75rem',
+  padding: '0.6rem 0.8rem',
   outline: 'none',
   boxSizing: 'border-box',
   fontFamily: 'inherit',
@@ -86,13 +87,11 @@ function TextInput({
         value={value}
         onChange={e => onChange(e.target.value)}
         style={inputBase}
-        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = '#EC1E79' }}
-        onBlur={e => { (e.target as HTMLInputElement).style.borderColor = '#2a2a2a' }}
       />
       {maxLength !== undefined && (
         <span style={{
           fontSize: '0.75rem',
-          color: value.length > maxLength ? '#f87171' : '#4b5563',
+          color: value.length > maxLength ? '#ef4444' : '#6b7280',
           display: 'block',
           marginTop: '0.25rem',
           textAlign: 'right',
@@ -122,13 +121,11 @@ function TextArea({
         onChange={e => onChange(e.target.value)}
         rows={rows}
         style={{ ...inputBase, resize: 'vertical', lineHeight: '1.5' }}
-        onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = '#EC1E79' }}
-        onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = '#2a2a2a' }}
       />
       {maxLength !== undefined && (
         <span style={{
           fontSize: '0.75rem',
-          color: value.length > maxLength ? '#f87171' : '#4b5563',
+          color: value.length > maxLength ? '#ef4444' : '#6b7280',
           display: 'block',
           marginTop: '0.25rem',
           textAlign: 'right',
@@ -161,9 +158,10 @@ function ToggleSwitch({
           height: '24px',
           borderRadius: '999px',
           border: 'none',
-          background: checked ? '#EC1E79' : '#2a2a2a',
+          background: checked ? 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)' : '#161617',
+          boxShadow: checked ? '0 4px 14px -6px rgba(236,30,121,0.6)' : 'inset 0 0 0 1px #202022',
           cursor: 'pointer',
-          transition: 'background 0.2s ease',
+          transition: 'background 0.2s ease, box-shadow 0.2s ease',
           flexShrink: 0,
         }}
         aria-checked={checked}
@@ -180,7 +178,7 @@ function ToggleSwitch({
           transition: 'left 0.2s ease',
         }} />
       </button>
-      <span style={{ fontSize: '0.875rem', color: checked ? '#e5e7eb' : '#6b7280' }}>
+      <span style={{ fontSize: '0.875rem', color: checked ? '#f4f4f5' : '#6b7280' }}>
         {label}
       </span>
     </div>
@@ -191,9 +189,9 @@ function ToggleSwitch({
 type AnnouncementColor = 'mint' | 'dark' | 'warning'
 
 const COLOR_OPTIONS: { value: AnnouncementColor; label: string; bg: string; text: string }[] = [
-  { value: 'mint', label: 'Mint', bg: '#EC1E79', text: '#000' },
-  { value: 'dark', label: 'Dark', bg: '#111', text: '#fff' },
-  { value: 'warning', label: 'Warning', bg: '#f59e0b', text: '#000' },
+  { value: 'mint', label: 'Mint', bg: 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)', text: '#fff' },
+  { value: 'dark', label: 'Dark', bg: '#161617', text: '#f4f4f5' },
+  { value: 'warning', label: 'Warning', bg: '#f59e0b', text: '#0a0a0a' },
 ]
 
 function ColorPicker({
@@ -213,13 +211,13 @@ function ColorPicker({
           style={{
             background: opt.bg,
             color: opt.text,
-            border: value === opt.value ? '2px solid #fff' : '2px solid transparent',
-            borderRadius: '8px',
-            padding: '0.375rem 1rem',
+            border: '1px solid #202022',
+            borderRadius: '11px',
+            padding: '0.4rem 1rem',
             fontSize: '0.8125rem',
-            fontWeight: 700,
+            fontWeight: 800,
             cursor: 'pointer',
-            boxShadow: value === opt.value ? '0 0 0 2px #EC1E79' : 'none',
+            boxShadow: value === opt.value ? '0 0 0 2px #0f0f10, 0 0 0 4px #EC1E79' : 'none',
             transition: 'box-shadow 0.15s ease',
           }}
         >
@@ -246,28 +244,28 @@ function SectionCard({
 }) {
   return (
     <div style={{
-      background: '#111',
-      borderRadius: '12px',
-      padding: '1rem 1.1rem',
-      border: '1px solid #1f1f1f',
+      background: '#0f0f10',
+      borderRadius: '16px',
+      padding: '1.25rem 1.35rem',
+      border: '1px solid #202022',
       marginBottom: '0.875rem',
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingBottom: '0.65rem',
-        borderBottom: '1px solid #1f1f1f',
-        marginBottom: '0.875rem',
+        paddingBottom: '0.75rem',
+        borderBottom: '1px solid #1a1a1c',
+        marginBottom: '1rem',
         gap: '0.75rem',
       }}>
         <h3 style={{
-          fontSize: '0.85rem',
-          fontWeight: 700,
-          color: '#fff',
+          fontSize: '0.7rem',
+          fontWeight: 800,
+          color: '#9ca3af',
           margin: 0,
           textTransform: 'uppercase',
-          letterSpacing: '0.06em',
+          letterSpacing: '0.16em',
         }}>
           {title}
         </h3>
@@ -275,15 +273,24 @@ function SectionCard({
           onClick={onSave}
           disabled={saveState === 'saving'}
           style={{
-            background: saveState === 'saved' ? '#059669' : saveState === 'error' ? '#dc2626' : '#EC1E79',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '7px',
-            padding: '0.35rem 0.85rem',
+            background: saveState === 'saved'
+              ? 'rgba(16,185,129,0.1)'
+              : saveState === 'error'
+                ? 'rgba(239,68,68,0.1)'
+                : 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+            color: saveState === 'saved' ? '#10b981' : saveState === 'error' ? '#ef4444' : '#fff',
+            border: saveState === 'saved'
+              ? '1px solid rgba(16,185,129,0.25)'
+              : saveState === 'error'
+                ? '1px solid rgba(239,68,68,0.25)'
+                : 'none',
+            borderRadius: '11px',
+            padding: '0.4rem 0.95rem',
             fontSize: '0.75rem',
-            fontWeight: 700,
+            fontWeight: 800,
             cursor: saveState === 'saving' ? 'not-allowed' : 'pointer',
             opacity: saveState === 'saving' ? 0.7 : 1,
+            boxShadow: saveState === 'idle' || saveState === 'saving' ? '0 8px 22px -10px rgba(236,30,121,0.6)' : 'none',
             transition: 'all 0.15s ease',
             whiteSpace: 'nowrap',
           }}
@@ -306,7 +313,7 @@ function SectionCard({
       </div>
 
       {saveState === 'error' && (
-        <div style={{ marginTop: '0.6rem', fontSize: '0.75rem', color: '#f87171' }}>
+        <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#ef4444' }}>
           Failed to save. Please try again.
         </div>
       )}
@@ -403,7 +410,7 @@ export default function PagesEditorPage() {
   }
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1100px' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1100px', background: '#0a0a0a' }}>
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -414,24 +421,37 @@ export default function PagesEditorPage() {
       {/* Page Header + Tabs in one row */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
         gap: '1rem',
         flexWrap: 'wrap',
-        marginBottom: '1.25rem',
-        paddingBottom: '0.75rem',
-        borderBottom: '1px solid #1f1f1f',
+        marginBottom: '1.5rem',
+        paddingBottom: '1rem',
+        borderBottom: '1px solid #1a1a1c',
       }}>
         <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.025em' }}>Page Editor</h1>
-          <p style={{ color: '#6b7280', fontSize: '0.8125rem', margin: '0.2rem 0 0' }}>
+          <p style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            fontSize: '10px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.16em',
+            color: '#EC1E79',
+            margin: '0 0 0.4rem',
+          }}>
+            <FileText size={11} /> Content
+          </p>
+          <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,1.75rem)', fontWeight: 900, color: '#f4f4f5', margin: 0, letterSpacing: '-0.025em' }}>Page Editor</h1>
+          <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0.35rem 0 0' }}>
             Edit copy for every section of the public site.
           </p>
         </div>
         {/* Tab Bar */}
         <div style={{
           display: 'flex',
-          gap: '0.3rem',
+          gap: '0.4rem',
           flexWrap: 'wrap',
         }}>
           {TABS.map(tab => (
@@ -439,15 +459,16 @@ export default function PagesEditorPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                background: activeTab === tab ? '#EC1E79' : 'transparent',
+                background: activeTab === tab ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
                 color: activeTab === tab ? '#fff' : '#9ca3af',
                 border: '1px solid',
-                borderColor: activeTab === tab ? '#EC1E79' : '#1f1f1f',
-                borderRadius: '8px',
-                padding: '0.35rem 0.85rem',
+                borderColor: activeTab === tab ? 'transparent' : '#202022',
+                borderRadius: '999px',
+                padding: '0.4rem 0.95rem',
                 fontSize: '0.78rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
+                boxShadow: activeTab === tab ? '0 8px 22px -12px rgba(236,30,121,0.6)' : 'none',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -530,8 +551,8 @@ export default function PagesEditorPage() {
             <Field label="Headline">
               <TextArea value={get('ethos_headline', 'We buy them, grade them, sell them.')} onChange={v => set('ethos_headline', v)} rows={2} />
             </Field>
-            <div style={{ borderTop: '1px solid #1f1f1f', paddingTop: '1rem' }}>
-              <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 1rem 0' }}>Pillar 01</p>
+            <div style={{ borderTop: '1px solid #1a1a1c', paddingTop: '1rem' }}>
+              <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#EC1E79', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 1rem 0' }}>Pillar 01</p>
               <Field label="Title">
                 <TextInput value={get('ethos_01_title', 'We grade. We source.')} onChange={v => set('ethos_01_title', v)} />
               </Field>
@@ -541,8 +562,8 @@ export default function PagesEditorPage() {
                 </Field>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #1f1f1f', paddingTop: '1rem' }}>
-              <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 1rem 0' }}>Pillar 02</p>
+            <div style={{ borderTop: '1px solid #1a1a1c', paddingTop: '1rem' }}>
+              <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#EC1E79', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 1rem 0' }}>Pillar 02</p>
               <Field label="Title">
                 <TextInput value={get('ethos_02_title', 'No funny pricing.')} onChange={v => set('ethos_02_title', v)} />
               </Field>
@@ -552,8 +573,8 @@ export default function PagesEditorPage() {
                 </Field>
               </div>
             </div>
-            <div style={{ borderTop: '1px solid #1f1f1f', paddingTop: '1rem' }}>
-              <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 1rem 0' }}>Pillar 03</p>
+            <div style={{ borderTop: '1px solid #1a1a1c', paddingTop: '1rem' }}>
+              <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#EC1E79', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 1rem 0' }}>Pillar 03</p>
               <Field label="Title">
                 <TextInput value={get('ethos_03_title', 'Packed like it matters.')} onChange={v => set('ethos_03_title', v)} />
               </Field>

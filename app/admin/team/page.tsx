@@ -159,31 +159,32 @@ export default function AdminTeamPage() {
         {/* Header */}
         <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <p className="m-0 mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
+            <p className="m-0 mb-1.5 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
               <Users size={11} /> Content
             </p>
-            <h1 className="m-0 text-[1.6rem] font-black tracking-[-0.025em]">Team / About Page</h1>
-            <p className="m-0 mt-1 text-sm text-neutral-400">
+            <h1 className="m-0 text-[clamp(1.4rem,2.5vw,1.75rem)] font-black tracking-[-0.025em] text-[#f4f4f5]">Team / About Page</h1>
+            <p className="m-0 mt-1 text-[0.875rem] text-[#9ca3af]">
               Manage the founders shown on the public About page. Up to {MAX_MEMBERS}.
             </p>
           </div>
           <div className="flex items-center gap-2">
             {status === 'saved' && (
-              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-400">
+              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#10b981]">
                 <Check size={13} /> Saved
               </span>
             )}
             <button
               onClick={addMember}
               disabled={members.length >= MAX_MEMBERS}
-              className="inline-flex items-center gap-1 rounded-lg bg-neutral-800 px-3 py-2 text-[12px] font-bold text-neutral-200 transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-[11px] border border-[#202022] bg-[#161617] px-3 py-2 text-[12px] font-bold text-[#e4e4e7] transition-colors hover:bg-[#1c1c1e] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={12} /> Add member
             </button>
             <button
               onClick={handleSave}
               disabled={status === 'saving' || loading}
-              className="rounded-xl bg-[#EC1E79] px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_6px_18px_-6px_rgba(236,30,121,0.55)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
+              className="rounded-[11px] px-5 py-2.5 text-sm font-extrabold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', fontWeight: 800, boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)' }}
             >
               {status === 'saving' ? 'Saving…' : 'Save'}
             </button>
@@ -191,34 +192,37 @@ export default function AdminTeamPage() {
         </div>
 
         {error && (
-          <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div
+            className="mb-4 flex items-start gap-2 rounded-[11px] px-4 py-3 text-sm text-[#ef4444]"
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
+          >
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Group photo card (separate from member grid) */}
-        <div className="mb-6 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
+        <div className="mb-6 rounded-2xl border border-[#202022] bg-[#0f0f10] px-[1.35rem] py-[1.25rem]">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
-              <p className="m-0 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#EC1E79]">
+              <p className="m-0 inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#EC1E79]">
                 <ImageIcon size={11} /> About Page
               </p>
-              <h2 className="m-0 mt-1 text-[1.05rem] font-black tracking-[-0.02em]">Group Photo</h2>
-              <p className="m-0 mt-1 text-[12.5px] text-neutral-500">
+              <h2 className="m-0 mt-1 text-[1.05rem] font-black tracking-[-0.02em] text-[#f4f4f5]">Group Photo</h2>
+              <p className="m-0 mt-1 text-[12.5px] text-[#6b7280]">
                 Shown in the About hero. Landscape 5:4 works best. Replace any time.
               </p>
             </div>
             {groupStatus === 'saved' && (
-              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-400">
+              <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#10b981]">
                 <Check size={13} /> Saved
               </span>
             )}
             {groupStatus === 'saving' && (
-              <span className="text-[12px] font-bold text-neutral-400">Saving…</span>
+              <span className="text-[12px] font-bold text-[#9ca3af]">Saving…</span>
             )}
             {groupStatus === 'error' && (
-              <span className="text-[12px] font-bold text-red-400">Save failed</span>
+              <span className="text-[12px] font-bold text-[#ef4444]">Save failed</span>
             )}
           </div>
 
@@ -230,19 +234,19 @@ export default function AdminTeamPage() {
                   <img
                     src={groupPhoto}
                     alt="Group"
-                    className="aspect-[5/4] w-full rounded-xl border border-neutral-800 object-cover"
+                    className="aspect-[5/4] w-full rounded-[12px] border border-[#202022] object-cover"
                   />
                   <button
                     type="button"
                     onClick={() => saveGroupPhoto('')}
-                    className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-red-500 text-white"
+                    className="absolute -right-1.5 -top-1.5 flex size-6 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#ef4444] text-white"
                     title="Remove photo"
                   >
                     <Trash2 size={11} />
                   </button>
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-neutral-800 bg-neutral-950">
+                <div className="rounded-[12px] border border-dashed border-[#202022] bg-[#0c0c0d]">
                   <ImageUploader
                     images={[]}
                     onChange={imgs => imgs[0] && saveGroupPhoto(imgs[0])}
@@ -252,8 +256,8 @@ export default function AdminTeamPage() {
                 </div>
               )}
             </div>
-            <div className="text-[13px] leading-[1.6] text-neutral-400">
-              <p className="m-0 mb-2 font-bold text-neutral-200">Tips</p>
+            <div className="text-[13px] leading-[1.6] text-[#9ca3af]">
+              <p className="m-0 mb-2 font-bold text-[#f4f4f5]">Tips</p>
               <ul className="m-0 space-y-1.5 pl-4">
                 <li>Use a landscape shot of all four together if you can.</li>
                 <li>Aspect ratio: roughly 5:4 (e.g. 1400×1120). Anything wider crops top/bottom.</li>
@@ -267,7 +271,7 @@ export default function AdminTeamPage() {
         {loading ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-[380px] animate-pulse rounded-2xl bg-neutral-900/40" />
+              <div key={i} className="h-[380px] animate-pulse rounded-2xl bg-[#0f0f10]" />
             ))}
           </div>
         ) : (
@@ -280,11 +284,11 @@ export default function AdminTeamPage() {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4"
+                  className="rounded-2xl border border-[#202022] bg-[#0f0f10] px-[1.35rem] py-[1.25rem]"
                 >
                   {/* Card header: position + actions */}
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                  <div className="mb-3 flex items-center justify-between border-b border-[#1a1a1c] pb-3">
+                    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#6b7280]">
                       <GripVertical size={12} />
                       Position {i + 1}
                     </div>
@@ -294,7 +298,7 @@ export default function AdminTeamPage() {
                         onClick={() => move(i, -1)}
                         disabled={i === 0}
                         title="Move up"
-                        className="rounded-md p-1 text-neutral-600 hover:bg-neutral-800 hover:text-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-30"
+                        className="rounded-[11px] p-1 text-[#6b7280] hover:bg-[#161617] hover:text-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-30"
                       >
                         ▲
                       </button>
@@ -303,7 +307,7 @@ export default function AdminTeamPage() {
                         onClick={() => move(i, 1)}
                         disabled={i === members.length - 1}
                         title="Move down"
-                        className="rounded-md p-1 text-neutral-600 hover:bg-neutral-800 hover:text-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-30"
+                        className="rounded-[11px] p-1 text-[#6b7280] hover:bg-[#161617] hover:text-[#EC1E79] disabled:cursor-not-allowed disabled:opacity-30"
                       >
                         ▼
                       </button>
@@ -311,7 +315,8 @@ export default function AdminTeamPage() {
                         type="button"
                         onClick={() => remove(i)}
                         title="Remove"
-                        className="ml-1 rounded-md bg-red-500/10 p-1.5 text-red-400 transition-colors hover:bg-red-500/20"
+                        className="ml-1 rounded-[11px] p-1.5 text-[#ef4444] transition-colors hover:brightness-125"
+                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
                       >
                         <Trash2 size={12} />
                       </button>
@@ -322,7 +327,7 @@ export default function AdminTeamPage() {
                   <div className="grid grid-cols-[140px_1fr] gap-3">
                     {/* Photo */}
                     <div>
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-500">
+                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b7280]">
                         Photo
                       </label>
                       {m.photo ? (
@@ -331,12 +336,12 @@ export default function AdminTeamPage() {
                           <img
                             src={m.photo}
                             alt={m.name}
-                            className="aspect-square w-full rounded-xl border border-neutral-800 object-cover"
+                            className="aspect-square w-full rounded-[12px] border border-[#202022] object-cover"
                           />
                           <button
                             type="button"
                             onClick={() => update(i, { photo: '' })}
-                            className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-red-500 text-white"
+                            className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#ef4444] text-white"
                             title="Remove photo"
                           >
                             <Trash2 size={9} />
@@ -372,7 +377,7 @@ export default function AdminTeamPage() {
                         maxLength={32}
                       />
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-500">
+                        <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b7280]">
                           Bio
                         </label>
                         <textarea
@@ -381,7 +386,7 @@ export default function AdminTeamPage() {
                           placeholder="Short bio (1–2 sentences)"
                           rows={3}
                           maxLength={400}
-                          className="w-full resize-y rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[12px] leading-[1.5] text-neutral-100 outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
+                          className="w-full resize-y rounded-[11px] border border-[#202022] bg-[#0c0c0d] px-2.5 py-1.5 text-[12px] leading-[1.5] text-[#f4f4f5] outline-none placeholder:text-[#6b7280]"
                         />
                       </div>
                     </div>
@@ -411,7 +416,7 @@ function Input({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-500">
+      <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b7280]">
         {label}
       </label>
       <input
@@ -419,7 +424,7 @@ function Input({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-2.5 py-1.5 text-[12.5px] font-medium text-white outline-none transition-colors placeholder:text-neutral-700 focus:border-[#EC1E79]"
+        className="w-full rounded-[11px] border border-[#202022] bg-[#0c0c0d] px-2.5 py-1.5 text-[12.5px] font-medium text-white outline-none placeholder:text-[#6b7280]"
       />
     </div>
   )
@@ -435,7 +440,7 @@ function SinglePhotoUploader({
 }) {
   const images = value ? [value] : []
   return (
-    <div className="rounded-xl border border-dashed border-neutral-800 bg-neutral-950">
+    <div className="rounded-[12px] border border-dashed border-[#202022] bg-[#0c0c0d]">
       <ImageUploader
         images={images}
         onChange={imgs => onChange(imgs[0] || '')}
