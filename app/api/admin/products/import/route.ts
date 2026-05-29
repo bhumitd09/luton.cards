@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
 
 type ImportRow = {
   name: string
@@ -107,7 +107,7 @@ function splitCsvLine(line: string): string[] {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = getAdminFromRequest(req)
+  const admin = await verifyAdminSession(req)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { format?: 'json' | 'csv'; data?: string | ImportRow[]; mode?: 'create' | 'upsert' }

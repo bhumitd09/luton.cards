@@ -280,28 +280,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const displayName = admin?.name?.trim() || admin?.email?.split('@')[0] || 'Admin'
   const initial = (admin?.name?.trim()?.[0] || admin?.email?.[0] || 'A').toUpperCase()
 
+  const isSuper = role === 'superadmin'
+
+  // superadminOnly items are store-wide config / integrations / moderation —
+  // matched 1:1 with the server-side verifySuperadminSession gates. Vendors
+  // never see them in the nav (and would get 401 if they hit the route).
   const navManage = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/admin/products', icon: Package, label: 'Products', badgeKey: 'outOfStockProducts' as const, badgeColor: '#ef4444' },
     { href: '/admin/import', icon: Upload, label: 'Bulk Import' },
     { href: '/admin/inventory', icon: Boxes, label: 'Inventory' },
-    { href: '/admin/content', icon: FileText, label: 'Content' },
-    { href: '/admin/pages', icon: Globe, label: 'Pages' },
-    { href: '/admin/instagram', icon: Instagram, label: 'Instagram' },
-    { href: '/admin/team', icon: Users, label: 'Team / About' },
     { href: '/admin/media', icon: Image, label: 'Media' },
-    { href: '/admin/integrations', icon: Plug, label: 'Integrations' },
-    { href: '/admin/shipping', icon: Truck, label: 'Shipping' },
-  ]
+    { href: '/admin/content', icon: FileText, label: 'Content', superadminOnly: true },
+    { href: '/admin/pages', icon: Globe, label: 'Pages', superadminOnly: true },
+    { href: '/admin/instagram', icon: Instagram, label: 'Instagram', superadminOnly: true },
+    { href: '/admin/team', icon: Users, label: 'Team / About', superadminOnly: true },
+    { href: '/admin/integrations', icon: Plug, label: 'Integrations', superadminOnly: true },
+    { href: '/admin/shipping', icon: Truck, label: 'Shipping', superadminOnly: true },
+  ].filter(item => isSuper || !('superadminOnly' in item))
+
   const navSales = [
     { href: '/admin/orders', icon: ShoppingBag, label: 'Orders', badgeKey: 'pendingOrders' as const, badgeColor: '#f59e0b' },
-    { href: '/admin/sell', icon: Tag, label: 'Buy-back', badgeColor: '#EC1E79' },
-    { href: '/admin/customers', icon: Users, label: 'Customers' },
-    { href: '/admin/discounts', icon: Tag, label: 'Discounts' },
-    { href: '/admin/reviews', icon: Star, label: 'Reviews' },
     { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
-  ]
-  const isSuper = role === 'superadmin'
+    { href: '/admin/sell', icon: Tag, label: 'Buy-back', badgeColor: '#EC1E79', superadminOnly: true },
+    { href: '/admin/customers', icon: Users, label: 'Customers', superadminOnly: true },
+    { href: '/admin/discounts', icon: Tag, label: 'Discounts', superadminOnly: true },
+    { href: '/admin/reviews', icon: Star, label: 'Reviews', superadminOnly: true },
+  ].filter(item => isSuper || !('superadminOnly' in item))
   const navCrew = isSuper
     ? [
         { href: '/admin/members', icon: UserCog, label: 'Team Members' },

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin } from '@/lib/vendor-auth'
 
 /**
@@ -17,7 +17,7 @@ import { isSuperadmin } from '@/lib/vendor-auth'
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!isSuperadmin(admin)) {
       return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
@@ -98,7 +98,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const admin = getAdminFromRequest(req)
+    const admin = await verifyAdminSession(req)
     if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!isSuperadmin(admin)) {
       return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })

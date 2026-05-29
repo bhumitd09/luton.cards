@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getAdminFromRequest } from '@/lib/admin-auth'
+import { verifySuperadminSession } from '@/lib/admin-auth'
 
 /**
  * Admin-only diagnostic endpoint. Hits Meta's Graph API directly using the
@@ -25,7 +25,7 @@ type Diagnostic = {
 }
 
 export async function GET(req: NextRequest) {
-  const admin = getAdminFromRequest(req)
+  const admin = await verifySuperadminSession(req)
   if (!admin) return NextResponse.json({ ok: false, message: 'Unauthorized' }, { status: 401 })
 
   const tokenRow = await db.content.findUnique({ where: { key: 'instagram_access_token' } }).catch(() => null)

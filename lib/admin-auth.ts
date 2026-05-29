@@ -164,6 +164,20 @@ export async function verifyAdminSession(req: NextRequest): Promise<AdminJwtPayl
   }
 }
 
+/**
+ * Like verifyAdminSession but additionally requires the superadmin role.
+ * Returns the payload only for an active superadmin; null otherwise.
+ *
+ * Use on store-wide config / integration / moderation endpoints that a
+ * vendor account must never reach. Returning null (→ 401) rather than a
+ * distinct 403 also avoids confirming the endpoint exists to vendors.
+ */
+export async function verifySuperadminSession(req: NextRequest): Promise<AdminJwtPayload | null> {
+  const admin = await verifyAdminSession(req)
+  if (!admin || admin.role !== 'superadmin') return null
+  return admin
+}
+
 /** Manually invalidate the cached session check for a token (e.g. after logout). */
 export function invalidateAdminSession(token: string | undefined) {
   if (token) sessionCache.delete(token)
