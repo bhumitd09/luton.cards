@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Phone, Image as ImageIcon, X, Trash2 } from 'lucide-react'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 interface SellSubmission {
   id: string
@@ -37,6 +39,8 @@ export default function AdminSellPage() {
   const [loading, setLoading] = useState(true)
   const [active, setActive] = useState<SellSubmission | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const load = () => {
     setLoading(true)
@@ -63,15 +67,26 @@ export default function AdminSellPage() {
       const data = await res.json()
       setSubmissions(prev => prev.map(s => (s.id === id ? data.submission : s)))
       if (active?.id === id) setActive(data.submission)
+      toast.success('Updated')
+    } else {
+      toast.error('Could not update')
     }
   }
 
   const deleteSubmission = async (id: string) => {
-    if (!confirm('Delete this submission? This cannot be undone.')) return
+    const ok = await confirm({
+      message: 'Delete this submission? This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
     const res = await fetch(`/api/admin/sell/${id}`, { method: 'DELETE' })
     if (res.ok) {
       setSubmissions(prev => prev.filter(s => s.id !== id))
       if (active?.id === id) setActive(null)
+      toast.success('Deleted')
+    } else {
+      toast.error('Could not delete')
     }
   }
 

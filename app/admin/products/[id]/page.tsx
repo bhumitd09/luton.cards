@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { ImageUploader } from '@/components/admin/image-uploader'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -120,6 +122,8 @@ function ToggleSwitch({
 export default function ProductEditPage() {
   const params = useParams()
   const router = useRouter()
+  const confirm = useConfirm()
+  const toast = useToast()
   const productId = params?.id as string
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -220,9 +224,11 @@ export default function ProductEditPage() {
         const data = await res.json().catch(() => ({}))
         throw new Error(data?.error || 'Save failed')
       }
+      toast.success('Product saved')
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (err: unknown) {
+      toast.error('Could not save product')
       setSaveError(err instanceof Error ? err.message : 'Failed to save product.')
     } finally {
       setSaving(false)
@@ -230,12 +236,21 @@ export default function ProductEditPage() {
   }
 
   const handleDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete product?',
+      message: 'This permanently removes the product. This cannot be undone.',
+      danger: true,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     setDeleting(true)
     try {
       const res = await fetch(`/api/admin/products/${productId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Delete failed')
+      toast.success('Product deleted')
       router.push('/admin/products')
     } catch {
+      toast.error('Could not delete product')
       setSaveError('Failed to delete product.')
       setConfirmDelete(false)
       setDeleting(false)

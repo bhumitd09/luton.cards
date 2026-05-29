@@ -6,6 +6,8 @@ import {
   Wallet, Users, TrendingUp, Calendar, Check, X, AlertCircle, ChevronDown,
   ChevronRight, ShieldCheck, Percent, PoundSterling,
 } from 'lucide-react'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 type PayoutRow = {
   vendorId: string
@@ -46,6 +48,8 @@ export default function AdminPayoutsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [marking, setMarking] = useState(false)
   const [me, setMe] = useState<{ id: string; role: string } | null>(null)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const load = async () => {
     setLoading(true)
@@ -76,16 +80,30 @@ export default function AdminPayoutsPage() {
 
   const markPaid = async () => {
     if (selected.size === 0) return
-    if (!confirm(`Mark ${selected.size} line item(s) as paid?`)) return
+    if (!(await confirm({
+      title: 'Mark as paid?',
+      message: `Mark ${selected.size} line item(s) as paid?`,
+      confirmLabel: 'Mark paid',
+    }))) return
     setMarking(true)
-    await fetch('/api/admin/payouts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemIds: Array.from(selected) }),
-    })
-    setSelected(new Set())
-    setMarking(false)
-    load()
+    try {
+      const res = await fetch('/api/admin/payouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemIds: Array.from(selected) }),
+      })
+      if (!res.ok) {
+        toast.error('Could not mark as paid')
+        return
+      }
+      setSelected(new Set())
+      toast.success('Marked as paid')
+      load()
+    } catch {
+      toast.error('Could not mark as paid')
+    } finally {
+      setMarking(false)
+    }
   }
 
   const totalOwed = rows.reduce((s, r) => s + r.vendorPayoutOwed, 0)

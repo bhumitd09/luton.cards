@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 interface Review {
   id: string
@@ -80,6 +82,8 @@ export default function ReviewsAdminPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const fetchReviews = async () => {
     setLoading(true)
@@ -138,14 +142,15 @@ export default function ReviewsAdminPage() {
         featured: form.featured,
       }
 
+      let res: Response
       if (editingId) {
-        await fetch(`/api/admin/reviews/${editingId}`, {
+        res = await fetch(`/api/admin/reviews/${editingId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
       } else {
-        await fetch('/api/admin/reviews', {
+        res = await fetch('/api/admin/reviews', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -154,35 +159,60 @@ export default function ReviewsAdminPage() {
 
       await fetchReviews()
       closeForm()
+      if (res.ok) {
+        toast.success('Updated')
+      } else {
+        toast.error('Could not save review')
+      }
     } catch {
-      // silent
+      toast.error('Could not save review')
     } finally {
       setSaving(false)
     }
   }
 
   const toggleApproved = async (review: Review) => {
-    await fetch(`/api/admin/reviews/${review.id}`, {
+    const res = await fetch(`/api/admin/reviews/${review.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ approved: !review.approved }),
     })
     await fetchReviews()
+    if (res.ok) {
+      toast.success('Updated')
+    } else {
+      toast.error('Could not update review')
+    }
   }
 
   const toggleFeatured = async (review: Review) => {
-    await fetch(`/api/admin/reviews/${review.id}`, {
+    const res = await fetch(`/api/admin/reviews/${review.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ featured: !review.featured }),
     })
     await fetchReviews()
+    if (res.ok) {
+      toast.success('Updated')
+    } else {
+      toast.error('Could not update review')
+    }
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this review? This cannot be undone.')) return
-    await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+    const ok = await confirm({
+      message: 'Delete this review? This cannot be undone.',
+      confirmLabel: 'Delete',
+      danger: true,
+    })
+    if (!ok) return
+    const res = await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
     await fetchReviews()
+    if (res.ok) {
+      toast.success('Deleted')
+    } else {
+      toast.error('Could not delete')
+    }
   }
 
   const total = reviews.length

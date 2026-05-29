@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { ToastProvider } from '@/components/admin/toast'
+import { ConfirmProvider } from '@/components/admin/confirm-dialog'
 import {
   LayoutDashboard,
   Package,
@@ -318,6 +320,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const closeMobile = () => setMobileMenuOpen(false)
 
   return (
+    <ConfirmProvider>
+    <ToastProvider>
     <div style={{ display: 'flex', minHeight: '100vh', background: T.bg }}>
       <style>{`
         @media (max-width: 900px) {
@@ -545,5 +549,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
     </div>
+    </ToastProvider>
+    </ConfirmProvider>
   )
 }

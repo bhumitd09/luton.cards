@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 interface Discount {
   id: string
@@ -25,6 +27,8 @@ function generateCode(): string {
 }
 
 export default function DiscountsPage() {
+  const confirm = useConfirm()
+  const toast = useToast()
   const [discounts, setDiscounts] = useState<Discount[]>([])
   const [loading, setLoading] = useState(true)
   const [slideOverOpen, setSlideOverOpen] = useState(false)
@@ -109,13 +113,16 @@ export default function DiscountsPage() {
       const data = await res.json()
       if (!res.ok) {
         setFormError(data.error || 'Failed to create discount')
+        toast.error(data.error || 'Failed to create discount')
         return
       }
 
       closeSlideOver()
       await fetchDiscounts()
+      toast.success('Discount saved')
     } catch {
       setFormError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -139,14 +146,18 @@ export default function DiscountsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this discount code?')) return
+    const ok = await confirm({ title: 'Delete discount?', message: 'This cannot be undone.', danger: true, confirmLabel: 'Delete' })
+    if (!ok) return
     try {
       const res = await fetch(`/api/admin/discounts/${id}`, { method: 'DELETE' })
       if (res.ok) {
         setDiscounts(prev => prev.filter(d => d.id !== id))
+        toast.success('Discount deleted')
+      } else {
+        toast.error('Could not delete discount')
       }
     } catch {
-      // ignore
+      toast.error('Could not delete discount')
     }
   }
 

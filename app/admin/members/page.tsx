@@ -6,6 +6,8 @@ import {
   UserCog, Plus, Mail, ShieldCheck, Percent, Wallet, Trash2,
   Check, AlertCircle, Eye, EyeOff, Power, X, KeyRound, Package,
 } from 'lucide-react'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 type Member = {
   id: string
@@ -137,15 +139,32 @@ export default function AdminMembersPage() {
 function MemberCard({
   member, onEdit, onChanged,
 }: { member: Member; onEdit: () => void; onChanged: () => void }) {
+  const confirm = useConfirm()
+  const toast = useToast()
+
   const toggleActive = async () => {
     const next = !member.active
-    if (!next && !confirm(`Disable ${member.name || member.email}? They won't be able to log in.`)) return
-    await fetch(`/api/admin/members/${member.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active: next }),
-    })
-    onChanged()
+    if (!next && !(await confirm({
+      title: 'Disable member?',
+      message: `Disable ${member.name || member.email}? They won't be able to log in.`,
+      confirmLabel: 'Disable',
+      danger: true,
+    }))) return
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: next }),
+      })
+      if (!res.ok) {
+        toast.error('Could not update member')
+        return
+      }
+      toast.success('Member updated')
+      onChanged()
+    } catch {
+      toast.error('Could not update member')
+    }
   }
 
   const initials = (member.name || member.email).split(/\s+/).map(s => s[0]).join('').slice(0, 2).toUpperCase()
@@ -256,6 +275,7 @@ function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [showPw, setShowPw] = useState(false)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
+  const toast = useToast()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -270,13 +290,16 @@ function CreateMemberModal({ onClose, onCreated }: { onClose: () => void; onCrea
       if (!res.ok) {
         setError(data.error || 'Failed to create')
         setStatus('error')
+        toast.error(data.error || 'Could not create member')
         return
       }
       setStatus('saved')
+      toast.success('Member created')
       onCreated()
     } catch {
       setError('Network error')
       setStatus('error')
+      toast.error('Could not create member')
     }
   }
 
@@ -350,6 +373,8 @@ function EditMemberModal({
   const [newPassword, setNewPassword] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -367,16 +392,32 @@ function EditMemberModal({
     if (!res.ok) {
       setError(data.error || 'Failed to save')
       setStatus('error')
+      toast.error(data.error || 'Could not update member')
       return
     }
     setStatus('saved')
+    toast.success('Member updated')
     onSaved()
   }
 
   const hardDelete = async () => {
-    if (!confirm(`Disable ${member.email}? Their products stay live and they can no longer log in.`)) return
-    await fetch(`/api/admin/members/${member.id}`, { method: 'DELETE' })
-    onSaved()
+    if (!(await confirm({
+      title: 'Disable member?',
+      message: `Disable ${member.email}? Their products stay live and they can no longer log in.`,
+      confirmLabel: 'Disable',
+      danger: true,
+    }))) return
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        toast.error('Could not update member')
+        return
+      }
+      toast.success('Member updated')
+      onSaved()
+    } catch {
+      toast.error('Could not update member')
+    }
   }
 
   return (

@@ -8,6 +8,7 @@ import {
   Image as ImageIcon, Tag, Copy,
 } from 'lucide-react'
 import { ImageUploader } from '@/components/admin/image-uploader'
+import { useToast } from '@/components/admin/toast'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -266,6 +267,7 @@ function ProductModal({
   const [form, setForm] = useState<FormData>(initialForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const toast = useToast()
 
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setForm(f => ({ ...f, [k]: v }))
@@ -303,9 +305,11 @@ function ProductModal({
         const data = await res.json().catch(() => ({}))
         throw new Error(data?.error || 'Save failed')
       }
+      toast.success(product ? 'Product updated' : 'Product created')
       onSave()
       onClose()
     } catch (err: unknown) {
+      toast.error('Could not save product')
       setError(err instanceof Error ? err.message : 'Failed to save product. Please try again.')
     } finally {
       setSaving(false)
@@ -601,6 +605,7 @@ function ProductModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminProductsPage() {
+  const toast = useToast()
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -726,10 +731,13 @@ export default function AdminProductsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
+      toast.success('Product deleted')
       setDeleteId(null)
       loadProducts()
     } catch {
+      toast.error('Could not delete product')
       setError('Failed to delete product.')
     }
   }

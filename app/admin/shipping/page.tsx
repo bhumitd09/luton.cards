@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { Pencil, Trash2, Plus, X, Check, Globe, ChevronDown, ChevronUp } from 'lucide-react'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 interface ShippingRate {
   id: string
@@ -209,6 +211,8 @@ function AddRateForm({ onAdd, onCancel }: AddRateFormProps) {
 }
 
 export default function ShippingPage() {
+  const confirm = useConfirm()
+  const toast = useToast()
   const [zones, setZones] = useState<ShippingZone[]>([])
   const [loading, setLoading] = useState(true)
   const [slideOverOpen, setSlideOverOpen] = useState(false)
@@ -258,33 +262,59 @@ export default function ShippingPage() {
   }
 
   const handleDeleteZone = async (id: string) => {
-    if (!confirm('Delete this zone and all its rates?')) return
-    await fetch(`/api/admin/shipping/${id}`, { method: 'DELETE' })
+    const ok = await confirm({ title: 'Delete zone?', message: 'Delete this zone and all its rates? This cannot be undone.', danger: true, confirmLabel: 'Delete' })
+    if (!ok) return
+    try {
+      const res = await fetch(`/api/admin/shipping/${id}`, { method: 'DELETE' })
+      if (res.ok) toast.success('Zone deleted')
+      else toast.error('Could not delete zone')
+    } catch {
+      toast.error('Could not delete zone')
+    }
     fetchZones()
   }
 
   const handleDeleteRate = async (rateId: string) => {
-    if (!confirm('Delete this rate?')) return
-    await fetch(`/api/admin/shipping/rates/${rateId}`, { method: 'DELETE' })
+    const ok = await confirm({ title: 'Delete rate?', message: 'Delete this rate?', danger: true, confirmLabel: 'Delete' })
+    if (!ok) return
+    try {
+      const res = await fetch(`/api/admin/shipping/rates/${rateId}`, { method: 'DELETE' })
+      if (res.ok) toast.success('Rate deleted')
+      else toast.error('Could not delete rate')
+    } catch {
+      toast.error('Could not delete rate')
+    }
     fetchZones()
   }
 
   const handleSaveRate = async (rateId: string, updates: Partial<ShippingRate>) => {
-    await fetch(`/api/admin/shipping/rates/${rateId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    })
+    try {
+      const res = await fetch(`/api/admin/shipping/rates/${rateId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (res.ok) toast.success('Rate saved')
+      else toast.error('Could not save rate')
+    } catch {
+      toast.error('Could not save rate')
+    }
     setEditingRateId(null)
     fetchZones()
   }
 
   const handleAddRate = async (zoneId: string, data: { name: string; price: number; minDays: number; maxDays: number; freeAbove: number | null }) => {
-    await fetch(`/api/admin/shipping/${zoneId}/rates`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
+    try {
+      const res = await fetch(`/api/admin/shipping/${zoneId}/rates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (res.ok) toast.success('Rate added')
+      else toast.error('Could not add rate')
+    } catch {
+      toast.error('Could not add rate')
+    }
     setAddingRateZoneId(null)
     fetchZones()
   }
@@ -293,15 +323,22 @@ export default function ShippingPage() {
     if (!newZoneName || newZoneCountries.length === 0) return
     setSavingZone(true)
     try {
-      await fetch('/api/admin/shipping', {
+      const res = await fetch('/api/admin/shipping', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newZoneName, countries: newZoneCountries }),
       })
-      setNewZoneName('')
-      setNewZoneCountries([])
-      setSlideOverOpen(false)
+      if (res.ok) {
+        setNewZoneName('')
+        setNewZoneCountries([])
+        setSlideOverOpen(false)
+        toast.success('Zone saved')
+      } else {
+        toast.error('Could not save zone')
+      }
       fetchZones()
+    } catch {
+      toast.error('Could not save zone')
     } finally {
       setSavingZone(false)
     }

@@ -7,6 +7,8 @@ import {
   Search, Grid, List, Upload,
 } from 'lucide-react'
 import { ImageUploader } from '@/components/admin/image-uploader'
+import { useConfirm } from '@/components/admin/confirm-dialog'
+import { useToast } from '@/components/admin/toast'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -197,6 +199,8 @@ function PreviewModal({
   const [altText, setAltText] = useState(item.alt ?? '')
   const [savingAlt, setSavingAlt] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -214,18 +218,31 @@ function PreviewModal({
       })
       if (!res.ok) throw new Error('Failed to save')
       onAltSave(item.id, altText)
+      toast.success('Alt text saved')
+    } catch {
+      toast.error('Could not save alt text')
     } finally {
       setSavingAlt(false)
     }
   }
 
   const handleDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete image?',
+      message: 'This permanently removes the image. This cannot be undone.',
+      danger: true,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     setDeleting(true)
     try {
-      await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
       onDelete(item.id)
+      toast.success('Image deleted')
       onClose()
     } catch {
+      toast.error('Could not delete image')
       setDeleting(false)
     }
   }
@@ -387,19 +404,23 @@ function GridCard({
   const [hovered, setHovered] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const toast = useToast()
 
   const handleDelete = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirmDelete) { setConfirmDelete(true); return }
     setDeleting(true)
     try {
-      await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
       onDelete(item.id)
+      toast.success('Image deleted')
     } catch {
+      toast.error('Could not delete image')
       setDeleting(false)
       setConfirmDelete(false)
     }
-  }, [confirmDelete, item.id, onDelete])
+  }, [confirmDelete, item.id, onDelete, toast])
 
   const handleCopy = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -554,14 +575,26 @@ function ListRow({
   onPreview: (item: MediaItem) => void
 }) {
   const [deleting, setDeleting] = useState(false)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
+    const ok = await confirm({
+      title: 'Delete image?',
+      message: 'This permanently removes the image. This cannot be undone.',
+      danger: true,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     setDeleting(true)
     try {
-      await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
       onDelete(item.id)
+      toast.success('Image deleted')
     } catch {
+      toast.error('Could not delete image')
       setDeleting(false)
     }
   }
@@ -656,6 +689,10 @@ function ListRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MediaPage() {
+  const confirm = useConfirm()
+  // NOTE: MediaPage keeps its own inline `toast` string state + <Toast> for
+  // page-level notifications; the global useToast() is used by the child
+  // components (PreviewModal/GridCard/ListRow) instead.
   const [media, setMedia] = useState<MediaItem[]>([])
   const [pagination, setPagination] = useState<Pagination | null>(null)
   const [loading, setLoading] = useState(true)
@@ -751,8 +788,15 @@ export default function MediaPage() {
   }
 
   const handleBulkDelete = async () => {
-    setBulkDeleting(true)
     const ids = Array.from(selected)
+    const ok = await confirm({
+      title: 'Delete selected images?',
+      message: `Delete ${ids.length} selected file${ids.length !== 1 ? 's' : ''}? This cannot be undone.`,
+      danger: true,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
+    setBulkDeleting(true)
     await Promise.allSettled(ids.map(id => fetch(`/api/admin/media/${id}`, { method: 'DELETE' })))
     setMedia(prev => prev.filter(m => !selected.has(m.id)))
     setPagination(prev => prev ? { ...prev, total: Math.max(0, prev.total - ids.length) } : null)
