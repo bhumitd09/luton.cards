@@ -3,9 +3,59 @@ import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { sendBackInStockNotification } from '@/lib/email'
 import { isSuperadmin } from '@/lib/vendor-auth'
+import { isValidCondition, isValidFoil } from '@/lib/conditions'
 
 function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+interface VariantInput {
+  condition?: unknown
+  foil?: unknown
+  price?: unknown
+  stock?: unknown
+  sku?: unknown
+  active?: unknown
+}
+
+interface VariantOut {
+  condition: string
+  foil: string | null
+  price: number
+  stock: number
+  sku: string | null
+  active: boolean
+}
+
+/** Thrown by parseVariants on validation failure; the message becomes the
+ *  400 response body. Using throw keeps the TS return type a clean array
+ *  (no union to narrow at the call site). */
+class VariantValidationError extends Error {}
+
+/**
+ * Replace-on-save model — see the comment block on the POST handler.
+ */
+function parseVariants(raw: unknown): VariantOut[] {
+  if (raw === undefined || raw === null) return []
+  if (!Array.isArray(raw)) throw new VariantValidationError('variants must be an array')
+  const seen = new Set<string>()
+  const out: VariantOut[] = []
+  for (const v of raw as VariantInput[]) {
+    if (!v || typeof v !== 'object') throw new VariantValidationError('Each variant must be an object')
+    if (!isValidCondition(v.condition)) throw new VariantValidationError('Invalid variant condition')
+    const foil = v.foil == null || v.foil === '' ? null : (isValidFoil(v.foil) ? v.foil : null)
+    const price = Number(v.price)
+    if (!Number.isFinite(price) || price < 0) throw new VariantValidationError('Variant price must be a non-negative number')
+    const stock = Number.parseInt(String(v.stock ?? 0), 10)
+    if (!Number.isInteger(stock) || stock < 0) throw new VariantValidationError('Variant stock must be a non-negative integer')
+    const sku = typeof v.sku === 'string' && v.sku.trim() ? v.sku.trim() : null
+    const active = v.active === undefined ? true : !!v.active
+    const key = `${v.condition}|${foil ?? ''}`
+    if (seen.has(key)) throw new VariantValidationError('Duplicate variant (condition + foil)')
+    seen.add(key)
+    out.push({ condition: v.condition, foil, price, stock, sku, active })
+  }
+  return out
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -17,7 +67,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const product = await db.product.findUnique({
       where: { id: params.id },
-      include: { vendor: { select: { id: true, name: true, email: true } } },
+      include: {
+        vendor: { select: { id: true, name: true, email: true } },
+        variants: { orderBy: [{ condition: 'asc' }, { foil: 'asc' }] },
+      },
     })
 
     if (!product) {
@@ -79,7 +132,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       featured,
       active,
       tags,
+      variants,
     } = body
+
+    // Only touch variants if the client explicitly sent the field. Omit it
+    // and the existing variant rows are left alone — lets the front-end
+    // patch other fields without round-tripping variants.
+    const variantsProvided = Object.prototype.hasOwnProperty.call(body, 'variants')
+    let nextVariants: VariantOut[] = []
+    if (variantsProvided) {
+      try {
+        nextVariants = parseVariants(variants)
+      } catch (e) {
+        if (e instanceof VariantValidationError) {
+          return NextResponse.json({ error: e.message }, { status: 400 })
+        }
+        throw e
+      }
+    }
 
     const resolvedSlug = slug ?? (name ? generateSlug(name) : existing.slug)
 
@@ -90,25 +160,47 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     // owner now. Otherwise vendorId is preserved (not editable via this route).
     const newVendorId = existing.vendorId ?? admin.userId
 
-    const product = await db.product.update({
-      where: { id: params.id },
-      data: {
-        name: name ?? existing.name,
-        slug: resolvedSlug,
-        description: description !== undefined ? description : existing.description,
-        price: price !== undefined ? parseFloat(price) : existing.price,
-        comparePrice: comparePrice !== undefined ? parseFloat(comparePrice) : existing.comparePrice,
-        stock: newStock,
-        category: category ?? existing.category,
-        images: images ?? existing.images,
-        grade: grade !== undefined ? grade : existing.grade,
-        grader: grader !== undefined ? grader : existing.grader,
-        featured: featured !== undefined ? featured : existing.featured,
-        active: active !== undefined ? active : existing.active,
-        tags: tags ?? existing.tags,
-        vendorId: newVendorId,
-      },
+    // Variants: replace-on-save. Wrap in a transaction so partial failures
+    // can't leave dangling variants without their parent updates.
+    const product = await db.$transaction(async tx => {
+      const updated = await tx.product.update({
+        where: { id: params.id },
+        data: {
+          name: name ?? existing.name,
+          slug: resolvedSlug,
+          description: description !== undefined ? description : existing.description,
+          price: price !== undefined ? parseFloat(price) : existing.price,
+          comparePrice: comparePrice !== undefined ? parseFloat(comparePrice) : existing.comparePrice,
+          stock: newStock,
+          category: category ?? existing.category,
+          images: images ?? existing.images,
+          grade: grade !== undefined ? grade : existing.grade,
+          grader: grader !== undefined ? grader : existing.grader,
+          featured: featured !== undefined ? featured : existing.featured,
+          active: active !== undefined ? active : existing.active,
+          tags: tags ?? existing.tags,
+          vendorId: newVendorId,
+        },
+      })
+      if (variantsProvided) {
+        await tx.productVariant.deleteMany({ where: { productId: params.id } })
+        if (nextVariants.length > 0) {
+          await tx.productVariant.createMany({
+            data: nextVariants.map(v => ({ ...v, productId: params.id })),
+          })
+        }
+      }
+      return tx.product.findUnique({
+        where: { id: updated.id },
+        include: { variants: { orderBy: [{ condition: 'asc' }, { foil: 'asc' }] } },
+      })
     })
+
+    // Transaction always returns the row we just updated; defend against
+    // the unlikely null so the rest of the handler stays typed.
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found after update' }, { status: 500 })
+    }
 
     // Fire back-in-stock emails to anyone subscribed (fire-and-forget; no await)
     if (stockTransitionedOOSToIn) {

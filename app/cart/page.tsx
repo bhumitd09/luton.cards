@@ -27,9 +27,20 @@ export default function CartPage() {
     setApplying(false)
   }
 
-  // Helper: get the real current stock for an item (live > cached)
-  const getStock = (productId: string, fallback: number) =>
-    liveStock[productId] !== undefined ? liveStock[productId] : fallback
+  // Helper: get the real current stock for an item. Variant-backed lines
+  // key on `${productId}:${variantId}` (matches the stock API + cart context);
+  // single-SKU lines key on productId. Falls back to whatever the cart item
+  // captured at add-to-cart time, then to the product's base stock.
+  const stockKey = (productId: string, variantId?: string) =>
+    variantId ? `${productId}:${variantId}` : productId
+  const getStock = (productId: string, fallback: number, variantId?: string) => {
+    const k = stockKey(productId, variantId)
+    if (liveStock[k] !== undefined) return liveStock[k]
+    return fallback
+  }
+  // Price for a cart line — variant snapshot wins; falls back to product.price.
+  const linePrice = (item: { product: { price: number }; variantPrice?: number }) =>
+    item.variantPrice ?? item.product.price
 
   if (items.length === 0) {
     return (
@@ -117,7 +128,7 @@ export default function CartPage() {
           <div className="cart-items">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {items.map((item) => (
-                <div key={item.product.id} className="cart-item" style={{
+                <div key={`${item.product.id}|${item.variantId ?? ''}`} className="cart-item" style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '1rem',
@@ -161,6 +172,14 @@ export default function CartPage() {
                     <p style={{ fontSize: '0.8125rem', color: '#9ca3af', margin: 0, textTransform: 'capitalize' }}>
                       {item.product.category}
                     </p>
+                    {item.variantLabel && (
+                      <p style={{
+                        fontSize: '0.75rem', color: '#EC1E79', fontWeight: 700,
+                        margin: '0.25rem 0 0', letterSpacing: '0.02em',
+                      }}>
+                        {item.variantLabel}
+                      </p>
+                    )}
                   </div>
 
                   {/* Actions group: qty + price + remove (wraps below info on narrow screens) */}
@@ -170,7 +189,7 @@ export default function CartPage() {
                     {/* Qty controls */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variantId)}
                         className="cart-qty-btn"
                         style={{
                           width: '30px', height: '30px', borderRadius: '8px',
@@ -185,7 +204,7 @@ export default function CartPage() {
                       <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111', minWidth: '20px', textAlign: 'center' }}>
                         {item.quantity}
                       </span>
-                      {item.quantity >= getStock(item.product.id, item.product.stock) ? (
+                      {item.quantity >= getStock(item.product.id, item.variantStock ?? item.product.stock, item.variantId) ? (
                         <span style={{
                           fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af',
                           minWidth: '30px', textAlign: 'center',
@@ -194,7 +213,7 @@ export default function CartPage() {
                         </span>
                       ) : (
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variantId)}
                           className="cart-qty-btn"
                           style={{
                             width: '30px', height: '30px', borderRadius: '8px',
@@ -214,12 +233,12 @@ export default function CartPage() {
                       fontWeight: 800, fontSize: '1rem', color: '#EC1E79',
                       minWidth: '70px', textAlign: 'right',
                     }}>
-                      £{(item.product.price * item.quantity).toFixed(2)}
+                      £{(linePrice(item) * item.quantity).toFixed(2)}
                     </span>
 
                     {/* Remove */}
                     <button
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={() => removeFromCart(item.product.id, item.variantId)}
                       title="Remove"
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer',

@@ -28,6 +28,8 @@ interface OrderItemInput {
   productId?: string
   productName?: string // optional — falls back to DB if missing
   quantity: number
+  /** If the buyer chose a specific condition variant on the PDP. */
+  variantId?: string
 }
 
 interface CreateOrderBody {
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
         id: true, name: true, price: true, stock: true,
         vendorId: true,
         vendor: { select: { commissionRate: true } },
+        variants: { select: { id: true, condition: true, foil: true, price: true, stock: true, active: true } },
       },
     })
     const productById = new Map(products.map(p => [p.id, p]))
@@ -110,6 +113,9 @@ export async function POST(req: NextRequest) {
       productName: string
       price: number
       quantity: number
+      variantId: string | null
+      variantCondition: string | null
+      variantFoil: string | null
       vendorId: string | null
       commissionRate: number
     }
@@ -126,17 +132,53 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         )
       }
-      if (p.stock < qty) {
+
+      // Variant-aware pricing + stock: if the client passed a variantId,
+      // it MUST exist on this product, be active, and have stock. Price +
+      // stock come from the variant row, never from the request body.
+      let variantId: string | null = null
+      let variantCondition: string | null = null
+      let variantFoil: string | null = null
+      let unitPrice = p.price
+      let availableStock = p.stock
+
+      if (item.variantId) {
+        const v = p.variants.find(x => x.id === item.variantId)
+        if (!v || !v.active) {
+          return NextResponse.json(
+            { error: `The selected variant of "${p.name}" is no longer available.` },
+            { status: 400 },
+          )
+        }
+        variantId = v.id
+        variantCondition = v.condition
+        variantFoil = v.foil
+        unitPrice = v.price
+        availableStock = v.stock
+      } else if (p.variants.length > 0) {
+        // Product has variants but caller didn't pick one — reject so we
+        // don't sell at the (likely undefined) base price by accident.
         return NextResponse.json(
-          { error: `Only ${p.stock} of "${p.name}" left in stock.` },
+          { error: `Please choose a condition for "${p.name}" before checking out.` },
           { status: 400 },
         )
       }
+
+      if (availableStock < qty) {
+        return NextResponse.json(
+          { error: `Only ${availableStock} of "${p.name}" left in stock.` },
+          { status: 400 },
+        )
+      }
+
       lines.push({
         productId: p.id,
         productName: p.name,
-        price: p.price, // ← server-side, not from request
+        price: unitPrice,
         quantity: qty,
+        variantId,
+        variantCondition,
+        variantFoil,
         vendorId: p.vendorId ?? null,
         commissionRate: p.vendor?.commissionRate ?? 0,
       })
@@ -203,6 +245,9 @@ export async function POST(req: NextRequest) {
               productName: l.productName,
               price: l.price,
               quantity: l.quantity,
+              variantId: l.variantId,
+              variantCondition: l.variantCondition,
+              variantFoil: l.variantFoil,
               vendorId: l.vendorId,
               vendorPayout,
               platformFee,

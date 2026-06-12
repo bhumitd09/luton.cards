@@ -8,6 +8,8 @@ import { db } from '@/lib/db'
  * admin session is verified and vendor ownership is enforced. The previous
  * unauthenticated PUT/DELETE handlers were the most severe finding from
  * the security audit and have been removed entirely.
+ *
+ * Includes active variants so the PDP can render the condition selector.
  */
 
 export async function GET(
@@ -15,7 +17,15 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const product = await db.product.findUnique({ where: { id: params.id } })
+    const product = await db.product.findUnique({
+      where: { id: params.id },
+      include: {
+        variants: {
+          where: { active: true },
+          orderBy: [{ condition: 'asc' }, { foil: 'asc' }],
+        },
+      },
+    })
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     return NextResponse.json({ ...product, image: product.images?.[0] || '' })
   } catch {

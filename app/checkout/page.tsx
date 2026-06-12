@@ -232,8 +232,11 @@ export default function CheckoutPage() {
     items: items.map(item => ({
       productId: item.product.id,
       productName: item.product.name,
-      price: item.product.price,
+      // price field is informational only — /api/orders ignores it and
+      // recomputes everything from Product / ProductVariant server-side.
+      price: item.variantPrice ?? item.product.price,
       quantity: item.quantity,
+      variantId: item.variantId,
     })),
     total: effectiveTotal,
     discountCode: discountApplied?.code || undefined,
@@ -247,21 +250,26 @@ export default function CheckoutPage() {
     setError(null)
     setSubmitting('card')
     try {
+      // Two-step: create the Order first (pending status, server recomputes
+      // every price + applies discount), then ask Stripe for a session
+      // bound to that orderId. The webhook verifies session amount matches
+      // the stored order.total before flipping to 'paid'.
+      const orderRes = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildOrderPayload()),
+      })
+      const orderData = await orderRes.json()
+      if (!orderRes.ok || !orderData.orderId) {
+        setError(orderData.error || 'Could not start your order. Please try again.')
+        setSubmitting(null)
+        return
+      }
+
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerEmail: email.trim(),
-          customerName: `${firstName.trim()} ${lastName.trim()}`,
-          items: items.map(item => ({
-            productId: item.product.id,
-            productName: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-          })),
-          shippingCost,
-          shippingMethodName: selectedRate?.name ?? '',
-        }),
+        body: JSON.stringify({ orderId: orderData.orderId }),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {

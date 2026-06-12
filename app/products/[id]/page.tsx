@@ -13,6 +13,19 @@ import { BackInStockButton } from '@/components/back-in-stock-button'
 import { ProductReviews } from '@/components/reviews'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
+import { variantLabel } from '@/lib/conditions'
+
+/** A variant row as returned by /api/products/[id]. */
+interface Variant {
+  id: string
+  condition: string
+  foil: string | null
+  price: number
+  stock: number
+  active: boolean
+}
+/** Local product shape with the variants array attached. */
+type ProductWithVariants = Product & { variants?: Variant[] }
 
 // ── Related Products Card ──────────────────────────────────────────────────
 function RelatedProductCard({ product, index }: { product: Product; index: number }) {
@@ -249,11 +262,14 @@ export default function ProductDetailPage() {
   const id = params?.id as string
 
   const { addToCart, canAddMore, cartQuantity } = useCart()
-  const [product, setProduct] = useState<Product | null>(null)
+  const [product, setProduct] = useState<ProductWithVariants | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
   const [added, setAdded] = useState(false)
+  // null when product has no variants. Otherwise the currently-selected
+  // ProductVariant.id (defaults to the first active variant with stock).
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -266,6 +282,15 @@ export default function ProductDetailPage() {
       .then(data => {
         if (data && !data.error) {
           setProduct(data)
+          // Auto-select the first usable variant: in-stock > active > first.
+          const variants: Variant[] = Array.isArray(data.variants) ? data.variants : []
+          if (variants.length > 0) {
+            const preferred =
+              variants.find(v => v.active && v.stock > 0) ||
+              variants.find(v => v.active) ||
+              variants[0]
+            setSelectedVariantId(preferred.id)
+          }
         } else if (data?.error) {
           setNotFound(true)
         }
@@ -274,6 +299,22 @@ export default function ProductDetailPage() {
       .catch(() => { setNotFound(true); setLoading(false) })
   }, [id])
 
+  // Derived selection — undefined if the product has no variants at all.
+  const variants: Variant[] = product?.variants ?? []
+  const hasVariants = variants.length > 0
+  const selectedVariant = hasVariants
+    ? variants.find(v => v.id === selectedVariantId) ?? variants[0]
+    : null
+  /** Display price for the buy box — variant price when picked, else product price. */
+  const effectivePrice = selectedVariant?.price ?? product?.price ?? 0
+  /** Effective stock — variant stock when picked, else product stock. */
+  const effectiveStock = selectedVariant?.stock ?? product?.stock ?? 0
+  /** Cart helper options for the current selection. */
+  const cartOpts = selectedVariant
+    ? { variantId: selectedVariant.id, variantStock: selectedVariant.stock }
+    : undefined
+  const canAdd = product ? canAddMore(product, cartOpts) : false
+
   useEffect(() => {
     if (product) {
       document.title = `${product.name} | Luton Cards`
@@ -281,8 +322,19 @@ export default function ProductDetailPage() {
   }, [product])
 
   const handleAddToCart = () => {
-    if (!product || !canAddMore(product)) return
-    addToCart(product)
+    if (!product) return
+    if (hasVariants && !selectedVariant) return
+    if (!canAddMore(product, cartOpts)) return
+    if (selectedVariant) {
+      addToCart(product, {
+        variantId: selectedVariant.id,
+        variantPrice: selectedVariant.price,
+        variantLabel: variantLabel(selectedVariant.condition, selectedVariant.foil),
+        variantStock: selectedVariant.stock,
+      })
+    } else {
+      addToCart(product)
+    }
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
@@ -301,11 +353,11 @@ export default function ProductDetailPage() {
   const graderStyle = GRADER_COLORS[graderKey] ?? { bg: '#fffbeb', border: '#fbbf24', color: '#78350f' }
 
   const stockStatus = product
-    ? product.stock === 0
+    ? effectiveStock === 0
       ? { label: 'Sold Out', color: '#ef4444', bg: '#fef2f2' }
-      : product.stock <= 3
-        ? { label: `Low Stock (${product.stock} left)`, color: '#f59e0b', bg: '#fffbeb' }
-        : { label: `In Stock (${product.stock} available)`, color: '#10b981', bg: '#ecfdf5' }
+      : effectiveStock <= 3
+        ? { label: `Low Stock (${effectiveStock} left)`, color: '#f59e0b', bg: '#fffbeb' }
+        : { label: `In Stock (${effectiveStock} available)`, color: '#10b981', bg: '#ecfdf5' }
     : null
 
   return (
@@ -528,7 +580,7 @@ export default function ProductDetailPage() {
 
                 {/* Pricing */}
                 <div style={{ marginBottom: '1.25rem' }}>
-                  {product.comparePrice && product.comparePrice > product.price && (
+                  {product.comparePrice && product.comparePrice > effectivePrice && (
                     <p style={{
                       fontSize: '1rem', color: '#9ca3af',
                       textDecoration: 'line-through', margin: '0 0 0.2rem',
@@ -541,9 +593,61 @@ export default function ProductDetailPage() {
                     fontSize: '2.25rem', fontWeight: 900, color: '#EC1E79',
                     margin: 0, letterSpacing: '-0.03em', lineHeight: 1,
                   }}>
-                    £{product.price.toFixed(2)}
+                    £{effectivePrice.toFixed(2)}
                   </p>
+                  {hasVariants && selectedVariant && (
+                    <p style={{ margin: '0.45rem 0 0', fontSize: '0.8125rem', color: '#6b7280', fontWeight: 600 }}>
+                      {variantLabel(selectedVariant.condition, selectedVariant.foil)}
+                    </p>
+                  )}
                 </div>
+
+                {/* Variant selector — only shown when the product has variants. */}
+                {hasVariants && (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <p style={{
+                      fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280',
+                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      margin: '0 0 0.6rem',
+                    }}>
+                      Condition
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {variants.map(v => {
+                        const isSelected = v.id === selectedVariant?.id
+                        const sold = v.stock === 0
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => setSelectedVariantId(v.id)}
+                            disabled={sold}
+                            style={{
+                              padding: '0.55rem 0.95rem',
+                              borderRadius: '10px',
+                              border: '1.5px solid',
+                              borderColor: isSelected ? '#EC1E79' : '#e5e7eb',
+                              background: isSelected ? '#EC1E79' : sold ? '#f5f5f5' : '#fff',
+                              color: isSelected ? '#fff' : sold ? '#9ca3af' : '#111',
+                              fontSize: '0.85rem',
+                              fontWeight: 700,
+                              letterSpacing: '-0.01em',
+                              cursor: sold ? 'not-allowed' : 'pointer',
+                              textDecoration: sold ? 'line-through' : 'none',
+                              transition: 'all 0.15s',
+                              boxShadow: isSelected ? '0 6px 18px -8px rgba(236,30,121,0.55)' : 'none',
+                            }}
+                          >
+                            {variantLabel(v.condition, v.foil)}
+                            {sold && (
+                              <span style={{ marginLeft: 6, fontSize: '0.7rem', fontWeight: 600 }}>· Sold out</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Stock indicator */}
                 {stockStatus && (
@@ -593,20 +697,20 @@ export default function ProductDetailPage() {
                 {/* Add to Cart */}
                 <motion.button
                   onClick={handleAddToCart}
-                  disabled={!canAddMore(product) || added}
-                  whileHover={canAddMore(product) && !added ? { scale: 1.02 } : {}}
-                  whileTap={canAddMore(product) && !added ? { scale: 0.97 } : {}}
+                  disabled={!canAdd || added}
+                  whileHover={canAdd && !added ? { scale: 1.02 } : {}}
+                  whileTap={canAdd && !added ? { scale: 0.97 } : {}}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', gap: '0.6rem',
                     background: added
                       ? '#c81c6b'
-                      : product.stock === 0 || !canAddMore(product)
+                      : !canAdd
                         ? '#e5e7eb'
                         : '#EC1E79',
-                    color: product.stock === 0 || !canAddMore(product) ? '#9ca3af' : '#000',
+                    color: !canAdd ? '#9ca3af' : '#000',
                     border: 'none',
-                    cursor: !canAddMore(product) ? 'not-allowed' : 'pointer',
+                    cursor: !canAdd ? 'not-allowed' : 'pointer',
                     padding: '1rem 1.5rem', borderRadius: '14px',
                     fontSize: '1rem', fontWeight: 800,
                     transition: 'background 0.25s ease',
@@ -617,9 +721,9 @@ export default function ProductDetailPage() {
                   <ShoppingCart size={18} />
                   {added
                     ? 'Added \u2713'
-                    : product.stock === 0
+                    : effectiveStock === 0
                       ? 'Sold Out'
-                      : !canAddMore(product)
+                      : !canAdd
                         ? 'Max in Cart'
                         : 'Add to Cart'}
                 </motion.button>
@@ -629,16 +733,18 @@ export default function ProductDetailPage() {
                   <WishlistButton productId={product.id} variant="inline" />
                 </div>
 
-                {/* Back-in-stock subscribe (only when sold out) */}
-                {product.stock === 0 && (
+                {/* Back-in-stock subscribe (only when sold out). Variant-
+                    backed products subscribe at product level — coarse but
+                    acceptable until back-in-stock grows variant awareness. */}
+                {effectiveStock === 0 && (
                   <div style={{ marginBottom: '0.75rem' }}>
                     <BackInStockButton productId={product.id} />
                   </div>
                 )}
-                {product.stock > 0 && product.stock <= 10 && (
+                {effectiveStock > 0 && effectiveStock <= 10 && (
                   <p style={{ fontSize: '0.8125rem', color: '#f59e0b', marginTop: '0.5rem', fontWeight: 600, marginBottom: '0.75rem' }}>
-                    Only {product.stock} in stock
-                    {cartQuantity(product.id) > 0 && ` · ${cartQuantity(product.id)} already in your cart`}
+                    Only {effectiveStock} in stock
+                    {cartQuantity(product.id, selectedVariant?.id) > 0 && ` · ${cartQuantity(product.id, selectedVariant?.id)} already in your cart`}
                   </p>
                 )}
 

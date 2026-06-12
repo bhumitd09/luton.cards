@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { ImageUploader } from '@/components/admin/image-uploader'
 import { useToast } from '@/components/admin/toast'
+import { CONDITIONS, FOILS } from '@/lib/conditions'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,16 @@ interface Product {
   tags: string[]
   vendorId?: string | null
   vendor?: { id: string; name: string | null; email: string } | null
+  /** Loaded by /api/admin/products and /api/admin/products/[id]. May be
+   *  undefined for older callers that don't fetch variants. */
+  variants?: {
+    id: string
+    condition: string
+    foil: string | null
+    price: number
+    stock: number
+    active: boolean
+  }[]
   createdAt: string
   updatedAt: string
 }
@@ -45,6 +56,15 @@ const CATEGORY_COLORS: Record<string, { bg: string; color: string; label: string
   sealed: { bg: 'rgba(52,211,153,0.12)', color: '#34d399', label: 'Sealed' },
 }
 
+// Variant row in the editor — strings for inputs, normalised at save time.
+// foil = '' means "no foil specified" (saved as null on the server).
+type VariantRow = {
+  condition: string
+  foil: string
+  price: string
+  stock: string
+}
+
 const EMPTY_FORM = {
   name: '',
   category: 'single',
@@ -58,6 +78,7 @@ const EMPTY_FORM = {
   featured: false,
   active: true,
   images: [] as string[],
+  variants: [] as VariantRow[],
 }
 
 type FormData = typeof EMPTY_FORM
@@ -261,8 +282,16 @@ function ProductModal({
         featured: product.featured,
         active: product.active,
         images: product.images,
+        // Variants come back from the API with numeric prices + condition/foil
+        // slugs; the editor stores them as strings so inputs are uncontrolled-friendly.
+        variants: (product.variants ?? []).map(v => ({
+          condition: v.condition,
+          foil: v.foil ?? '',
+          price: String(v.price),
+          stock: String(v.stock),
+        })),
       }
-    : { ...EMPTY_FORM }
+    : { ...EMPTY_FORM, variants: [] }
 
   const [form, setForm] = useState<FormData>(initialForm)
   const [saving, setSaving] = useState(false)
@@ -280,6 +309,22 @@ function ProductModal({
     setSaving(true)
     setError('')
     try {
+      // Validate variants: every row must have a condition + numeric price + stock.
+      // We allow zero stock (sold-out variants stay listed); reject NaN / negative.
+      const cleanedVariants = form.variants.map(v => ({
+        condition: v.condition,
+        foil: v.foil || null,
+        price: Number(v.price),
+        stock: Number.parseInt(v.stock || '0', 10),
+      }))
+      for (const v of cleanedVariants) {
+        if (!v.condition || !Number.isFinite(v.price) || v.price < 0 || !Number.isInteger(v.stock) || v.stock < 0) {
+          setError('Each variant needs a condition, a valid price, and a non-negative stock.')
+          setSaving(false)
+          return
+        }
+      }
+
       const body = {
         name: form.name.trim(),
         category: form.category,
@@ -293,6 +338,10 @@ function ProductModal({
         featured: form.featured,
         active: form.active,
         images: form.images,
+        // Always send the array (possibly empty) so existing variants can be
+        // cleared by emptying the editor. The PUT route treats missing field
+        // as "leave alone" — that branch is only used by other patch paths.
+        variants: cleanedVariants,
       }
       const url = product ? `/api/admin/products/${product.id}` : '/api/admin/products'
       const method = product ? 'PUT' : 'POST'
@@ -551,6 +600,112 @@ function ProductModal({
               </div>
             </label>
           </div>
+        </div>
+
+        {/* Conditions / variants — when present, the storefront shows a
+            selector and uses these prices/stocks instead of the base price. */}
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #1a1a1c' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '0.5rem', gap: '0.75rem' }}>
+            <div>
+              <label style={{ ...labelStyle, marginBottom: 4 }}>Conditions / variants</label>
+              <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0 }}>
+                Add one row per condition you stock (Near Mint, Lightly Played, etc.). Optional foil per row.
+                Buyers will see a selector. Leave empty to keep using the base price + stock above.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                // Pre-pick the first condition + foil not already used so adding
+                // a row never collides with an existing (condition, foil) row.
+                const used = new Set(form.variants.map(v => `${v.condition}|${v.foil}`))
+                const nextCond = CONDITIONS.find(c => !used.has(`${c.slug}|`))?.slug ?? CONDITIONS[0].slug
+                update('variants', [
+                  ...form.variants,
+                  { condition: nextCond, foil: '', price: form.price || '', stock: '0' },
+                ])
+              }}
+              style={{
+                background: '#161617', border: '1px solid #202022', color: '#e4e4e7',
+                fontSize: '0.78rem', fontWeight: 700, padding: '0.45rem 0.85rem',
+                borderRadius: 11, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              + Add variant
+            </button>
+          </div>
+
+          {form.variants.length === 0 ? (
+            <div style={{
+              padding: '0.85rem 1rem', background: '#0c0c0d', border: '1px dashed #202022',
+              borderRadius: 12, fontSize: '0.8rem', color: '#6b7280',
+            }}>
+              No variants yet — this product will sell at the base price above.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {form.variants.map((v, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1.4fr 1.2fr 0.9fr 0.7fr auto',
+                    gap: '0.5rem',
+                    alignItems: 'center',
+                    background: '#0c0c0d',
+                    border: '1px solid #202022',
+                    borderRadius: 11,
+                    padding: '0.5rem',
+                  }}
+                >
+                  <select
+                    value={v.condition}
+                    onChange={e => update('variants', form.variants.map((x, j) => j === i ? { ...x, condition: e.target.value } : x))}
+                    style={{ ...inputStyle, padding: '0.5rem 0.65rem', fontSize: '0.82rem' }}
+                  >
+                    {CONDITIONS.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+                  </select>
+                  <select
+                    value={v.foil}
+                    onChange={e => update('variants', form.variants.map((x, j) => j === i ? { ...x, foil: e.target.value } : x))}
+                    style={{ ...inputStyle, padding: '0.5rem 0.65rem', fontSize: '0.82rem' }}
+                  >
+                    <option value="">No foil</option>
+                    {FOILS.map(f => <option key={f.slug} value={f.slug}>{f.label}</option>)}
+                  </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Price"
+                    value={v.price}
+                    onChange={e => update('variants', form.variants.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
+                    style={{ ...inputStyle, padding: '0.5rem 0.65rem', fontSize: '0.82rem' }}
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Stock"
+                    value={v.stock}
+                    onChange={e => update('variants', form.variants.map((x, j) => j === i ? { ...x, stock: e.target.value } : x))}
+                    style={{ ...inputStyle, padding: '0.5rem 0.65rem', fontSize: '0.82rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => update('variants', form.variants.filter((_, j) => j !== i))}
+                    aria-label="Remove variant"
+                    style={{
+                      background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                      color: '#ef4444', padding: '0.45rem 0.55rem', borderRadius: 9, cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer Buttons */}

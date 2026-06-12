@@ -12,6 +12,8 @@ model Product {
   name         String
   slug         String   @unique
   description  String?  @db.Text
+  // Base price — used when the product has no per-variant pricing. When
+  // variants exist they take precedence (each has its own price + stock).
   price        Float
   comparePrice Float?
   stock        Int      @default(0)
@@ -28,6 +30,11 @@ model Product {
   // Only the owning vendor can edit/delete. Superadmin can view all.
   vendorId     String?
   vendor       AdminUser? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  // Card-condition variants (Near Mint, Lightly Played, etc.) + foil.
+  // Empty for legacy single-SKU products — those keep using the base
+  // price/stock above. When non-empty, the storefront shows a selector
+  // and orders carry the chosen variantId.
+  variants     ProductVariant[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -36,6 +43,30 @@ model Product {
   @@index([featured])
   @@index([active])
   @@index([vendorId])
+}
+
+// One row per (productId, condition, foil) combination. Each has its own
+// price + stock so a Near Mint Holofoil can cost more than a Damaged Normal
+// of the same card. Unique constraint stops accidental duplicates.
+model ProductVariant {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // 'near-mint' | 'lightly-played' | 'moderately-played' | 'heavily-played' | 'damaged'
+  condition  String
+  // 'normal' | 'holofoil' | 'reverse-holofoil'. Optional — many cards
+  // only exist in one finish.
+  foil       String?
+  price      Float
+  stock      Int      @default(0)
+  sku        String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orderItems OrderItem[]
+
+  @@unique([productId, condition, foil])
+  @@index([productId])
 }
 
 model Content {
@@ -184,6 +215,13 @@ model OrderItem {
   productName  String
   price        Float
   quantity     Int
+  // Variant link + condition/foil snapshot. variantId is null for legacy
+  // single-SKU orders. The snapshot strings preserve the condition label
+  // even if the variant row is later deleted.
+  variantId        String?
+  variant          ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  variantCondition String?
+  variantFoil      String?
   // Snapshot of who owned the product at sale time, plus the payout math.
   // Kept on the line item (not derived) so historical payouts don't shift
   // if a product is later reassigned or a commission rate changes.
@@ -198,6 +236,7 @@ model OrderItem {
 
   @@index([vendorId])
   @@index([payoutPaidAt])
+  @@index([variantId])
 }
 
 model ShippingZone {

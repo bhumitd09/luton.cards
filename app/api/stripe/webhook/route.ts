@@ -81,8 +81,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Decrement stock now that we know we just won the status flip race.
+  // Variant-aware: if the line carries a variantId, the inventory we sold
+  // from is the variant row, not the parent Product.stock. We keep the
+  // parent product.stock untouched for variant-backed orders so it can act
+  // as an "aggregate" if the admin chooses to surface it later.
   for (const item of order.items) {
-    if (item.productId) {
+    if (item.variantId) {
+      await db.productVariant.update({
+        where: { id: item.variantId },
+        data: { stock: { decrement: item.quantity } },
+      }).catch(() => {}) // ignore if variant was deleted
+    } else if (item.productId) {
       await db.product.update({
         where: { id: item.productId },
         data: { stock: { decrement: item.quantity } },
