@@ -69,9 +69,11 @@ export async function POST(req: NextRequest) {
       })),
     })
   } catch (err) {
+    // Log the detail server-side; return a generic message so internal/library
+    // errors aren't leaked to unauthenticated callers.
     console.error('Checkout create error:', err)
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Could not start payment.' },
+      { error: 'Could not start payment. Please try again.' },
       { status: 500 },
     )
   }

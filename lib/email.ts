@@ -102,7 +102,7 @@ function heading(text: string): string {
 function ctaButton(href: string, label: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 2px;"><tr>
     <td bgcolor="#EC1E79" style="border-radius:11px;background:${DEFAULT_BAR};">
-      <a href="${href}" style="display:inline-block;padding:13px 30px;font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:11px;">${escapeHtml(label)}</a>
+      <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 30px;font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:11px;">${escapeHtml(label)}</a>
     </td></tr></table>`
 }
 
@@ -176,9 +176,9 @@ function buildShippingNotificationHtml(data: OrderEmailData): string {
 
   let trackingLink = ''
   if (carrier.toLowerCase().includes('royal mail')) {
-    trackingLink = `https://www.royalmail.com/track-your-item#/tracking-results/${tracking}`
+    trackingLink = `https://www.royalmail.com/track-your-item#/tracking-results/${encodeURIComponent(tracking)}`
   } else if (carrier.toLowerCase().includes('dpd')) {
-    trackingLink = `https://track.dpd.co.uk/search?reference=${tracking}`
+    trackingLink = `https://track.dpd.co.uk/search?reference=${encodeURIComponent(tracking)}`
   }
 
   const ref = data.orderId.slice(-8).toUpperCase()

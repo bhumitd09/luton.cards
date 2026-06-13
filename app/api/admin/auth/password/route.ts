@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 // PUT /api/admin/auth/password
 // Body: { currentPassword, newPassword }
@@ -12,6 +13,16 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Rate-limit per account so a stolen/borrowed session can't brute-force
+    // the current password here.
+    const block = enforceRateLimit(req, {
+      bucket: 'admin-password-change',
+      keyParts: [admin.userId],
+      max: 5,
+      windowMs: 15 * 60_000,
+    })
+    if (block) return block
+
     const body = await req.json()
     const { currentPassword, newPassword } = body
 
@@ -19,8 +30,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'currentPassword and newPassword are required' }, { status: 400 })
     }
 
-    if (newPassword.length < 8) {
-      return NextResponse.json({ error: 'New password must be at least 8 characters' }, { status: 400 })
+    if (newPassword.length < 12) {
+      return NextResponse.json({ error: 'New password must be at least 12 characters' }, { status: 400 })
     }
 
     const adminUser = await db.adminUser.findUnique({ where: { id: admin.userId } })

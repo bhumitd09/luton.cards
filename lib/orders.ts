@@ -134,6 +134,7 @@ export interface AppliedDiscount {
   type: string
   value: number
   savings: number
+  maxUses: number | null
 }
 
 /** Validate a discount code server-side and compute its saving against the
@@ -162,7 +163,34 @@ export async function applyDiscountCode(
     type: discount.type,
     value: discount.value,
     savings: Math.min(savingsRaw, subtotal),
+    maxUses: discount.maxUses ?? null,
   }
+}
+
+/**
+ * Atomically claim one use of a discount, enforcing maxUses at the database
+ * level. Returns true if the use was claimed, false if the code is already at
+ * its limit. This closes the check-then-act race in applyDiscountCode: a
+ * single conditional UPDATE (`WHERE uses < maxUses`) serialises concurrent
+ * redemptions so a "single-use" code can never be redeemed twice.
+ *
+ * Call this BEFORE creating the order; if it returns false, drop the discount
+ * and recompute the total without it.
+ */
+export async function redeemDiscountUse(discount: AppliedDiscount): Promise<boolean> {
+  if (discount.maxUses == null) {
+    // Unlimited code — just record the use (best-effort, never blocks).
+    await db.discount.update({
+      where: { id: discount.id },
+      data: { uses: { increment: 1 } },
+    }).catch(() => {})
+    return true
+  }
+  const res = await db.discount.updateMany({
+    where: { id: discount.id, uses: { lt: discount.maxUses } },
+    data: { uses: { increment: 1 } },
+  })
+  return res.count > 0
 }
 
 /** Build the Prisma OrderItem.create payloads from priced lines, including
@@ -188,21 +216,31 @@ export function buildOrderItemCreates(lines: PricedLine[]) {
 
 /** Decrement stock for sold lines, variant-aware. Mirrors the Stripe webhook
  *  so manual/admin orders (which have no gateway webhook) keep inventory
- *  accurate. Failures per line are swallowed (row may have been deleted). */
+ *  accurate. Conditional (`stock >= qty`) so it can't drive stock negative;
+ *  returns the lines that could NOT be decremented (oversold / row deleted) so
+ *  the caller can surface them instead of silently shipping. */
 export async function decrementStockForLines(
-  lines: { productId: string; variantId: string | null; quantity: number }[],
-) {
+  lines: { productId: string; variantId: string | null; quantity: number; productName?: string }[],
+): Promise<{ productId: string; variantId: string | null; quantity: number; productName?: string }[]> {
+  const failed: typeof lines = []
   for (const l of lines) {
-    if (l.variantId) {
-      await db.productVariant.update({
-        where: { id: l.variantId },
-        data: { stock: { decrement: l.quantity } },
-      }).catch(() => {})
-    } else if (l.productId) {
-      await db.product.update({
-        where: { id: l.productId },
-        data: { stock: { decrement: l.quantity } },
-      }).catch(() => {})
+    try {
+      if (l.variantId) {
+        const res = await db.productVariant.updateMany({
+          where: { id: l.variantId, stock: { gte: l.quantity } },
+          data: { stock: { decrement: l.quantity } },
+        })
+        if (res.count === 0) failed.push(l)
+      } else if (l.productId) {
+        const res = await db.product.updateMany({
+          where: { id: l.productId, stock: { gte: l.quantity } },
+          data: { stock: { decrement: l.quantity } },
+        })
+        if (res.count === 0) failed.push(l)
+      }
+    } catch {
+      failed.push(l)
     }
   }
+  return failed
 }

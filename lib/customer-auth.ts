@@ -50,12 +50,12 @@ export interface CustomerJwtPayload {
 
 export function signCustomerToken(payload: CustomerJwtPayload): string {
   // 7-day expiry (was 30d). Sliding renewal happens on next login.
-  return jwt.sign(payload, jwtSecret(), { expiresIn: '7d' })
+  return jwt.sign(payload, jwtSecret(), { expiresIn: '7d', algorithm: 'HS256' })
 }
 
 export function verifyCustomerToken(token: string): CustomerJwtPayload | null {
   try {
-    const decoded = jwt.verify(token, jwtSecret()) as Partial<CustomerJwtPayload>
+    const decoded = jwt.verify(token, jwtSecret(), { algorithms: ['HS256'] }) as Partial<CustomerJwtPayload>
     if (
       !decoded ||
       typeof decoded.userId !== 'string' ||

@@ -32,8 +32,14 @@ const store = new Map<string, Bucket>()
 export function clientIp(req: NextRequest): string {
   const xff = req.headers.get('x-forwarded-for')
   if (xff) {
-    // x-forwarded-for is a comma-separated list; first entry is the original client
-    return xff.split(',')[0].trim()
+    // x-forwarded-for is "client, proxy1, proxy2, ...". A CLIENT can forge
+    // the left side, but our trusted proxy (Railway's edge) APPENDS the real
+    // peer IP as the RIGHT-MOST entry. So we take the last entry — any
+    // attacker-supplied value sits to its left and can't be used to rotate
+    // buckets and bypass the limit. (Assumes exactly one trusted proxy hop,
+    // which is Railway's setup.)
+    const parts = xff.split(',').map(s => s.trim()).filter(Boolean)
+    if (parts.length > 0) return parts[parts.length - 1]
   }
   const real = req.headers.get('x-real-ip')
   if (real) return real.trim()

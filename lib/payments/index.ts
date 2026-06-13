@@ -61,6 +61,9 @@ export interface RefundRequest {
   amount?: number
   /** Optional human reason, surfaced to the gateway where supported. */
   reason?: string
+  /** Optional idempotency key — the gateway dedupes retries with the same key
+   *  so a double-click / network retry can't issue two refunds. */
+  idempotencyKey?: string
 }
 
 export interface RefundResult {

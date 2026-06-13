@@ -17,9 +17,11 @@ import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
  *    invalidates every existing session.
  */
 
-// A real bcrypt hash so the compare path is the same shape on miss + hit.
-// (Generated offline; not a valid password for anyone.)
-const DUMMY_HASH = '$2a$12$abcdefghijklmnopqrstuv0123456789ABCDEFGHIJKLMNOPQRSTUV'
+// A REAL bcrypt hash (cost 12) computed once at module load, so the compare
+// on a missing/disabled account takes the same ~400ms as a real hit. The old
+// hardcoded string was NOT a parseable bcrypt hash, so compare returned in
+// ~0.2ms and leaked account existence via a timing oracle.
+const DUMMY_HASH = bcrypt.hashSync('luton-cards-not-a-real-password-placeholder', 12)
 
 export async function POST(req: NextRequest) {
   // Per-IP cap first (quick).

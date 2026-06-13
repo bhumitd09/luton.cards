@@ -52,8 +52,11 @@ export async function POST(req: NextRequest) {
   }
 
   // (2) session.id must match the one we recorded at checkout-create time.
-  if (order.stripeSessionId && order.stripeSessionId !== session.id) {
-    console.error('Stripe webhook: session id mismatch — possible takeover attempt', {
+  //     Fail CLOSED: an order with no recorded stripeSessionId never went
+  //     through our checkout-create, so we must not flip it to paid on the
+  //     strength of amount-matching alone.
+  if (!order.stripeSessionId || order.stripeSessionId !== session.id) {
+    console.error('Stripe webhook: session id missing/mismatch — refusing to flip to paid', {
       orderId, expected: order.stripeSessionId, got: session.id,
     })
     return NextResponse.json({ received: true })
@@ -86,16 +89,34 @@ export async function POST(req: NextRequest) {
   // parent product.stock untouched for variant-backed orders so it can act
   // as an "aggregate" if the admin chooses to surface it later.
   for (const item of order.items) {
-    if (item.variantId) {
-      await db.productVariant.update({
-        where: { id: item.variantId },
-        data: { stock: { decrement: item.quantity } },
-      }).catch(() => {}) // ignore if variant was deleted
-    } else if (item.productId) {
-      await db.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      }).catch(() => {}) // ignore if product was deleted
+    try {
+      if (item.variantId) {
+        // Conditional decrement: only when enough stock remains, so two
+        // buyers racing on the last unit can't drive stock negative
+        // (oversell). count===0 means we sold past available — log it loudly
+        // so the order can be reconciled/refunded rather than silently shipped.
+        const res = await db.productVariant.updateMany({
+          where: { id: item.variantId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        })
+        if (res.count === 0) {
+          console.error('Stripe webhook: OVERSOLD variant — stock could not be decremented', {
+            orderId, variantId: item.variantId, qty: item.quantity,
+          })
+        }
+      } else if (item.productId) {
+        const res = await db.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        })
+        if (res.count === 0) {
+          console.error('Stripe webhook: OVERSOLD product — stock could not be decremented', {
+            orderId, productId: item.productId, qty: item.quantity,
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Stripe webhook: stock decrement error', { orderId, err })
     }
   }
 

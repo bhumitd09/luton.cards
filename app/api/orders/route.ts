@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
-import { priceOrderLines, applyDiscountCode, buildOrderItemCreates, PricingError } from '@/lib/orders'
+import { priceOrderLines, applyDiscountCode, redeemDiscountUse, buildOrderItemCreates, PricingError } from '@/lib/orders'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 /**
  * POST /api/orders — guest or logged-in checkout.
@@ -51,6 +52,11 @@ interface CreateOrderBody {
 const MAX_SHIPPING_COST = 100 // hard ceiling in GBP
 
 export async function POST(req: NextRequest) {
+  // Cap order creation per IP so an unauthenticated actor can't mass-create
+  // pending orders (DB bloat / stock churn).
+  const block = enforceRateLimit(req, { bucket: 'orders-create', max: 20, windowMs: 60_000 })
+  if (block) return block
+
   try {
     const body: CreateOrderBody = await req.json()
 
@@ -105,7 +111,13 @@ export async function POST(req: NextRequest) {
     const { lines, subtotal } = await priceOrderLines(items)
 
     // ─── Discount math (all server-side) ──────────────────────────────────
-    const appliedDiscount = await applyDiscountCode(discountCode, subtotal)
+    // Validate, then atomically claim a use BEFORE pricing it in. If the code
+    // hit its usage limit between validation and claim, drop it — never apply
+    // a discount we couldn't redeem.
+    let appliedDiscount = await applyDiscountCode(discountCode, subtotal)
+    if (appliedDiscount && !(await redeemDiscountUse(appliedDiscount))) {
+      appliedDiscount = null
+    }
     const discountSavings = appliedDiscount?.savings ?? 0
     const finalTotal = Math.max(0, subtotal + safeShipping - discountSavings)
 
@@ -137,13 +149,7 @@ export async function POST(req: NextRequest) {
       include: { items: true },
     })
 
-    // Bump discount uses once, atomically.
-    if (appliedDiscount?.id) {
-      db.discount.update({
-        where: { id: appliedDiscount.id },
-        data: { uses: { increment: 1 } },
-      }).catch(err => console.error('Discount usage increment failed:', err))
-    }
+    // (Discount use was already claimed atomically above, before pricing.)
 
     // ─── Emails (fire-and-forget) ─────────────────────────────────────────
     const emailData = {

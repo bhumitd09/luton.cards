@@ -16,8 +16,9 @@ export async function GET() {
       await db.$queryRaw`SELECT 1`
       warmed = true
     } catch (err) {
+      console.error('Health check DB error:', err)
       return NextResponse.json(
-        { status: 'warming', error: err instanceof Error ? err.message : 'db unavailable' },
+        { status: 'warming', error: 'db unavailable' },
         { status: 503 }
       )
     }

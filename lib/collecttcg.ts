@@ -165,7 +165,17 @@ export async function syncProducts(products: CollectTCGProduct[]): Promise<SyncR
 }
 
 export function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
-  if (!secret) return true // if no secret configured, allow all
+  // Fail CLOSED: no secret or no signature means we cannot verify, so reject.
+  // (Previously returned true when no secret was set — a footgun that would
+  // authorize every request if a caller ever relied on this helper alone.)
+  if (!secret || !signature) return false
   const expected = crypto.createHmac('sha256', secret).update(body).digest('hex')
-  return signature === expected || signature === `sha256=${expected}`
+  // Constant-time compare to avoid leaking the HMAC via timing. Normalise the
+  // optional "sha256=" prefix first; bail if lengths differ (timingSafeEqual
+  // throws on unequal-length buffers).
+  const provided = signature.startsWith('sha256=') ? signature.slice(7) : signature
+  const a = Buffer.from(provided, 'hex')
+  const b = Buffer.from(expected, 'hex')
+  if (a.length !== b.length || a.length === 0) return false
+  return crypto.timingSafeEqual(a, b)
 }

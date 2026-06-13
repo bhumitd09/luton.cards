@@ -32,15 +32,47 @@ export async function PUT(
     const updateData: Record<string, unknown> = {}
 
     if (body.code !== undefined) updateData.code = String(body.code).trim().toUpperCase()
+    // The resulting type matters for value validation below — use the new type
+    // if supplied, otherwise the existing one.
+    const effectiveType = body.type !== undefined ? body.type : existing.type
     if (body.type !== undefined) {
       if (body.type !== 'percentage' && body.type !== 'fixed') {
         return NextResponse.json({ error: 'Type must be percentage or fixed' }, { status: 400 })
       }
       updateData.type = body.type
     }
-    if (body.value !== undefined) updateData.value = Number(body.value)
-    if (body.minOrder !== undefined) updateData.minOrder = body.minOrder != null ? Number(body.minOrder) : null
-    if (body.maxUses !== undefined) updateData.maxUses = body.maxUses != null ? Number(body.maxUses) : null
+    if (body.value !== undefined) {
+      const value = Number(body.value)
+      if (!Number.isFinite(value) || value <= 0) {
+        return NextResponse.json({ error: 'Value must be a positive number' }, { status: 400 })
+      }
+      if (effectiveType === 'percentage' && value > 100) {
+        return NextResponse.json({ error: 'Percentage discount cannot exceed 100' }, { status: 400 })
+      }
+      updateData.value = value
+    }
+    if (body.minOrder !== undefined) {
+      if (body.minOrder == null) {
+        updateData.minOrder = null
+      } else {
+        const minOrder = Number(body.minOrder)
+        if (!Number.isFinite(minOrder) || minOrder < 0) {
+          return NextResponse.json({ error: 'Minimum order must be zero or more' }, { status: 400 })
+        }
+        updateData.minOrder = minOrder
+      }
+    }
+    if (body.maxUses !== undefined) {
+      if (body.maxUses == null) {
+        updateData.maxUses = null
+      } else {
+        const maxUses = Number(body.maxUses)
+        if (!Number.isInteger(maxUses) || maxUses < 1) {
+          return NextResponse.json({ error: 'Max uses must be a positive whole number' }, { status: 400 })
+        }
+        updateData.maxUses = maxUses
+      }
+    }
     if (body.active !== undefined) updateData.active = Boolean(body.active)
     if (body.expiresAt !== undefined) updateData.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null
 

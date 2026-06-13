@@ -92,11 +92,16 @@ export class StripeDriver implements PaymentDriver {
       throw new Error('Could not resolve a Stripe payment to refund for this order.')
     }
 
-    const refund = await this.stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      ...(req.amount !== undefined ? { amount: Math.round(req.amount * 100) } : {}),
-      ...(req.reason ? { metadata: { reason: req.reason.slice(0, 500) } } : {}),
-    })
+    const refund = await this.stripe.refunds.create(
+      {
+        payment_intent: paymentIntentId,
+        ...(req.amount !== undefined ? { amount: Math.round(req.amount * 100) } : {}),
+        ...(req.reason ? { metadata: { reason: req.reason.slice(0, 500) } } : {}),
+      },
+      // Idempotency: Stripe returns the original refund (no second charge-back)
+      // if the same key is replayed within 24h.
+      req.idempotencyKey ? { idempotencyKey: req.idempotencyKey } : undefined,
+    )
 
     return {
       refundId: refund.id,

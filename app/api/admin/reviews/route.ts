@@ -11,6 +11,11 @@ export async function GET(req: NextRequest) {
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    // Reviews are store-wide and contain reviewer PII (name + location);
+    // a vendor must not be able to enumerate them.
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
+    }
 
     const reviews = await db.review.findMany({
       orderBy: { createdAt: 'desc' },

@@ -65,15 +65,44 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const reason = typeof body.reason === 'string' ? body.reason.trim() : undefined
 
+    // ── Atomically CLAIM the amount before touching the gateway ───────────
+    // Optimistic lock: only proceed if refundedAmount is still what we read.
+    // Two concurrent refunds can't both pass — the loser gets count===0 and a
+    // 409, so we never over-refund (critical for offline orders with no
+    // gateway backstop).
+    const claimed = Math.round((alreadyRefunded + amount) * 100) / 100
+    const claim = await db.order.updateMany({
+      where: { id: order.id, refundedAmount: order.refundedAmount },
+      data: { refundedAmount: claimed },
+    })
+    if (claim.count === 0) {
+      return NextResponse.json(
+        { error: 'This order was refunded by another request just now. Reload and try again.' },
+        { status: 409 },
+      )
+    }
+
     // Run the gateway refund when there's a captured payment to refund against.
     let refundId: string | null = null
     if (order.paymentRef) {
       try {
-        const result = await paymentProvider().refund({ ref: order.paymentRef, amount, reason })
+        const result = await paymentProvider().refund({
+          ref: order.paymentRef,
+          amount,
+          reason,
+          // Stable key per (order, prior-total, amount) so a retry can't double-refund.
+          idempotencyKey: `refund:${order.id}:${alreadyRefunded}:${amount}`,
+        })
         refundId = result.refundId
-        // Trust the gateway's actual refunded amount.
+        // Trust the gateway's actual refunded amount, but never let the running
+        // total exceed the order total.
         amount = Math.round(result.amount * 100) / 100
       } catch (err) {
+        // Roll the claim back so the reserved amount isn't lost.
+        await db.order.updateMany({
+          where: { id: order.id, refundedAmount: claimed },
+          data: { refundedAmount: order.refundedAmount },
+        }).catch(() => {})
         console.error('Gateway refund failed:', err)
         return NextResponse.json(
           { error: err instanceof Error ? err.message : 'The payment gateway rejected the refund.' },
@@ -82,7 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }
     }
 
-    const newRefunded = Math.round((alreadyRefunded + amount) * 100) / 100
+    const newRefunded = Math.min(order.total, Math.round((alreadyRefunded + amount) * 100) / 100)
     const fullyRefunded = newRefunded >= order.total - 0.001
 
     const updated = await db.order.update({

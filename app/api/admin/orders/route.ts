@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin, orderListScope } from '@/lib/vendor-auth'
-import { priceOrderLines, applyDiscountCode, buildOrderItemCreates, decrementStockForLines, PricingError } from '@/lib/orders'
+import { priceOrderLines, applyDiscountCode, redeemDiscountUse, buildOrderItemCreates, decrementStockForLines, PricingError } from '@/lib/orders'
 
 /**
  * GET /api/admin/orders
@@ -114,7 +114,10 @@ export async function POST(req: NextRequest) {
     const requestedShipping = typeof body.shippingCost === 'number' && isFinite(body.shippingCost) ? body.shippingCost : 0
     const safeShipping = Math.max(0, Math.min(100, requestedShipping))
 
-    const appliedDiscount = await applyDiscountCode(body.discountCode, subtotal)
+    let appliedDiscount = await applyDiscountCode(body.discountCode, subtotal)
+    if (appliedDiscount && !(await redeemDiscountUse(appliedDiscount))) {
+      appliedDiscount = null
+    }
     const discountSavings = appliedDiscount?.savings ?? 0
     const finalTotal = Math.max(0, subtotal + safeShipping - discountSavings)
 
@@ -142,18 +145,16 @@ export async function POST(req: NextRequest) {
 
     // No gateway webhook for manual orders, so decrement stock here whenever
     // the order consumes inventory (i.e. not a draft 'pending' or 'cancelled').
+    let oversold: { productName?: string }[] = []
     if (status !== 'pending' && status !== 'cancelled') {
-      await decrementStockForLines(lines)
+      oversold = await decrementStockForLines(lines)
     }
+    // (Discount use was already claimed atomically above.)
 
-    if (appliedDiscount?.id) {
-      db.discount.update({
-        where: { id: appliedDiscount.id },
-        data: { uses: { increment: 1 } },
-      }).catch(err => console.error('Discount usage increment failed:', err))
-    }
-
-    return NextResponse.json({ order, orderId: order.id, total: finalTotal, success: true }, { status: 201 })
+    return NextResponse.json({
+      order, orderId: order.id, total: finalTotal, success: true,
+      ...(oversold.length > 0 ? { warning: `Created, but ${oversold.length} item(s) had insufficient stock and were not decremented.` } : {}),
+    }, { status: 201 })
   } catch (error) {
     if (error instanceof PricingError) {
       return NextResponse.json({ error: error.message }, { status: error.status })

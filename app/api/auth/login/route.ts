@@ -4,7 +4,10 @@ import { db } from '@/lib/db'
 import { signCustomerToken, CUSTOMER_TOKEN_COOKIE, invalidateCustomerSession } from '@/lib/customer-auth'
 import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
 
-const DUMMY_HASH = '$2a$12$abcdefghijklmnopqrstuv0123456789ABCDEFGHIJKLMNOPQRSTUV'
+// A REAL bcrypt hash (cost 12) so the compare on a missing account takes the
+// same ~400ms as a real hit — the old hardcoded string wasn't a valid bcrypt
+// hash and returned in ~0.2ms, leaking which emails exist via timing.
+const DUMMY_HASH = bcrypt.hashSync('luton-cards-not-a-real-password-placeholder', 12)
 
 /**
  * Customer login. Rate-limited 5/min/IP + 10/hr/(IP+email). 7-day cookie

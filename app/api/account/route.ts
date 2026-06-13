@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { verifyCustomerSession } from '@/lib/customer-auth'
 
 export async function GET(req: NextRequest) {
-  const auth = getCustomerFromRequest(req)
+  const auth = await verifyCustomerSession(req)
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await db.user.findUnique({
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = getCustomerFromRequest(req)
+  const auth = await verifyCustomerSession(req)
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: Record<string, unknown>

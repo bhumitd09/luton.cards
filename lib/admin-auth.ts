@@ -73,12 +73,14 @@ export function signAdminToken(payload: AdminJwtPayload): string {
   // 24h expiry. Sliding refresh happens on every login — we don't auto-renew
   // on every request because that needs a cookie write and we want session
   // length to be predictable.
-  return jwt.sign(payload, jwtSecret(), { expiresIn: '24h' })
+  return jwt.sign(payload, jwtSecret(), { expiresIn: '24h', algorithm: 'HS256' })
 }
 
 export function verifyAdminToken(token: string): AdminJwtPayload | null {
   try {
-    const decoded = jwt.verify(token, jwtSecret()) as Partial<AdminJwtPayload>
+    // Pin HS256 so a future refactor to asymmetric keys can't be tricked into
+    // an algorithm-confusion bypass (alg:none / RS256-as-HS256).
+    const decoded = jwt.verify(token, jwtSecret(), { algorithms: ['HS256'] }) as Partial<AdminJwtPayload>
     if (
       !decoded ||
       typeof decoded.userId !== 'string' ||
