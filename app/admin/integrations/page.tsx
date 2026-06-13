@@ -30,6 +30,14 @@ interface SyncResult {
   error?: string
 }
 
+interface ProviderStatus {
+  name: 'stripe' | 'square'
+  label: string
+  active: boolean
+  configured: boolean
+  envVars: { key: string; present: boolean; required: boolean }[]
+}
+
 export default function IntegrationsPage() {
   const [activeTab, setActiveTab] = useState<'settings' | 'logs'>('settings')
 
@@ -50,6 +58,10 @@ export default function IntegrationsPage() {
   const [logs, setLogs] = useState<SyncLog[]>([])
   const [copied, setCopied] = useState(false)
 
+  // Payment gateways (Stripe / Square) status
+  const [payProviders, setPayProviders] = useState<ProviderStatus[]>([])
+  const [activeProvider, setActiveProvider] = useState<string>('stripe')
+
   const webhookUrl = 'https://lutoncards.com/api/webhooks/collecttcg'
 
   useEffect(() => {
@@ -60,6 +72,17 @@ export default function IntegrationsPage() {
         if (data.collecttcg_api_url) setApiUrl(data.collecttcg_api_url)
         if (data.collecttcg_api_key) setApiKey(data.collecttcg_api_key)
         if (data.collecttcg_webhook_secret) setWebhookSecret(data.collecttcg_webhook_secret)
+      })
+      .catch(() => {})
+
+    // Load payment gateway status (Stripe / Square)
+    fetch('/api/admin/payments/status')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (data?.providers) {
+          setPayProviders(data.providers)
+          setActiveProvider(data.active ?? 'stripe')
+        }
       })
       .catch(() => {})
 
@@ -332,9 +355,106 @@ export default function IntegrationsPage() {
         {activeTab === 'settings' && (
           <div style={{ padding: '1.35rem' }}>
 
+            {/* ── Payment gateways (Stripe / Square) ── */}
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={sectionTitleStyle}>Payment gateways</div>
+              <p style={{ fontSize: '0.8rem', color: '#9ca3af', margin: '0 0 1rem' }}>
+                Luton Cards supports two gateways. The active one is set with the{' '}
+                <code style={{ background: '#161617', padding: '1px 6px', borderRadius: 5, color: '#FF80B8' }}>PAYMENT_PROVIDER</code>{' '}
+                env var on Railway (<code style={{ background: '#161617', padding: '1px 6px', borderRadius: 5, color: '#FF80B8' }}>stripe</code> or{' '}
+                <code style={{ background: '#161617', padding: '1px 6px', borderRadius: 5, color: '#FF80B8' }}>square</code>). Keys live in env vars, never the database.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                {payProviders.map(p => {
+                  const isLive = p.active
+                  const ready = p.configured
+                  return (
+                    <div
+                      key={p.name}
+                      style={{
+                        background: '#0c0c0d',
+                        border: `1px solid ${isLive ? 'rgba(236,30,121,0.4)' : '#202022'}`,
+                        borderRadius: 14,
+                        padding: '1.1rem 1.2rem',
+                        position: 'relative',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f4f4f5', letterSpacing: '-0.02em' }}>
+                          {p.label}
+                        </span>
+                        {isLive ? (
+                          <span style={{
+                            fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
+                            color: '#fff', background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+                            padding: '0.2rem 0.55rem', borderRadius: 999,
+                          }}>
+                            Active
+                          </span>
+                        ) : (
+                          <span style={{
+                            fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
+                            color: '#6b7280', background: '#161617', border: '1px solid #202022',
+                            padding: '0.2rem 0.55rem', borderRadius: 999,
+                          }}>
+                            Standby
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Readiness pill */}
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.85rem',
+                        color: ready ? '#10b981' : '#f59e0b',
+                      }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: ready ? '#10b981' : '#f59e0b' }} />
+                        {ready ? 'Configured' : 'Not configured'}
+                      </div>
+
+                      {/* Env checklist */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        {p.envVars.map(v => (
+                          <div key={v.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.72rem' }}>
+                            <span style={{
+                              width: 14, height: 14, borderRadius: 4, flexShrink: 0,
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              background: v.present ? 'rgba(16,185,129,0.15)' : v.required ? 'rgba(239,68,68,0.12)' : '#161617',
+                              color: v.present ? '#10b981' : v.required ? '#ef4444' : '#6b7280',
+                              fontWeight: 800, fontSize: 9,
+                            }}>
+                              {v.present ? '✓' : '·'}
+                            </span>
+                            <code style={{ color: v.present ? '#9ca3af' : '#6b7280', fontFamily: 'monospace' }}>
+                              {v.key}
+                            </code>
+                            {!v.required && (
+                              <span style={{ fontSize: '0.62rem', color: '#52525b' }}>optional</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {p.name === 'square' && !ready && (
+                        <p style={{ fontSize: '0.68rem', color: '#6b7280', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
+                          Square driver is stubbed — run <code style={{ color: '#FF80B8' }}>npm i square</code> + implement
+                          lib/payments/square.ts to go live.
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+                {payProviders.length === 0 && (
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280', padding: '0.5rem' }}>
+                    Loading payment status…
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* API Connection */}
             <div style={{ marginBottom: '2rem' }}>
-              <div style={sectionTitleStyle}>API Connection</div>
+              <div style={sectionTitleStyle}>CollectTCG API Connection</div>
               <div style={{ display: 'grid', gap: '1rem' }}>
                 <div>
                   <label style={labelStyle}>API Base URL</label>

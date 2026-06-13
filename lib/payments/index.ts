@@ -59,17 +59,29 @@ export interface PaymentDriver {
   createCheckout(order: CheckoutOrder): Promise<CheckoutResult>
 }
 
+/**
+ * The only two gateways Luton Cards supports. PAYMENT_PROVIDER must be one of
+ * these (defaults to 'stripe'). Anything else is rejected so a typo can't
+ * silently fall back to the wrong processor for a money path.
+ */
+export const SUPPORTED_PROVIDERS = ['stripe', 'square'] as const
+export type ProviderName = (typeof SUPPORTED_PROVIDERS)[number]
+
+/** Resolve the configured provider name (validated, lowercased). */
+export function activeProviderName(): ProviderName {
+  const raw = (process.env.PAYMENT_PROVIDER || 'stripe').toLowerCase()
+  return (SUPPORTED_PROVIDERS as readonly string[]).includes(raw) ? (raw as ProviderName) : 'stripe'
+}
+
 let _driver: PaymentDriver | null = null
 
 /**
- * Returns the active payment driver. Lazily constructed + cached. Throws a
- * clear error if PAYMENT_PROVIDER names an unknown gateway.
+ * Returns the active payment driver. Lazily constructed + cached.
  */
 export function paymentProvider(): PaymentDriver {
   if (_driver) return _driver
 
-  const name = (process.env.PAYMENT_PROVIDER || 'stripe').toLowerCase()
-  switch (name) {
+  switch (activeProviderName()) {
     case 'square': {
       // Lazy require so the Square SDK never loads unless selected.
       const { SquareDriver } = require('./square') as typeof import('./square')
@@ -83,6 +95,51 @@ export function paymentProvider(): PaymentDriver {
       return _driver
     }
   }
+}
+
+/** Per-provider config + readiness, computed from env (NEVER returns secret
+ *  values — only booleans). Powers the admin Payments panel. */
+export interface ProviderStatus {
+  name: ProviderName
+  label: string
+  active: boolean
+  configured: boolean
+  /** env var → present? — so the admin sees exactly what's still missing. */
+  envVars: { key: string; present: boolean; required: boolean }[]
+}
+
+export function paymentProvidersStatus(): ProviderStatus[] {
+  const active = activeProviderName()
+  const has = (k: string) => Boolean(process.env[k] && process.env[k]!.length > 0)
+
+  const stripeVars = [
+    { key: 'STRIPE_SECRET_KEY', present: has('STRIPE_SECRET_KEY'), required: true },
+    { key: 'STRIPE_WEBHOOK_SECRET', present: has('STRIPE_WEBHOOK_SECRET'), required: true },
+    { key: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', present: has('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'), required: false },
+  ]
+  const squareVars = [
+    { key: 'SQUARE_ACCESS_TOKEN', present: has('SQUARE_ACCESS_TOKEN'), required: true },
+    { key: 'SQUARE_LOCATION_ID', present: has('SQUARE_LOCATION_ID'), required: true },
+    { key: 'SQUARE_ENVIRONMENT', present: has('SQUARE_ENVIRONMENT'), required: false },
+    { key: 'SQUARE_WEBHOOK_SIGNATURE_KEY', present: has('SQUARE_WEBHOOK_SIGNATURE_KEY'), required: true },
+  ]
+
+  return [
+    {
+      name: 'stripe',
+      label: 'Stripe',
+      active: active === 'stripe',
+      configured: stripeVars.filter(v => v.required).every(v => v.present),
+      envVars: stripeVars,
+    },
+    {
+      name: 'square',
+      label: 'Square',
+      active: active === 'square',
+      configured: squareVars.filter(v => v.required).every(v => v.present),
+      envVars: squareVars,
+    },
+  ]
 }
 
 /** Build the line items a driver renders from an order — shipping + discount
