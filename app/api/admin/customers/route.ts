@@ -58,7 +58,25 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Enrich each customer with their CustomerProfile (notes / tags / blocked)
+    // so the admin list can show a Blocked badge + tags without an extra call.
+    const emails = Array.from(customerMap.keys())
+    const profiles = await db.customerProfile.findMany({
+      where: { email: { in: emails } },
+      select: { email: true, blocked: true, tags: true, adminNotes: true },
+    })
+    const profileByEmail = new Map(profiles.map(p => [p.email, p]))
+
     const customers = Array.from(customerMap.values())
+      .map(c => {
+        const p = profileByEmail.get(c.email)
+        return {
+          ...c,
+          blocked: p?.blocked ?? false,
+          tags: p?.tags ?? [],
+          hasNotes: !!(p?.adminNotes && p.adminNotes.length > 0),
+        }
+      })
       .sort((a, b) => b.totalSpent - a.totalSpent)
 
     return NextResponse.json({ customers })

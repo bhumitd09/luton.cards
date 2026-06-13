@@ -80,6 +80,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Block-list check: a CustomerProfile flagged `blocked` can't place orders.
+    // Generic message so we don't confirm the block to the blocked party.
+    const normalisedEmail = String(email).trim().toLowerCase()
+    const profile = await db.customerProfile.findUnique({
+      where: { email: normalisedEmail },
+      select: { blocked: true },
+    })
+    if (profile?.blocked) {
+      return NextResponse.json(
+        { error: 'We are unable to process this order. Please contact us.' },
+        { status: 403 },
+      )
+    }
+
     // Clamp shipping to [0, MAX_SHIPPING_COST]. Reject negatives outright.
     const requestedShipping = typeof shippingCost === 'number' && isFinite(shippingCost) ? shippingCost : 0
     if (requestedShipping < 0) {

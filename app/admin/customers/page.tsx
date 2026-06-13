@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Search, X, TrendingUp, ShoppingBag, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, Search, X, TrendingUp, ShoppingBag, DollarSign, ChevronLeft, ChevronRight, Ban, Check } from 'lucide-react'
+import { useToast } from '@/components/admin/toast'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,9 @@ interface Customer {
   firstOrderAt: string
   lastOrderAt: string
   orders: Order[]
+  blocked?: boolean
+  tags?: string[]
+  hasNotes?: boolean
 }
 
 type SortBy = 'spend' | 'orders' | 'recent'
@@ -138,10 +142,70 @@ function StatCard({
 function SlideOver({
   customer,
   onClose,
+  onUpdated,
 }: {
   customer: Customer
   onClose: () => void
+  onUpdated?: () => void
 }) {
+  const toast = useToast()
+  // Profile (notes / tags / blocked) loaded on open from the [email] route.
+  const [blocked, setBlocked] = useState(!!customer.blocked)
+  const [notes, setNotes] = useState('')
+  const [tags, setTags] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileLoaded, setProfileLoaded] = useState(false)
+
+  useEffect(() => {
+    let aborted = false
+    fetch(`/api/admin/customers/${encodeURIComponent(customer.email)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (aborted || !data) return
+        const p = data.profile
+        setBlocked(!!p?.blocked)
+        setNotes(p?.adminNotes ?? '')
+        setTags((p?.tags ?? []).join(', '))
+        setProfileLoaded(true)
+      })
+      .catch(() => setProfileLoaded(true))
+    return () => { aborted = true }
+  }, [customer.email])
+
+  const saveProfile = async (patch: { blocked?: boolean; adminNotes?: string; tags?: string[] }) => {
+    setProfileSaving(true)
+    try {
+      const res = await fetch(`/api/admin/customers/${encodeURIComponent(customer.email)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      if (!res.ok) { toast.error('Could not save'); return false }
+      onUpdated?.()
+      return true
+    } catch {
+      toast.error('Network error'); return false
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const toggleBlocked = async () => {
+    const next = !blocked
+    setBlocked(next)
+    const ok = await saveProfile({ blocked: next })
+    if (ok) toast.success(next ? 'Customer blocked from checkout' : 'Customer unblocked')
+    else setBlocked(!next)
+  }
+
+  const saveNotesTags = async () => {
+    const ok = await saveProfile({
+      adminNotes: notes,
+      tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+    })
+    if (ok) toast.success('Saved')
+  }
+
   const avgOrder = customer.totalOrders > 0 ? customer.totalSpent / customer.totalOrders : 0
   const sortedOrders = [...customer.orders].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -249,6 +313,82 @@ function SlideOver({
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Profile: block + notes + tags */}
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #202022', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          {/* Block toggle */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
+            background: blocked ? 'rgba(239,68,68,0.08)' : '#161617',
+            border: `1px solid ${blocked ? 'rgba(239,68,68,0.25)' : '#202022'}`,
+            borderRadius: 11, padding: '0.7rem 0.9rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+              <Ban size={15} color={blocked ? '#ef4444' : '#6b7280'} />
+              <div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: blocked ? '#ef4444' : '#f4f4f5' }}>
+                  {blocked ? 'Blocked from checkout' : 'Checkout allowed'}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#6b7280' }}>
+                  {blocked ? 'This email cannot place new orders.' : 'Block to stop this email ordering.'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={toggleBlocked}
+              disabled={profileSaving || !profileLoaded}
+              style={{
+                padding: '0.4rem 0.85rem', borderRadius: 9, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 800,
+                border: '1px solid', whiteSpace: 'nowrap',
+                ...(blocked
+                  ? { background: '#161617', borderColor: '#202022', color: '#e4e4e7' }
+                  : { background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.25)', color: '#ef4444' }),
+              }}
+            >
+              {blocked ? 'Unblock' : 'Block'}
+            </button>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              Tags <span style={{ fontWeight: 600, textTransform: 'none', letterSpacing: 0, color: '#52525b' }}>— comma separated</span>
+            </label>
+            <input
+              value={tags}
+              onChange={e => setTags(e.target.value)}
+              placeholder="vip, repeat, wholesale"
+              style={{ width: '100%', padding: '0.55rem 0.75rem', background: '#0c0c0d', border: '1px solid #202022', borderRadius: 10, color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              Internal notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Notes only staff can see…"
+              style={{ width: '100%', padding: '0.55rem 0.75rem', background: '#0c0c0d', border: '1px solid #202022', borderRadius: 10, color: '#fff', fontSize: '0.85rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.55 }}
+            />
+          </div>
+
+          <button
+            onClick={saveNotesTags}
+            disabled={profileSaving || !profileLoaded}
+            style={{
+              alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)', border: 'none', color: '#fff',
+              fontSize: '0.8rem', fontWeight: 800, padding: '0.5rem 1rem', borderRadius: 10,
+              cursor: profileSaving ? 'wait' : 'pointer', boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
+            }}
+          >
+            <Check size={14} /> {profileSaving ? 'Saving…' : 'Save notes & tags'}
+          </button>
         </div>
 
         {/* Order history */}
@@ -596,7 +736,17 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Status badge */}
-                <div>
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                  {customer.blocked && (
+                    <span style={{
+                      background: 'rgba(239,68,68,0.12)', color: '#ef4444',
+                      fontSize: '0.6875rem', fontWeight: 800,
+                      padding: '3px 10px', borderRadius: '999px',
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <Ban size={10} /> Blocked
+                    </span>
+                  )}
                   <span style={{
                     background: status.bg,
                     color: status.color,
@@ -705,6 +855,7 @@ export default function CustomersPage() {
           <SlideOver
             customer={selectedCustomer}
             onClose={() => setSelectedCustomer(null)}
+            onUpdated={fetchCustomers}
           />
         )}
       </AnimatePresence>
