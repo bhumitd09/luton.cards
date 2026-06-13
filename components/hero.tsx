@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Particles } from '@/components/magicui/particles'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
-import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 import { EditableText } from '@/components/editable/editable-text'
 
 export function Hero() {
@@ -85,24 +84,10 @@ export function Hero() {
       />
 
       <div className="relative z-10 mx-auto flex max-w-[820px] flex-col items-center px-6 py-12 text-center sm:py-14 md:py-16">
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="mb-5"
-        >
-          <AnimatedGradientText className="!bg-white/[0.04] !text-white">
-            <Sparkles className="mr-1.5 size-3 text-[#EC1E79]" />
-            <span className="inline animate-gradient bg-gradient-to-r from-[#EC1E79] via-[#FF80B8] to-[#EC1E79] bg-[length:var(--bg-size)_100%] bg-clip-text text-[10.5px] font-bold uppercase tracking-[0.14em] text-transparent">
-              Luton, UK · Pokémon &amp; One Piece TCG
-            </span>
-          </AnimatedGradientText>
-        </motion.div>
-
-        {/* Logo intentionally removed from the hero — the sticky header
-            already shows it on every page, so doubling it here pushes the
-            headline below the fold and adds visual noise. The pink eyebrow
-            tag above keeps the brand presence at the top of the hero. */}
+        {/* Logo + "Luton, UK · Pokémon & One Piece TCG" eyebrow tag both
+            removed — the sticky header already brands the page and the
+            eyebrow read as redundant noise above the headline. The hero
+            now opens straight on the headline for maximum impact. */}
 
         <EditableText
           cmsKey="hero_headline"
@@ -202,7 +187,7 @@ export function Hero() {
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-1 rounded-full bg-[#EC1E79]" />
-            Free UK shipping
+            Fast UK shipping
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-1 rounded-full bg-[#EC1E79]" />

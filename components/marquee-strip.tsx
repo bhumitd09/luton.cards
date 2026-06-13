@@ -12,7 +12,7 @@ const DEFAULT_ITEMS = [
   'Booster Boxes',
   'Sealed Product',
   'Same Day Dispatch',
-  'Free UK Shipping',
+  'Fast UK Shipping',
   'Luton, UK',
 ]
 

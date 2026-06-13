@@ -45,7 +45,7 @@ async function main() {
     { key: 'marquee_items', value: JSON.stringify([
       'PSA Graded', 'Pokémon TCG', 'CGC Certified',
       'One Piece TCG', 'ACE Graded', 'Same Day Dispatch',
-      'Booster Boxes', 'Sealed Product', 'Free UK Shipping',
+      'Booster Boxes', 'Sealed Product', 'Fast UK Shipping',
     ]), type: 'json', label: 'Marquee Ticker Items' },
     { key: 'site_tagline', value: 'Pokémon & One Piece TCG, Luton UK', type: 'text', label: 'Site Tagline' },
     { key: 'footer_tagline', value: 'Pokémon and One Piece trading cards from Luton, UK. Properly sourced, properly priced.', type: 'text', label: 'Footer Tagline' },
