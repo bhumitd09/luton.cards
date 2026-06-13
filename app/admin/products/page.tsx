@@ -67,6 +67,7 @@ type VariantRow = {
 
 const EMPTY_FORM = {
   name: '',
+  game: 'pokemon',
   category: 'single',
   price: '',
   comparePrice: '',
@@ -271,6 +272,7 @@ function ProductModal({
   const initialForm: FormData = product
     ? {
         name: product.name,
+        game: product.game === 'one-piece' ? 'one-piece' : 'pokemon',
         category: product.category,
         price: String(product.price),
         comparePrice: product.comparePrice != null ? String(product.comparePrice) : '',
@@ -327,6 +329,7 @@ function ProductModal({
 
       const body = {
         name: form.name.trim(),
+        game: form.game,
         category: form.category,
         price: Number(form.price),
         comparePrice: form.comparePrice ? Number(form.comparePrice) : null,
@@ -435,6 +438,19 @@ function ProductModal({
               onChange={e => update('name', e.target.value)}
               placeholder="e.g. Charizard VMAX Rainbow Rare"
             />
+          </div>
+
+          {/* Game */}
+          <div>
+            <label style={labelStyle}>Game *</label>
+            <select
+              style={{ ...inputStyle, cursor: 'pointer' }}
+              value={form.game}
+              onChange={e => update('game', e.target.value)}
+            >
+              <option value="pokemon">Pokémon</option>
+              <option value="one-piece">One Piece</option>
+            </select>
           </div>
 
           {/* Category */}

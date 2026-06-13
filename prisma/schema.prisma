@@ -197,6 +197,13 @@ model Order {
   // the order to 'paid' — stops attackers from creating a £1 session whose
   // metadata.orderId points at someone else's expensive pending order.
   stripeSessionId  String?
+  // Provider-agnostic payment fields. paymentProvider is 'stripe' | 'square'
+  // (whichever processed this order); paymentRef is that provider's
+  // session/payment id. stripeSessionId is kept for back-compat + the existing
+  // Stripe webhook's provenance check, but new code should read paymentRef so
+  // adding Square doesn't require schema changes.
+  paymentProvider  String?
+  paymentRef       String?
   items            OrderItem[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -205,6 +212,7 @@ model Order {
   @@index([email])
   @@index([userId])
   @@index([stripeSessionId])
+  @@index([paymentRef])
 }
 
 model OrderItem {
