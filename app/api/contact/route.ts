@@ -30,22 +30,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
-    const timestamp = Date.now()
-    const key = `contact_submission_${timestamp}`
-    const value = JSON.stringify({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      subject: subject.trim(),
-      message: message.trim(),
-      submittedAt: new Date().toISOString(),
-    })
-
-    await db.content.create({
+    await db.contactMessage.create({
       data: {
-        key,
-        value,
-        type: 'contact_submission',
-        label: `Contact from ${name.trim()} — ${subject.trim()}`,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        subject: subject.trim(),
+        message: message.trim(),
       },
     })
 

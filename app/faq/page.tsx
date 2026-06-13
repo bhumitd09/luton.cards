@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { CmsPage, useCmsPage } from '@/components/cms-page'
 
 interface FaqItem {
   question: string
@@ -195,6 +196,12 @@ function FaqAccordion({ items }: { items: FaqItem[] }) {
 }
 
 export default function FaqPage() {
+  const cms = useCmsPage('faq')
+  if (cms.status === 'cms') return <CmsPage page={cms.page} />
+  return <FaqPageFallback />
+}
+
+function FaqPageFallback() {
   return (
     <>
       <style>{`

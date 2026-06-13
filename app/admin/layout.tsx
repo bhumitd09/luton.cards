@@ -27,6 +27,9 @@ import {
   Instagram,
   UserCog,
   Wallet,
+  BookText,
+  Inbox,
+  BellRing,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -295,6 +298,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/media', icon: Image, label: 'Media' },
     { href: '/admin/content', icon: FileText, label: 'Content', superadminOnly: true },
     { href: '/admin/pages', icon: Globe, label: 'Pages', superadminOnly: true },
+    { href: '/admin/legal', icon: BookText, label: 'Legal Pages', superadminOnly: true },
     { href: '/admin/instagram', icon: Instagram, label: 'Instagram', superadminOnly: true },
     { href: '/admin/team', icon: Users, label: 'Team / About', superadminOnly: true },
     { href: '/admin/integrations', icon: Plug, label: 'Integrations', superadminOnly: true },
@@ -308,6 +312,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/customers', icon: Users, label: 'Customers', superadminOnly: true },
     { href: '/admin/discounts', icon: Tag, label: 'Discounts', superadminOnly: true },
     { href: '/admin/reviews', icon: Star, label: 'Reviews', superadminOnly: true },
+    { href: '/admin/contact', icon: Inbox, label: 'Contact Inbox', superadminOnly: true },
+    { href: '/admin/subscribers', icon: BellRing, label: 'Subscribers', superadminOnly: true },
   ].filter(item => isSuper || !('superadminOnly' in item))
   const navCrew = isSuper
     ? [

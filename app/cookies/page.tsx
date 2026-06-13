@@ -2,8 +2,15 @@
 
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { CmsPage, useCmsPage } from '@/components/cms-page'
 
 export default function CookiesPage() {
+  const cms = useCmsPage('cookies')
+  if (cms.status === 'cms') return <CmsPage page={cms.page} />
+  return <CookiesPageFallback />
+}
+
+function CookiesPageFallback() {
   const h2Style: React.CSSProperties = {
     fontSize: '1.25rem',
     fontWeight: 800,

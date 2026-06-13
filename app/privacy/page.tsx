@@ -2,8 +2,15 @@
 
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { CmsPage, useCmsPage } from '@/components/cms-page'
 
 export default function PrivacyPage() {
+  const cms = useCmsPage('privacy')
+  if (cms.status === 'cms') return <CmsPage page={cms.page} />
+  return <PrivacyPageFallback />
+}
+
+function PrivacyPageFallback() {
   const h2Style: React.CSSProperties = {
     fontSize: '1.25rem',
     fontWeight: 800,
