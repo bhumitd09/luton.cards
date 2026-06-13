@@ -135,7 +135,7 @@ export function BuiltByBanner() {
             opacity: 0.75,
           }}>
             Collect TCG is the inventory and pricing platform built for card sellers.
-            Track live prices, manage your stock and know your numbers — all in one place.
+            Track live prices, manage your stock and know your numbers, all in one place.
           </p>
         </motion.div>
 

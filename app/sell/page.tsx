@@ -233,7 +233,7 @@ export default function SellPage() {
                     maxLength={4000}
                     value={form.details}
                     onChange={update('details')}
-                    placeholder="Tell us what you have — sets, conditions, whether it's sealed/graded/raw, quantities. The more detail the better."
+                    placeholder="Tell us what you have: sets, conditions, whether it's sealed/graded/raw, quantities. The more detail the better."
                   />
                 </Field>
 
@@ -243,7 +243,7 @@ export default function SellPage() {
                     className={inputCls}
                     value={form.estimate}
                     onChange={update('estimate')}
-                    placeholder="e.g. £500 — what you'd hope to get, or 'open to offers'"
+                    placeholder="e.g. £500, what you'd hope to get, or 'open to offers'"
                   />
                 </Field>
 

@@ -39,7 +39,7 @@ const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'What if my order arrives damaged?',
         answer:
-          'Please contact us within 48 hours of receiving the order with clear photos of the damage. We will assess the situation and work to resolve it for you — whether that is a replacement, refund, or another solution.',
+          'Please contact us within 48 hours of receiving the order with clear photos of the damage. We will assess the situation and work to resolve it for you, whether that is a replacement, refund, or another solution.',
       },
     ],
   },
@@ -64,7 +64,7 @@ const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'What condition are raw cards in?',
         answer:
-          'We describe each raw card honestly in the listing. If we say a card is NM (Near Mint), it is Near Mint — no surprises. We will always point out any flaws we notice. If you want more photos or details on a specific card, just ask.',
+          'We describe each raw card honestly in the listing. If we say a card is NM (Near Mint), it is Near Mint, with no surprises. We will always point out any flaws we notice. If you want more photos or details on a specific card, just ask.',
       },
     ],
   },
@@ -94,7 +94,7 @@ const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'What payment methods do you accept?',
         answer:
-          'We accept all major credit and debit cards — Visa, Mastercard, and American Express — processed securely via Stripe. A Pay Later/Invoice option may be available for verified customers. Contact us for more details.',
+          'We accept all major credit and debit cards (Visa, Mastercard, and American Express) processed securely via Stripe. A Pay Later/Invoice option may be available for verified customers. Contact us for more details.',
       },
       {
         question: 'Do you have discount codes?',
@@ -104,7 +104,7 @@ const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'Is the site secure?',
         answer:
-          'Yes. All payments are handled by Stripe, which is PCI DSS Level 1 compliant — the highest standard of payment security. We never see or store your full card details.',
+          'Yes. All payments are handled by Stripe, which is PCI DSS Level 1 compliant, the highest standard of payment security. We never see or store your full card details.',
       },
     ],
   },
@@ -119,12 +119,12 @@ const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'Can I sell cards to you?',
         answer:
-          "We don't currently have a formal buying programme, but we're open to it — especially for quality singles or collections. Drop us a message via the Contact page and we'll see what we can do.",
+          "We don't currently have a formal buying programme, but we're open to it, especially for quality singles or collections. Drop us a message via the Contact page and we'll see what we can do.",
       },
       {
         question: 'I have a question not listed here',
         answer:
-          "No problem. Head to our Contact page and send us a message. We aim to respond to all enquiries quickly — usually within a few hours during business days.",
+          "No problem. Head to our Contact page and send us a message. We aim to respond to all enquiries quickly, usually within a few hours during business days.",
       },
     ],
   },

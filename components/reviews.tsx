@@ -50,7 +50,7 @@ export function ProductReviews({ productId }: { productId: string }) {
           </p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginTop: '0.4rem' }}>
             <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#111', letterSpacing: '-0.025em' }}>
-              {loading ? '—' : data?.avgRating ? data.avgRating.toFixed(1) : 'No reviews yet'}
+              {loading ? '–' : data?.avgRating ? data.avgRating.toFixed(1) : 'No reviews yet'}
             </h2>
             {data && data.avgRating !== null && (
               <>
@@ -88,7 +88,7 @@ export function ProductReviews({ productId }: { productId: string }) {
             Be the first to review this card.
           </p>
           <p style={{ margin: '0.4rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>
-            Sign in and share what you think — it helps other collectors.
+            Sign in and share what you think. It helps other collectors.
           </p>
         </div>
       ) : (
@@ -163,7 +163,7 @@ function ReviewCard({ review }: { review: ReviewItem }) {
         {review.body}
       </p>
       <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280' }}>
-        — <span style={{ fontWeight: 700, color: '#111' }}>{review.name}</span>
+        <span style={{ fontWeight: 700, color: '#111' }}>{review.name}</span>
         {review.location ? <>, {review.location}</> : null}
       </p>
     </div>

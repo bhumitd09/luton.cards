@@ -9,13 +9,13 @@ const DEFAULTS = {
   ethos_headline: 'We buy them,\ngrade them, sell them.',
   ethos_01_title: 'We grade. We source.',
   ethos_01_body:
-    'Some cards we buy raw and send off ourselves — PSA, CGC, ACE. Others we pick up already slabbed. Either way, we know the card before it goes on the site.',
+    'Some cards we buy raw and send off ourselves (PSA, CGC, ACE). Others we pick up already slabbed. Either way, we know the card before it goes on the site.',
   ethos_02_title: 'No funny pricing.',
   ethos_02_body:
     "We're collectors too. We know what things are worth and we price accordingly. You won't find us sticking a random number on something and hoping for the best.",
   ethos_03_title: 'Packed like it matters.',
   ethos_03_body:
-    "Because it does. We've all had that sinking feeling when a parcel arrives dented. Every order goes out wrapped properly — not just chucked in a bag.",
+    "Because it does. We've all had that sinking feeling when a parcel arrives dented. Every order goes out wrapped properly, not just chucked in a bag.",
 }
 
 type EthosData = typeof DEFAULTS

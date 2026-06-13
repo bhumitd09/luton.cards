@@ -19,7 +19,7 @@ const OG_IMAGE = `${APP_URL}/logo/luton-cards.png`
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: 'Luton Cards — Pokémon & One Piece TCG, Luton UK',
+    default: 'Luton Cards | Pokémon & One Piece TCG, Luton UK',
     template: '%s | Luton Cards',
   },
   description: 'Pokémon and One Piece trading cards from Luton, UK. Rare singles, PSA & CGC graded slabs, sealed booster boxes. Properly sourced, properly priced.',
@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     siteName: 'Luton Cards',
     locale: 'en_GB',
     type: 'website',
-    title: 'Luton Cards — Pokémon & One Piece TCG, Luton UK',
+    title: 'Luton Cards | Pokémon & One Piece TCG, Luton UK',
     description: 'Rare singles, PSA & CGC graded slabs, sealed booster boxes. Properly sourced, properly priced.',
     url: APP_URL,
     images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Luton Cards' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Luton Cards — Pokémon & One Piece TCG, Luton UK',
+    title: 'Luton Cards | Pokémon & One Piece TCG, Luton UK',
     description: 'Rare singles, PSA & CGC graded slabs, sealed booster boxes.',
     images: [OG_IMAGE],
   },

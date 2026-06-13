@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About Luton Cards — The team behind the cards',
+  title: 'About Luton Cards | The Team Behind the Cards',
   description:
     'Luton Cards is a UK-based Pokémon and One Piece TCG shop. Meet the team of specialists, learn how we source, grade and pack every card.',
   openGraph: {

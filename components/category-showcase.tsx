@@ -34,7 +34,7 @@ const CATEGORIES: Category[] = [
   },
   {
     name: 'Graded',
-    description: 'PSA · CGC · ACE — investment grade.',
+    description: 'PSA · CGC · ACE, investment grade.',
     href: '/products?category=graded',
     badge: 'Investment',
     variant: 'standard',

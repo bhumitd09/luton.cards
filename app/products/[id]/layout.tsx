@@ -43,7 +43,7 @@ export async function generateMetadata(
   const gameLabel = product.game === 'one-piece' ? 'One Piece' : 'Pokémon'
   const gradeLabel = formatGrade(product.grade, product.grader)
   const gradeBit = gradeLabel ? ` · ${gradeLabel}` : ''
-  const title = `${product.name}${gradeBit} — £${product.price.toLocaleString('en-GB')}`
+  const title = `${product.name}${gradeBit} · £${product.price.toLocaleString('en-GB')}`
   const description = product.description
     ? product.description.slice(0, 155)
     : `${gameLabel} ${product.category}${gradeLabel ? ` (${gradeLabel})` : ''} for sale at Luton Cards. £${product.price.toLocaleString('en-GB')}. Properly checked, properly priced.`

@@ -58,7 +58,7 @@ function CookiesPageFallback() {
     { name: 'luton_admin_token', purpose: 'Admin authentication', expires: 'Session' },
     { name: 'cookie_consent', purpose: 'Remembers your cookie choice', expires: '1 year' },
     { name: 'cart (localStorage)', purpose: 'Saves your shopping cart', expires: 'Persistent' },
-    { name: '_ga, _gid', purpose: 'Google Analytics — only if you accept', expires: '2 years / 24 hours' },
+    { name: '_ga, _gid', purpose: 'Google Analytics (only if you accept)', expires: '2 years / 24 hours' },
   ]
 
   return (
@@ -166,7 +166,7 @@ function CookiesPageFallback() {
 
           <h2 style={h2Style}>Managing Cookies</h2>
           <p style={bodyStyle}>
-            You can control and delete cookies through your browser settings. Most browsers allow you to refuse new cookies, accept only certain cookies, or delete all cookies. Note that disabling cookies may affect the functionality of our site — for example, your shopping cart may not persist between sessions. For guidance on managing cookies in your specific browser, visit the browser&apos;s help pages or{' '}
+            You can control and delete cookies through your browser settings. Most browsers allow you to refuse new cookies, accept only certain cookies, or delete all cookies. Note that disabling cookies may affect the functionality of our site. For example, your shopping cart may not persist between sessions. For guidance on managing cookies in your specific browser, visit the browser&apos;s help pages or{' '}
             <a href="https://www.allaboutcookies.org" target="_blank" rel="noopener noreferrer" style={{ color: '#EC1E79', textDecoration: 'none' }}>
               allaboutcookies.org
             </a>

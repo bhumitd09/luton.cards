@@ -228,7 +228,7 @@ export function FeaturedProducts() {
               {active === 'all' ? 'No featured stock yet.' : 'Nothing here yet.'}
             </p>
             <p className="m-0 mt-1 text-xs text-neutral-400">
-              Check back soon — restocks land weekly.
+              Check back soon, restocks land weekly.
             </p>
           </div>
         ) : (

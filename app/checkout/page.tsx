@@ -858,7 +858,7 @@ export default function CheckoutPage() {
                           <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 700, color: '#15803d' }}>
                             {discountApplied.type === 'percentage'
                               ? `${discountApplied.value}% off applied`
-                              : `£${discountApplied.value.toFixed(2)} off applied`} — saving £{discountApplied.savings.toFixed(2)}
+                              : `£${discountApplied.value.toFixed(2)} off applied`}, saving £{discountApplied.savings.toFixed(2)}
                           </p>
                           <p style={{ margin: '0.15rem 0 0', fontSize: '0.8125rem', color: '#16a34a' }}>
                             Code: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{discountApplied.code}</span>

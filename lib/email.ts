@@ -282,7 +282,7 @@ export async function sendOrderConfirmation(data: OrderEmailData): Promise<void>
   await sendEmail({
     from: getFrom(),
     to: data.customerEmail,
-    subject: `Order confirmed — #${data.orderId.slice(-8).toUpperCase()}`,
+    subject: `Order confirmed: #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildOrderConfirmationHtml(data),
   })
 }
@@ -302,7 +302,7 @@ export async function sendShippingNotification(data: OrderEmailData): Promise<vo
   await sendEmail({
     from: getFrom(),
     to: data.customerEmail,
-    subject: `Your order is on its way! — #${data.orderId.slice(-8).toUpperCase()}`,
+    subject: `Your order is on its way! #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildShippingNotificationHtml(data),
   })
 }
@@ -343,7 +343,7 @@ export async function sendDeliveredNotification(data: OrderEmailData): Promise<v
   await sendEmail({
     from: getFrom(),
     to: data.customerEmail,
-    subject: `Delivered — #${data.orderId.slice(-8).toUpperCase()}`,
+    subject: `Delivered: #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildSimpleStatusHtml({
       orderId: data.orderId,
       customerName: data.customerName,
@@ -360,7 +360,7 @@ export async function sendOrderCancelledNotification(data: OrderEmailData): Prom
   await sendEmail({
     from: getFrom(),
     to: data.customerEmail,
-    subject: `Order cancelled — #${data.orderId.slice(-8).toUpperCase()}`,
+    subject: `Order cancelled: #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildSimpleStatusHtml({
       orderId: data.orderId,
       customerName: data.customerName,
@@ -448,7 +448,7 @@ function buildBackInStockHtml(data: BackInStockEmailData): string {
       <h2 style="margin:0 0 8px;color:#111;font-size:18px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(data.productName)}</h2>
       <p style="margin:0 0 22px;color:#EC1E79;font-size:24px;font-weight:900;letter-spacing:-0.02em;">£${data.productPrice.toLocaleString('en-GB')}</p>
       <a href="${productUrl}" style="display:inline-block;background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);color:#fff;font-weight:800;font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;">View product</a>
-      <p style="margin:18px 0 0;color:#666;font-size:13px;line-height:1.6;">You asked us to let you know when this came back. Stock can move fast — first to checkout wins.</p>
+      <p style="margin:18px 0 0;color:#666;font-size:13px;line-height:1.6;">You asked us to let you know when this came back. Stock can move fast, first to checkout wins.</p>
     </td></tr>
     <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
       You’re receiving this because you subscribed to stock alerts on Luton Cards.<br/>
@@ -516,7 +516,7 @@ export async function sendBuybackOfferEmail(data: BuybackOfferEmailData): Promis
   await sendEmail({
     from: getFrom(),
     to: data.to,
-    subject: `Your Luton Cards offer — £${data.offerAmount.toLocaleString('en-GB')}`,
+    subject: `Your Luton Cards offer: £${data.offerAmount.toLocaleString('en-GB')}`,
     html: buildBuybackOfferHtml(data),
   })
 }
