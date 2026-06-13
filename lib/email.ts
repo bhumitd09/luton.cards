@@ -29,106 +29,145 @@ function formatPrice(pence: number): string {
   return `£${pence.toFixed(2)}`
 }
 
-function buildItemRows(items: OrderEmailData['items']): string {
-  return items
-    .map(
-      (item) => `
-    <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;">${escapeHtml(item.productName)}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;text-align:center;">${item.quantity}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#333;text-align:right;">${formatPrice(item.price * item.quantity)}</td>
-    </tr>`
-    )
-    .join('')
+// ─── Shared dark-mode email shell ──────────────────────────────────────────
+// Every customer email uses one template: a black canvas, the centred Luton
+// Cards logo, a pink accent bar, a dark rounded card, and a muted footer.
+// Inline styles only (clients ignore <style>); bgcolor attributes back up the
+// gradients for Outlook's Word engine.
+
+function appBase(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || 'https://lutoncards.com').replace(/\/+$/, '')
 }
 
-function buildOrderConfirmationHtml(data: OrderEmailData): string {
-  const itemRows = buildItemRows(data.items)
-  const discountRow =
-    data.discount > 0
-      ? `<tr>
-          <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Discount</td>
-          <td style="padding:6px 12px;font-size:13px;color:#EC1E79;text-align:right;">-${formatPrice(data.discount)}</td>
-        </tr>`
-      : ''
-  const addressBlock = data.shippingAddress
-    ? `<div style="margin-top:24px;padding:16px;background:#f9f9f9;border-radius:8px;border:1px solid #eee;">
-        <div style="font-size:12px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:6px;">Shipping Address</div>
-        <div style="font-size:14px;color:#333;line-height:1.5;">${escapeHtml(data.shippingAddress).replace(/,\s*/g, '<br>')}</div>
-      </div>`
-    : ''
+const DEFAULT_BAR = 'linear-gradient(90deg,#EC1E79 0%,#FF4DA6 100%)'
 
+function emailShell(opts: {
+  title: string
+  content: string
+  preheader?: string
+  accentColor?: string
+  accentBar?: string
+}): string {
+  const logo = `${appBase()}/logo/luton-cards.png`
+  const bar = opts.accentBar || DEFAULT_BAR
+  const barColor = opts.accentColor || '#EC1E79'
   return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Order Confirmed</title></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>${escapeHtml(opts.title)}</title>
+</head>
+<body style="margin:0;padding:0;background:#050505;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  ${opts.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#050505;font-size:1px;line-height:1px;">${escapeHtml(opts.preheader)}</div>` : ''}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#050505" style="background:#050505;padding:32px 16px;">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
 
-        <!-- Header -->
-        <tr>
-          <td style="background:#EC1E79;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
-            <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">LUTON CARDS</div>
-            <div style="font-size:28px;font-weight:700;color:#fff;margin-top:12px;">Order Confirmed &#10003;</div>
-            <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">Order #${data.orderId.slice(-8).toUpperCase()}</div>
-          </td>
-        </tr>
+        <tr><td align="center" style="padding:6px 0 24px;">
+          <img src="${logo}" alt="Luton Cards" height="46" style="height:46px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
+        </td></tr>
 
-        <!-- Body -->
-        <tr>
-          <td style="background:#fff;padding:40px;">
-            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${escapeHtml(data.customerName)},</p>
-            <p style="font-size:15px;color:#555;margin:0 0 28px 0;line-height:1.6;">Thanks for your order &mdash; we&rsquo;ll get it packed up and sent your way.</p>
+        <tr><td bgcolor="#0f0f10" style="background:#0f0f10;border:1px solid #202022;border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td bgcolor="${barColor}" style="height:4px;line-height:4px;font-size:4px;background:${bar};">&nbsp;</td></tr>
+            <tr><td style="padding:36px 36px 32px;">
+              ${opts.content}
+            </td></tr>
+          </table>
+        </td></tr>
 
-            <!-- Order table -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:8px;overflow:hidden;border-collapse:collapse;">
-              <thead>
-                <tr style="background:#f9f9f9;">
-                  <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Item</th>
-                  <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Qty</th>
-                  <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.5px;">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemRows}
-              </tbody>
-            </table>
-
-            <!-- Totals -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
-              <tr>
-                <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Subtotal</td>
-                <td style="padding:6px 12px;font-size:13px;color:#333;text-align:right;">${formatPrice(data.subtotal)}</td>
-              </tr>
-              <tr>
-                <td colspan="2" style="padding:6px 12px;font-size:13px;color:#666;">Shipping${data.shippingMethod ? ` (${escapeHtml(data.shippingMethod)})` : ''}</td>
-                <td style="padding:6px 12px;font-size:13px;color:#333;text-align:right;">${data.shippingCost > 0 ? formatPrice(data.shippingCost) : 'Free'}</td>
-              </tr>
-              ${discountRow}
-              <tr style="border-top:2px solid #eee;">
-                <td colspan="2" style="padding:10px 12px;font-size:15px;font-weight:700;color:#111;">Total</td>
-                <td style="padding:10px 12px;font-size:15px;font-weight:700;color:#111;text-align:right;">${formatPrice(data.total)}</td>
-              </tr>
-            </table>
-
-            ${addressBlock}
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#f9f9f9;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
-            <p style="font-size:13px;color:#999;margin:0 0 4px 0;">Questions? Email us at <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
-            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK</p>
-          </td>
-        </tr>
+        <tr><td align="center" style="padding:24px 16px 8px;">
+          <p style="margin:0 0 4px;font-size:12px;color:#6b7280;">Questions? Email <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
+          <p style="margin:0;font-size:11px;color:#52525b;">Luton Cards · Pok&eacute;mon &amp; One Piece TCG · Luton, UK</p>
+        </td></tr>
 
       </table>
     </td></tr>
   </table>
 </body>
 </html>`
+}
+
+function eyebrow(text: string, color = '#EC1E79'): string {
+  return `<p style="margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:${color};">${escapeHtml(text)}</p>`
+}
+
+function heading(text: string): string {
+  return `<h1 style="margin:0 0 4px;font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#f4f4f5;line-height:1.25;">${escapeHtml(text)}</h1>`
+}
+
+function ctaButton(href: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 2px;"><tr>
+    <td bgcolor="#EC1E79" style="border-radius:11px;background:${DEFAULT_BAR};">
+      <a href="${href}" style="display:inline-block;padding:13px 30px;font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:11px;">${escapeHtml(label)}</a>
+    </td></tr></table>`
+}
+
+function addressBlock(address: string): string {
+  return `<div style="margin-top:18px;background:#161617;border:1px solid #202022;border-radius:12px;padding:16px 18px;">
+    <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Shipping to</div>
+    <div style="font-size:14px;color:#e4e4e7;line-height:1.6;">${escapeHtml(address).replace(/,\s*/g, '<br>')}</div>
+  </div>`
+}
+
+function buildItemRows(items: OrderEmailData['items']): string {
+  return items
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:14px;color:#e4e4e7;">${escapeHtml(item.productName)}</td>
+      <td style="padding:12px 10px;border-bottom:1px solid #1a1a1c;font-size:14px;color:#9ca3af;text-align:center;white-space:nowrap;">&times;${item.quantity}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:14px;color:#f4f4f5;text-align:right;font-weight:600;white-space:nowrap;">${formatPrice(item.price * item.quantity)}</td>
+    </tr>`
+    )
+    .join('')
+}
+
+// The order summary card: items + totals inside one dark rounded box. Shared
+// by the customer confirmation and the admin notification.
+function buildOrderTable(data: OrderEmailData): string {
+  const shippingLabel = `Shipping${data.shippingMethod ? ` (${escapeHtml(data.shippingMethod)})` : ''}`
+  const shippingVal = data.shippingCost > 0 ? formatPrice(data.shippingCost) : 'Free'
+  const discountRow =
+    data.discount > 0
+      ? `<tr><td colspan="2" style="padding:5px 0;font-size:13px;color:#9ca3af;">Discount</td><td style="padding:5px 0;font-size:13px;text-align:right;color:#FF4DA6;">-${formatPrice(data.discount)}</td></tr>`
+      : ''
+  return `<div style="background:#161617;border:1px solid #202022;border-radius:12px;padding:4px 18px 14px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      <thead><tr>
+        <th align="left" style="padding:12px 0 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid #202022;">Item</th>
+        <th align="center" style="padding:12px 10px 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid #202022;">Qty</th>
+        <th align="right" style="padding:12px 0 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid #202022;">Price</th>
+      </tr></thead>
+      <tbody>${buildItemRows(data.items)}</tbody>
+      <tfoot>
+        <tr><td colspan="2" style="padding:14px 0 5px;font-size:13px;color:#9ca3af;">Subtotal</td><td style="padding:14px 0 5px;font-size:13px;text-align:right;color:#e4e4e7;">${formatPrice(data.subtotal)}</td></tr>
+        <tr><td colspan="2" style="padding:5px 0;font-size:13px;color:#9ca3af;">${shippingLabel}</td><td style="padding:5px 0;font-size:13px;text-align:right;color:#e4e4e7;">${shippingVal}</td></tr>
+        ${discountRow}
+        <tr><td colspan="2" style="padding:12px 0 4px;font-size:15px;font-weight:800;color:#f4f4f5;border-top:1px solid #202022;">Total</td><td style="padding:12px 0 4px;font-size:15px;font-weight:800;text-align:right;color:#f4f4f5;border-top:1px solid #202022;">${formatPrice(data.total)}</td></tr>
+      </tfoot>
+    </table>
+  </div>`
+}
+
+function buildOrderConfirmationHtml(data: OrderEmailData): string {
+  const ref = data.orderId.slice(-8).toUpperCase()
+  const content = `
+    ${eyebrow('Order confirmed')}
+    ${heading(`Thanks, ${data.customerName}!`)}
+    <p style="margin:0;font-size:13px;color:#6b7280;">Order #${ref}</p>
+    <p style="margin:18px 0 22px;font-size:15px;line-height:1.7;color:#a1a1aa;">We've got your order and we're packing it up. Here's what's on the way:</p>
+    ${buildOrderTable(data)}
+    ${data.shippingAddress ? addressBlock(data.shippingAddress) : ''}
+    ${ctaButton(`${appBase()}/products`, 'Browse more cards')}`
+  return emailShell({
+    title: 'Order confirmed',
+    preheader: `Order #${ref} confirmed — thanks for shopping with Luton Cards.`,
+    content,
+  })
 }
 
 function buildShippingNotificationHtml(data: OrderEmailData): string {
@@ -142,92 +181,43 @@ function buildShippingNotificationHtml(data: OrderEmailData): string {
     trackingLink = `https://track.dpd.co.uk/search?reference=${tracking}`
   }
 
-  const trackingBlock = trackingLink
-    ? `<a href="${trackingLink}" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#EC1E79;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;">Track Your Parcel &rarr;</a>`
-    : ''
+  const ref = data.orderId.slice(-8).toUpperCase()
+  const trackBox = tracking
+    ? `<div style="background:#161617;border:1px solid #202022;border-radius:12px;padding:24px;text-align:center;">
+        <div style="font-size:11px;font-weight:800;color:#EC1E79;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;">Tracking number</div>
+        <div style="font-size:22px;font-weight:800;color:#f4f4f5;letter-spacing:0.06em;word-break:break-all;">${escapeHtml(tracking)}</div>
+        <div style="font-size:13px;color:#9ca3af;margin-top:8px;">via ${escapeHtml(carrier)}</div>
+      </div>`
+    : `<div style="background:#161617;border:1px solid #202022;border-radius:12px;padding:20px;text-align:center;font-size:14px;color:#9ca3af;">Your parcel is on its way via ${escapeHtml(carrier)}.</div>`
 
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Your Order Is On Its Way</title></head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
-
-        <!-- Header -->
-        <tr>
-          <td style="background:#EC1E79;border-radius:12px 12px 0 0;padding:32px 40px;text-align:center;">
-            <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">LUTON CARDS</div>
-            <div style="font-size:28px;font-weight:700;color:#fff;margin-top:12px;">Your order is on its way! &#128230;</div>
-            <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:6px;">Order #${data.orderId.slice(-8).toUpperCase()}</div>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="background:#fff;padding:40px;">
-            <p style="font-size:16px;color:#333;margin:0 0 8px 0;">Hi ${escapeHtml(data.customerName)},</p>
-            <p style="font-size:15px;color:#555;margin:0 0 28px 0;line-height:1.6;">Great news &mdash; your order has been shipped and is on its way to you!</p>
-
-            <!-- Tracking box -->
-            <div style="background:#f0fdf9;border:2px solid #EC1E79;border-radius:10px;padding:24px;text-align:center;">
-              <div style="font-size:12px;font-weight:700;color:#EC1E79;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Tracking Number</div>
-              <div style="font-size:22px;font-weight:900;color:#111;letter-spacing:2px;">${escapeHtml(tracking)}</div>
-              <div style="font-size:13px;color:#666;margin-top:6px;">Carrier: ${escapeHtml(carrier)}</div>
-              ${trackingBlock}
-            </div>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#f9f9f9;border-radius:0 0 12px 12px;padding:24px 40px;text-align:center;border-top:1px solid #eee;">
-            <p style="font-size:13px;color:#999;margin:0 0 4px 0;">Questions? Email us at <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a></p>
-            <p style="font-size:12px;color:#bbb;margin:0;">Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK</p>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+  const content = `
+    ${eyebrow('Shipped')}
+    ${heading('Your order is on its way')}
+    <p style="margin:0;font-size:13px;color:#6b7280;">Order #${ref}</p>
+    <p style="margin:18px 0 22px;font-size:15px;line-height:1.7;color:#a1a1aa;">Hi ${escapeHtml(data.customerName)}, good news, your cards have left the building.</p>
+    ${trackBox}
+    ${trackingLink ? ctaButton(trackingLink, 'Track your parcel') : ''}`
+  return emailShell({
+    title: 'Your order is on its way',
+    preheader: `Order #${ref} has shipped via ${carrier}.`,
+    content,
+  })
 }
 
 function buildAdminNotificationHtml(data: OrderEmailData): string {
-  // Build the body in plain text and escape ONCE at the end. Safer than
-  // remembering to escape every fragment individually.
-  const itemLines = data.items
-    .map((i) => `  - ${i.productName} x${i.quantity} @ ${formatPrice(i.price)} each`)
-    .join('\n')
-
-  const lines = [
-    `New order received: #${data.orderId.slice(-8).toUpperCase()}`,
-    ``,
-    `Customer: ${data.customerName} <${data.customerEmail}>`,
-    ``,
-    `Items:`,
-    itemLines,
-    ``,
-    `Subtotal: ${formatPrice(data.subtotal)}`,
-    `Shipping: ${formatPrice(data.shippingCost)}`,
-    data.discount > 0 ? `Discount: -${formatPrice(data.discount)}` : null,
-    `Total: ${formatPrice(data.total)}`,
-    data.shippingAddress ? `\nShip to: ${data.shippingAddress}` : null,
-    data.shippingMethod ? `Method: ${data.shippingMethod}` : null,
-  ]
-    .filter((l) => l !== null)
-    .join('\n')
-
-  const htmlLines = escapeHtml(lines).replace(/\n/g, '<br>')
-
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>New Order</title></head>
-<body style="margin:0;padding:32px;font-family:monospace;font-size:14px;color:#111;background:#fff;line-height:1.8;">
-  <div style="white-space:pre-wrap;">${htmlLines}</div>
-</body>
-</html>`
+  const ref = data.orderId.slice(-8).toUpperCase()
+  const content = `
+    ${eyebrow('New order')}
+    ${heading(`Order #${ref}`)}
+    <p style="margin:16px 0 22px;font-size:15px;line-height:1.7;color:#a1a1aa;">From <strong style="color:#f4f4f5;">${escapeHtml(data.customerName)}</strong> &lt;<a href="mailto:${escapeHtml(data.customerEmail)}" style="color:#EC1E79;text-decoration:none;">${escapeHtml(data.customerEmail)}</a>&gt;</p>
+    ${buildOrderTable(data)}
+    ${data.shippingAddress ? addressBlock(data.shippingAddress) : ''}
+    ${ctaButton(`${appBase()}/admin/orders`, 'Open in admin')}`
+  return emailShell({
+    title: `New order #${ref}`,
+    preheader: `New order from ${data.customerName} — ${formatPrice(data.total)}`,
+    content,
+  })
 }
 
 async function sendEmail(payload: {
@@ -335,27 +325,23 @@ function buildSimpleStatusHtml(opts: {
   heading: string
   eyebrow: string
   body: string
-  accent: string
+  accentColor: string
+  accentBar: string
 }): string {
-  const orderRef = `#${opts.orderId.slice(-8).toUpperCase()}`
-  return `<!DOCTYPE html>
-<html><body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f5f5f5;padding:24px;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-    <tr><td style="background:${opts.accent};padding:28px 32px;text-align:center;">
-      <p style="margin:0 0 6px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;">${escapeHtml(opts.eyebrow)}</p>
-      <h1 style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.02em;">${escapeHtml(opts.heading)}</h1>
-      <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Order ${orderRef}</p>
-    </td></tr>
-    <tr><td style="padding:28px 32px;">
-      <p style="font-size:16px;color:#333;margin:0 0 12px;">Hi ${escapeHtml(opts.customerName)},</p>
-      <p style="font-size:15px;color:#555;margin:0;line-height:1.7;">${escapeHtml(opts.body)}</p>
-    </td></tr>
-    <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
-      Questions? Email <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a><br/>
-      Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK
-    </td></tr>
-  </table>
-</body></html>`
+  const ref = opts.orderId.slice(-8).toUpperCase()
+  const content = `
+    ${eyebrow(opts.eyebrow, opts.accentColor)}
+    ${heading(opts.heading)}
+    <p style="margin:0;font-size:13px;color:#6b7280;">Order #${ref}</p>
+    <p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">Hi ${escapeHtml(opts.customerName)},</p>
+    <p style="margin:12px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">${escapeHtml(opts.body)}</p>`
+  return emailShell({
+    title: opts.heading,
+    preheader: opts.body.slice(0, 90),
+    content,
+    accentColor: opts.accentColor,
+    accentBar: opts.accentBar,
+  })
 }
 
 export async function sendDeliveredNotification(data: OrderEmailData): Promise<void> {
@@ -370,7 +356,8 @@ export async function sendDeliveredNotification(data: OrderEmailData): Promise<v
       eyebrow: 'Delivered',
       heading: 'Your order has landed.',
       body: 'Your order has been marked as delivered. We hope the cards are everything you wanted. If anything is not right, just reply and we will sort it.',
-      accent: 'linear-gradient(135deg,#10b981 0%,#34d399 100%)',
+      accentColor: '#10b981',
+      accentBar: 'linear-gradient(90deg,#10b981 0%,#34d399 100%)',
     }),
   })
 }
@@ -387,7 +374,8 @@ export async function sendOrderCancelledNotification(data: OrderEmailData): Prom
       eyebrow: 'Cancelled',
       heading: 'Your order was cancelled.',
       body: 'This order has been cancelled. If you paid, a refund will follow to your original payment method. If this was a mistake or you have any questions, just reply to this email.',
-      accent: 'linear-gradient(135deg,#6b7280 0%,#9ca3af 100%)',
+      accentColor: '#9ca3af',
+      accentBar: 'linear-gradient(90deg,#6b7280 0%,#9ca3af 100%)',
     }),
   })
 }
@@ -453,29 +441,26 @@ export interface BackInStockEmailData {
 }
 
 function buildBackInStockHtml(data: BackInStockEmailData): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lutoncards.com'
-  const productUrl = `${appUrl}/products/${data.productId}`
-
-  return `<!DOCTYPE html>
-<html><body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f5f5f5;padding:24px;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-    <tr><td style="background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);padding:28px 32px;text-align:center;">
-      <p style="margin:0 0 6px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;">Back in stock</p>
-      <h1 style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.02em;">It&rsquo;s back. Get it quick.</h1>
-    </td></tr>
-    <tr><td style="padding:28px 32px;text-align:center;">
-      ${data.productImage ? `<img src="${escapeHtml(data.productImage)}" alt="${escapeHtml(data.productName)}" style="max-width:240px;width:100%;height:auto;border-radius:8px;margin-bottom:18px;" />` : ''}
-      <h2 style="margin:0 0 8px;color:#111;font-size:18px;font-weight:800;letter-spacing:-0.01em;">${escapeHtml(data.productName)}</h2>
-      <p style="margin:0 0 22px;color:#EC1E79;font-size:24px;font-weight:900;letter-spacing:-0.02em;">£${data.productPrice.toLocaleString('en-GB')}</p>
-      <a href="${productUrl}" style="display:inline-block;background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);color:#fff;font-weight:800;font-size:14px;padding:12px 28px;border-radius:10px;text-decoration:none;">View product</a>
-      <p style="margin:18px 0 0;color:#666;font-size:13px;line-height:1.6;">You asked us to let you know when this came back. Stock can move fast, first to checkout wins.</p>
-    </td></tr>
-    <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
-      You’re receiving this because you subscribed to stock alerts on Luton Cards.<br/>
-      Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK
-    </td></tr>
-  </table>
-</body></html>`
+  const productUrl = `${appBase()}/products/${data.productId}`
+  const img = data.productImage
+    ? `<div align="center" style="margin:6px 0 20px;"><img src="${escapeHtml(data.productImage)}" alt="${escapeHtml(data.productName)}" width="220" style="width:220px;max-width:100%;height:auto;border-radius:12px;border:1px solid #202022;display:inline-block;" /></div>`
+    : ''
+  const content = `
+    ${eyebrow('Back in stock')}
+    ${heading("It's back. Grab it quick.")}
+    <p style="margin:18px 0 4px;font-size:15px;line-height:1.7;color:#a1a1aa;">The card you wanted just landed back in stock.</p>
+    ${img}
+    <div style="text-align:center;">
+      <div style="font-size:18px;font-weight:800;color:#f4f4f5;margin:0 0 4px;">${escapeHtml(data.productName)}</div>
+      <div style="font-size:26px;font-weight:900;color:#FF4DA6;letter-spacing:-0.02em;">£${data.productPrice.toLocaleString('en-GB')}</div>
+    </div>
+    <div align="center">${ctaButton(productUrl, 'View product')}</div>
+    <p style="margin:18px 0 0;font-size:13px;color:#6b7280;line-height:1.6;text-align:center;">You asked us to let you know when this came back. Stock can move fast, first to checkout wins.</p>`
+  return emailShell({
+    title: 'Back in stock',
+    preheader: `${data.productName} is back in stock at Luton Cards.`,
+    content,
+  })
 }
 
 export async function sendBackInStockNotification(data: BackInStockEmailData): Promise<void> {
@@ -498,37 +483,28 @@ export interface BuybackOfferEmailData {
 }
 
 function buildBuybackOfferHtml(data: BuybackOfferEmailData): string {
+  const amount = `£${data.offerAmount.toLocaleString('en-GB')}`
   const detailsBlock = data.details
-    ? `<div style="margin-top:22px;padding:16px;background:#f9f9f9;border-radius:10px;border:1px solid #eee;">
-        <div style="font-size:11px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">What you sent us</div>
-        <div style="font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.details)}</div>
+    ? `<div style="margin-top:20px;background:#161617;border:1px solid #202022;border-radius:12px;padding:16px 18px;">
+        <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">What you sent us</div>
+        <div style="font-size:14px;color:#e4e4e7;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.details)}</div>
       </div>`
     : ''
-
-  return `<!DOCTYPE html>
-<html><body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f5f5f5;padding:24px;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
-    <tr><td style="background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);padding:28px 32px;text-align:center;">
-      <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;">LUTON CARDS</div>
-      <p style="margin:12px 0 6px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;">Buy-back offer</p>
-      <h1 style="margin:0;color:#fff;font-size:24px;font-weight:900;letter-spacing:-0.02em;">We&rsquo;d like to offer &pound;${data.offerAmount.toLocaleString('en-GB')}</h1>
-    </td></tr>
-    <tr><td style="padding:28px 32px;">
-      <p style="font-size:16px;color:#333;margin:0 0 12px;">Hi ${escapeHtml(data.sellerName)},</p>
-      <p style="font-size:15px;color:#555;margin:0 0 22px;line-height:1.7;">Thanks for sending your cards over to Luton Cards. We&rsquo;ve reviewed your submission and we&rsquo;d like to offer you the amount below.</p>
-      <div style="background:#fdf2f8;border:2px solid #EC1E79;border-radius:12px;padding:24px;text-align:center;">
-        <div style="font-size:11px;font-weight:800;color:#EC1E79;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Our offer</div>
-        <div style="font-size:34px;font-weight:900;color:#111;letter-spacing:-0.02em;">&pound;${data.offerAmount.toLocaleString('en-GB')}</div>
-      </div>
-      ${detailsBlock}
-      <p style="font-size:15px;color:#555;margin:22px 0 0;line-height:1.7;">If you&rsquo;re happy with this, just <strong>reply to this email to accept</strong> and we&rsquo;ll sort out the next steps. Got questions? Reply here too &mdash; we&rsquo;re glad to help.</p>
-    </td></tr>
-    <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
-      Questions? Email <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a><br/>
-      Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK
-    </td></tr>
-  </table>
-</body></html>`
+  const content = `
+    ${eyebrow('Buy-back offer')}
+    ${heading(`We'd like to offer ${amount}`)}
+    <p style="margin:18px 0 22px;font-size:15px;line-height:1.7;color:#a1a1aa;">Hi ${escapeHtml(data.sellerName)}, thanks for sending your cards to Luton Cards. We've reviewed your submission and here's our offer:</p>
+    <div style="background:#161617;border:1px solid #2a1622;border-radius:14px;padding:26px;text-align:center;">
+      <div style="font-size:11px;font-weight:800;color:#EC1E79;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">Our offer</div>
+      <div style="font-size:36px;font-weight:900;color:#f4f4f5;letter-spacing:-0.02em;">${amount}</div>
+    </div>
+    ${detailsBlock}
+    <p style="margin:22px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">Happy with it? Just <strong style="color:#f4f4f5;">reply to this email to accept</strong> and we'll sort the next steps. Any questions, reply here too.</p>`
+  return emailShell({
+    title: 'Your Luton Cards offer',
+    preheader: `We'd like to offer ${amount} for your cards.`,
+    content,
+  })
 }
 
 export async function sendBuybackOfferEmail(data: BuybackOfferEmailData): Promise<void> {
