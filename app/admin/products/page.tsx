@@ -1108,26 +1108,30 @@ export default function AdminProductsPage() {
           {/* Divider */}
           <div style={{ width: '1px', height: '28px', background: '#1a1a1c', flexShrink: 0 }} />
 
-          {/* Category Pills */}
+          {/* Category Pills — SECONDARY active state (soft pink) to match
+              the visual hierarchy on the public products page. */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {CATEGORY_PILLS.map(pill => (
-              <button
-                key={pill.value}
-                className="pill-btn"
-                onClick={() => setCategoryFilter(pill.value)}
-                style={{
-                  padding: '0.35rem 0.8rem', borderRadius: '999px',
-                  border: '1px solid',
-                  borderColor: categoryFilter === pill.value ? '#2a2a2c' : '#202022',
-                  background: categoryFilter === pill.value ? '#161617' : 'transparent',
-                  color: categoryFilter === pill.value ? '#f4f4f5' : '#9ca3af',
-                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {pill.label}
-              </button>
-            ))}
+            {CATEGORY_PILLS.map(pill => {
+              const isActive = categoryFilter === pill.value
+              return (
+                <button
+                  key={pill.value}
+                  className="pill-btn"
+                  onClick={() => setCategoryFilter(pill.value)}
+                  style={{
+                    padding: '0.35rem 0.8rem', borderRadius: '999px',
+                    border: '1px solid',
+                    borderColor: isActive ? 'rgba(236,30,121,0.35)' : '#202022',
+                    background: isActive ? 'rgba(236,30,121,0.12)' : 'transparent',
+                    color: isActive ? '#FF80B8' : '#9ca3af',
+                    cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {pill.label}
+                </button>
+              )
+            })}
           </div>
 
           {/* Divider */}
@@ -1149,26 +1153,30 @@ export default function AdminProductsPage() {
             ))}
           </select>
 
-          {/* Active Toggle */}
+          {/* Active Toggle — TERTIARY meta filter, keeps the neutral dark
+              treatment so it doesn't compete with the product filters above. */}
           <div style={{ display: 'flex', gap: '0.4rem' }}>
-            {(['all', 'active', 'inactive'] as const).map(val => (
-              <button
-                key={val}
-                className="pill-btn"
-                onClick={() => setActiveFilter(val)}
-                style={{
-                  padding: '0.35rem 0.8rem', borderRadius: '999px',
-                  border: '1px solid',
-                  borderColor: activeFilter === val ? '#2a2a2c' : '#202022',
-                  background: activeFilter === val ? '#161617' : 'transparent',
-                  color: activeFilter === val ? '#f4f4f5' : '#6b7280',
-                  cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
-                  transition: 'all 0.15s ease', textTransform: 'capitalize',
-                }}
-              >
-                {val}
-              </button>
-            ))}
+            {(['all', 'active', 'inactive'] as const).map(val => {
+              const isActive = activeFilter === val
+              return (
+                <button
+                  key={val}
+                  className="pill-btn"
+                  onClick={() => setActiveFilter(val)}
+                  style={{
+                    padding: '0.35rem 0.8rem', borderRadius: '999px',
+                    border: '1px solid',
+                    borderColor: isActive ? 'rgba(236,30,121,0.35)' : '#202022',
+                    background: isActive ? 'rgba(236,30,121,0.12)' : 'transparent',
+                    color: isActive ? '#FF80B8' : '#6b7280',
+                    cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700,
+                    transition: 'all 0.15s ease', textTransform: 'capitalize',
+                  }}
+                >
+                  {val}
+                </button>
+              )
+            })}
           </div>
         </div>
 
