@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Instagram, Youtube, ArrowRight } from 'lucide-react'
+import { Instagram, Youtube, ArrowRight, Sparkles, Check, Mail } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { EditableText } from '@/components/editable/editable-text'
+import { Particles } from '@/components/magicui/particles'
 
 function DiscordIcon({ size = 18 }: { size?: number }) {
   return (
@@ -27,6 +28,7 @@ const DEFAULTS: Record<string, string> = {
 function NewsletterSection() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [focused, setFocused] = useState(false)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,132 +36,195 @@ function NewsletterSection() {
   }
 
   return (
-    <div style={{ background: '#0a0a0a', padding: '2.5rem 1.5rem', position: 'relative', overflow: 'hidden', borderTop: '1px solid #1a1a1a' }}>
-      {/* subtle pink glow up the left */}
+    <section
+      className="relative overflow-hidden bg-[#070708]"
+      style={{ borderTop: '1px solid #1a1a1c' }}
+    >
+      {/* Particles + mesh gradient backdrop — same language as the hero so
+          this section reads as a deliberate part of the page, not a card
+          sitting in a void. */}
+      <Particles
+        className="absolute inset-0"
+        quantity={45}
+        ease={70}
+        color="#EC1E79"
+        size={0.5}
+        staticity={55}
+      />
       <div
         aria-hidden
+        className="pointer-events-none absolute inset-0"
         style={{
-          position: 'absolute',
-          top: '-40%',
-          left: '-10%',
-          width: 380,
-          height: 380,
-          background: 'radial-gradient(circle, rgba(236,30,121,0.10) 0%, transparent 70%)',
-          pointerEvents: 'none',
+          background: `
+            radial-gradient(60% 55% at 50% 0%, rgba(236,30,121,0.18) 0%, transparent 60%),
+            radial-gradient(45% 50% at 12% 100%, rgba(255,77,166,0.12) 0%, transparent 65%),
+            radial-gradient(50% 55% at 88% 100%, rgba(126,18,71,0.22) 0%, transparent 70%)
+          `,
         }}
       />
-      <style>{`
-        .newsletter-card {
-          max-width: 920px;
-          margin: 0 auto;
-          background: linear-gradient(135deg, rgba(236,30,121,0.06), rgba(255,255,255,0.015));
-          border: 1px solid rgba(236,30,121,0.18);
-          border-radius: 14px;
-          padding: 1.5rem 1.75rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1.75rem;
-          flex-wrap: wrap;
-          position: relative;
-          z-index: 1;
-        }
-        @media (max-width: 640px) {
-          .newsletter-card { flex-direction: column; align-items: stretch; padding: 1.25rem 1.25rem; }
-          .newsletter-form { width: 100%; }
-          .newsletter-form input { width: 100% !important; box-sizing: border-box !important; }
-          .newsletter-form button { width: 100% !important; justify-content: center !important; }
-        }
-      `}</style>
-      <div className="newsletter-card">
-        <div>
-          <p style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#EC1E79', margin: '0 0 0.4rem' }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#EC1E79' }} />
-            Newsletter
-          </p>
-          <p style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.3 }}>
-            New drops, restocks, early access.
-          </p>
-          <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', margin: '0.3rem 0 0' }}>
-            One email when something good lands. Unsubscribe anytime.
-          </p>
-        </div>
+      {/* Soft animated aurora bar across the middle, matches the hero */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-1/2 h-[40%] -translate-y-1/2 blur-3xl"
+        initial={{ opacity: 0.3 }}
+        animate={{ opacity: [0.25, 0.45, 0.25] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          background:
+            'linear-gradient(90deg, transparent 0%, rgba(236,30,121,0.16) 35%, rgba(255,77,166,0.18) 50%, rgba(236,30,121,0.16) 65%, transparent 100%)',
+        }}
+      />
 
-        {submitted ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: 'rgba(52,211,153,0.1)',
-              color: '#34d399',
-              padding: '0.65rem 1.1rem',
-              borderRadius: 10,
-              border: '1px solid rgba(52,211,153,0.25)',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-            }}
-          >
-            ✓ You&apos;re in. Stay tuned.
-          </motion.div>
-        ) : (
-          <form className="newsletter-form" onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.4rem' }}>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              style={{
-                padding: '0.65rem 0.95rem',
-                borderRadius: 9,
-                border: '1px solid rgba(255,255,255,0.1)',
-                background: 'rgba(255,255,255,0.04)',
-                fontSize: '0.875rem',
-                color: '#fff',
-                outline: 'none',
-                fontFamily: 'inherit',
-                width: 240,
-                transition: 'border-color 0.15s, background 0.15s',
-              }}
-              onFocus={e => {
-                ;(e.target as HTMLInputElement).style.borderColor = '#EC1E79'
-                ;(e.target as HTMLInputElement).style.background = 'rgba(255,255,255,0.06)'
-              }}
-              onBlur={e => {
-                ;(e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'
-                ;(e.target as HTMLInputElement).style.background = 'rgba(255,255,255,0.04)'
-              }}
-            />
-            <motion.button
-              type="submit"
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                background: 'linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)',
-                color: '#fff',
-                border: 'none',
-                padding: '0.65rem 1.1rem',
-                borderRadius: 9,
-                fontWeight: 800,
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                whiteSpace: 'nowrap',
-                fontFamily: 'inherit',
-                boxShadow: '0 6px 18px -6px rgba(236,30,121,0.55)',
-              }}
+      <div className="relative z-10 mx-auto max-w-[760px] px-6 py-16 text-center sm:py-20">
+        {/* Eyebrow */}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.4 }}
+          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#EC1E79]/30 bg-[#EC1E79]/[0.08] px-3 py-1"
+        >
+          <Sparkles className="size-3 text-[#EC1E79]" />
+          <span className="text-[10.5px] font-extrabold uppercase tracking-[0.14em] text-[#FF80B8]">
+            Join the list
+          </span>
+        </motion.div>
+
+        {/* Headline */}
+        <motion.h2
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="m-0 text-[clamp(1.8rem,4vw,2.6rem)] font-black leading-[1.05] tracking-[-0.035em] text-white"
+        >
+          New drops.{' '}
+          <span className="bg-gradient-to-br from-[#EC1E79] via-[#FF4DA6] to-[#EC1E79] bg-clip-text text-transparent">
+            Restocks.
+          </span>{' '}
+          Early access.
+        </motion.h2>
+
+        {/* Subtext */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="m-0 mx-auto mt-4 max-w-[460px] text-[0.95rem] leading-[1.65] text-white/55"
+        >
+          One email when something good lands. No spam, no noise. Unsubscribe whenever you like.
+        </motion.p>
+
+        {/* Form / success */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, delay: 0.22 }}
+          className="mt-8"
+        >
+          {submitted ? (
+            <div
+              className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#10b981]/30 bg-[#10b981]/[0.1] px-5 py-2.5 text-[0.875rem] font-bold text-[#10b981]"
             >
-              Subscribe <ArrowRight size={13} />
-            </motion.button>
-          </form>
-        )}
+              <Check size={15} /> You&apos;re in. Look out for the next drop.
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="newsletter-form mx-auto flex max-w-[460px] flex-col gap-2 sm:flex-row"
+            >
+              {/* Pill input with leading mail icon + focus-glow ring */}
+              <div
+                className="newsletter-input-wrap relative flex flex-1 items-center"
+                style={{
+                  background: focused ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.035)',
+                  border: `1px solid ${focused ? 'rgba(236,30,121,0.55)' : 'rgba(255,255,255,0.1)'}`,
+                  borderRadius: 12,
+                  transition: 'border-color 0.15s, background 0.15s, box-shadow 0.2s',
+                  boxShadow: focused ? '0 0 0 4px rgba(236,30,121,0.12)' : 'none',
+                }}
+              >
+                <Mail
+                  size={15}
+                  className="pointer-events-none absolute left-3 text-white/40"
+                />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder="your@email.com"
+                  className="newsletter-input"
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem 1rem 0.75rem 2.25rem',
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '0.9rem',
+                    color: '#fff',
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                    minWidth: 0,
+                  }}
+                />
+              </div>
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  background: 'linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '0.8rem 1.4rem',
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'inherit',
+                  letterSpacing: '-0.01em',
+                  boxShadow: '0 10px 26px -10px rgba(236,30,121,0.7)',
+                }}
+              >
+                Subscribe <ArrowRight size={14} />
+              </motion.button>
+            </form>
+          )}
+        </motion.div>
+
+        {/* Trust row — keeps the section grounded with the same micro-copy
+            language as the hero's trust row. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.5, delay: 0.32 }}
+          className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/30"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="size-1 rounded-full bg-[#EC1E79]" />
+            No spam ever
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-1 rounded-full bg-[#EC1E79]" />
+            ~2 emails a month
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-1 rounded-full bg-[#EC1E79]" />
+            One-click unsubscribe
+          </span>
+        </motion.div>
       </div>
-    </div>
+    </section>
   )
 }
 
