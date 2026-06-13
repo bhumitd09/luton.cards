@@ -307,6 +307,121 @@ export async function sendShippingNotification(data: OrderEmailData): Promise<vo
   })
 }
 
+// ─── Delivered + Cancelled (status-transition emails) ──────────────────────
+
+function buildSimpleStatusHtml(opts: {
+  orderId: string
+  customerName: string
+  heading: string
+  eyebrow: string
+  body: string
+  accent: string
+}): string {
+  const orderRef = `#${opts.orderId.slice(-8).toUpperCase()}`
+  return `<!DOCTYPE html>
+<html><body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f5f5f5;padding:24px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+    <tr><td style="background:${opts.accent};padding:28px 32px;text-align:center;">
+      <p style="margin:0 0 6px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;">${escapeHtml(opts.eyebrow)}</p>
+      <h1 style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.02em;">${escapeHtml(opts.heading)}</h1>
+      <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Order ${orderRef}</p>
+    </td></tr>
+    <tr><td style="padding:28px 32px;">
+      <p style="font-size:16px;color:#333;margin:0 0 12px;">Hi ${escapeHtml(opts.customerName)},</p>
+      <p style="font-size:15px;color:#555;margin:0;line-height:1.7;">${escapeHtml(opts.body)}</p>
+    </td></tr>
+    <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
+      Questions? Email <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a><br/>
+      Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK
+    </td></tr>
+  </table>
+</body></html>`
+}
+
+export async function sendDeliveredNotification(data: OrderEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: getFrom(),
+    to: data.customerEmail,
+    subject: `Delivered — #${data.orderId.slice(-8).toUpperCase()}`,
+    html: buildSimpleStatusHtml({
+      orderId: data.orderId,
+      customerName: data.customerName,
+      eyebrow: 'Delivered',
+      heading: 'Your order has landed.',
+      body: 'Your order has been marked as delivered. We hope the cards are everything you wanted. If anything is not right, just reply and we will sort it.',
+      accent: 'linear-gradient(135deg,#10b981 0%,#34d399 100%)',
+    }),
+  })
+}
+
+export async function sendOrderCancelledNotification(data: OrderEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: getFrom(),
+    to: data.customerEmail,
+    subject: `Order cancelled — #${data.orderId.slice(-8).toUpperCase()}`,
+    html: buildSimpleStatusHtml({
+      orderId: data.orderId,
+      customerName: data.customerName,
+      eyebrow: 'Cancelled',
+      heading: 'Your order was cancelled.',
+      body: 'This order has been cancelled. If you paid, a refund will follow to your original payment method. If this was a mistake or you have any questions, just reply to this email.',
+      accent: 'linear-gradient(135deg,#6b7280 0%,#9ca3af 100%)',
+    }),
+  })
+}
+
+/**
+ * Fires the right customer email for a status transition, exactly once.
+ * Called after an order's status is changed (single update or bulk). No-ops
+ * when the status didn't actually change, or for statuses with no email
+ * (pending / paid — the order confirmation already went out at creation).
+ */
+type StatusEmailOrder = {
+  id: string
+  name: string
+  email: string
+  total: number
+  shippingCost: number | null
+  trackingNumber: string | null
+  trackingCarrier: string | null
+  status: string
+  items: { productName: string; quantity: number; price: number }[]
+}
+
+export async function sendStatusTransitionEmail(prevStatus: string, order: StatusEmailOrder): Promise<void> {
+  if (prevStatus === order.status) return
+  const base = {
+    orderId: order.id,
+    customerName: order.name,
+    customerEmail: order.email,
+    items: order.items.map(i => ({ productName: i.productName, quantity: i.quantity, price: i.price })),
+    subtotal: order.total,
+    shippingCost: order.shippingCost ?? 0,
+    discount: 0,
+    total: order.total,
+  }
+  switch (order.status) {
+    case 'shipped':
+      await sendShippingNotification({
+        ...base,
+        trackingNumber: order.trackingNumber ?? undefined,
+        trackingCarrier: order.trackingCarrier ?? 'Other',
+      })
+      break
+    case 'delivered':
+      await sendDeliveredNotification(base)
+      break
+    case 'cancelled':
+      await sendOrderCancelledNotification(base)
+      break
+    default:
+      // 'pending' / 'paid' → no transactional email (confirmation already sent)
+      break
+  }
+}
+
 // ─── Back-in-stock notification ────────────────────────────────────────────
 
 export interface BackInStockEmailData {

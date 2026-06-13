@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin } from '@/lib/vendor-auth'
-import { sendShippingNotification } from '@/lib/email'
+import { sendStatusTransitionEmail } from '@/lib/email'
 
 const VALID_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
 
@@ -98,6 +98,8 @@ async function updateOrder(req: NextRequest, id: string) {
     )
   }
 
+  const prevStatus = existing.status
+
   const order = await db.order.update({
     where: { id },
     data: {
@@ -116,25 +118,12 @@ async function updateOrder(req: NextRequest, id: string) {
     include: { items: true },
   })
 
-  // Send shipping notification when tracking is added and status becomes shipped
-  if (order.trackingNumber && order.status === 'shipped') {
-    sendShippingNotification({
-      orderId: order.id,
-      customerName: order.name,
-      customerEmail: order.email,
-      items: order.items.map((i) => ({
-        productName: i.productName,
-        quantity: i.quantity,
-        price: i.price,
-      })),
-      subtotal: order.total,
-      shippingCost: order.shippingCost ?? 0,
-      discount: 0,
-      total: order.total,
-      trackingNumber: order.trackingNumber,
-      trackingCarrier: order.trackingCarrier ?? 'Other',
-    }).catch(() => {})
-  }
+  // Auto-send the matching customer email on any status transition
+  // (shipped → tracking email, delivered → delivered email, cancelled →
+  // cancellation email). No-ops when status didn't change. Fire-and-forget.
+  sendStatusTransitionEmail(prevStatus, order).catch(err =>
+    console.error('Status transition email failed:', err),
+  )
 
   // Acknowledge we consulted ownsAnyItem helper (kept exported for future use)
   void ownsAnyItem
