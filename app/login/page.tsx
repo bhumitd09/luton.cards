@@ -96,6 +96,12 @@ function LoginContent() {
                   onChange={e => setForm(prev => ({ ...prev, password: e.target.value }))}
                   placeholder="••••••••"
                 />
+                <Link
+                  href="/forgot-password"
+                  className="self-end text-[13px] font-bold text-[#EC1E79] underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
               </Field>
 
               {error && (

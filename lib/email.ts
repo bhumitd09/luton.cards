@@ -563,3 +563,33 @@ export function buildLowStockHtml(data: LowStockAlertData): string {
     accentBar: 'linear-gradient(90deg,#f59e0b 0%,#fbbf24 100%)',
   })
 }
+
+// ─── Password reset ────────────────────────────────────────────────────────
+
+export interface PasswordResetEmailData {
+  to: string
+  name?: string | null
+  resetUrl: string
+  /** Minutes until the link expires, for the copy. */
+  expiresInMinutes: number
+}
+
+export async function sendPasswordResetEmail(data: PasswordResetEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  const content = `
+    ${eyebrow('Password reset')}
+    ${heading('Reset your password')}
+    <p style="margin:18px 0 18px;font-size:15px;line-height:1.7;color:#a1a1aa;">${data.name ? `Hi ${escapeHtml(data.name)}, ` : ''}we got a request to reset your Luton Cards password. Click below to choose a new one. This link expires in ${data.expiresInMinutes} minutes and can only be used once.</p>
+    <div align="center">${ctaButton(data.resetUrl, 'Reset password')}</div>
+    <p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">If you didn't ask for this, you can safely ignore this email, your password won't change.</p>`
+  await sendEmail({
+    from: await getFrom(),
+    to: data.to,
+    subject: 'Reset your Luton Cards password',
+    html: emailShell({
+      title: 'Reset your password',
+      preheader: 'Reset your Luton Cards password (link expires soon).',
+      content,
+    }),
+  })
+}

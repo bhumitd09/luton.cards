@@ -241,6 +241,15 @@ export default function AdminLogin() {
                 {error}
               </motion.div>
             )}
+
+            <div style={{ textAlign: 'right', marginTop: '0.75rem' }}>
+              <a
+                href="/admin/forgot-password"
+                style={{ color: '#EC1E79', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}
+              >
+                Forgot password?
+              </a>
+            </div>
           </div>
 
           {/* Submit */}

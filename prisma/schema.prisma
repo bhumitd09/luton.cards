@@ -130,6 +130,12 @@ model AdminUser {
   // without a server-side session store.
   tokenVersion   Int       @default(0)
 
+  // ─── Password reset ───────────────────────────────────────────────────
+  // SHA-256 hash of the single-use reset token (raw token only ever lives in
+  // the emailed link). Cleared after use or expiry.
+  resetTokenHash   String?
+  resetTokenExpiry DateTime?
+
   createdAt      DateTime  @default(now())
   lastLogin      DateTime?
   products       Product[]
@@ -364,6 +370,9 @@ model User {
   country       String?   @default("GB")
   // Session revocation — see AdminUser.tokenVersion.
   tokenVersion  Int       @default(0)
+  // Password reset — SHA-256 hash of the single-use token, cleared after use.
+  resetTokenHash   String?
+  resetTokenExpiry DateTime?
   createdAt     DateTime  @default(now())
   lastLogin     DateTime?
   orders        Order[]
