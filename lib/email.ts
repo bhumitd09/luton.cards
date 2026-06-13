@@ -516,3 +516,50 @@ export async function sendBuybackOfferEmail(data: BuybackOfferEmailData): Promis
     html: buildBuybackOfferHtml(data),
   })
 }
+
+// ─── Low-stock alert (admin) ───────────────────────────────────────────────
+
+export interface LowStockAlertData {
+  threshold: number
+  outOfStock: number
+  low: number
+  products: { name: string; game: string; category: string; stock: number }[]
+}
+
+export function buildLowStockHtml(data: LowStockAlertData): string {
+  const headCell = 'padding:12px 0 10px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid #202022;'
+  const rows = data.products
+    .map((p) => {
+      const color = p.stock === 0 ? '#ef4444' : '#f59e0b'
+      const gameLabel = p.game === 'one-piece' ? 'One Piece' : 'Pokémon'
+      return `<tr>
+        <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:14px;color:#e4e4e7;font-weight:600;">${escapeHtml(p.name)}</td>
+        <td style="padding:12px 10px;border-bottom:1px solid #1a1a1c;font-size:12px;color:#9ca3af;text-transform:capitalize;">${escapeHtml(gameLabel)} · ${escapeHtml(p.category)}</td>
+        <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:13px;font-weight:800;color:${color};text-align:right;white-space:nowrap;">${p.stock === 0 ? 'Out' : p.stock}</td>
+      </tr>`
+    })
+    .join('')
+  const content = `
+    ${eyebrow('Stock alert', '#f59e0b')}
+    ${heading('Time to restock')}
+    <p style="margin:0;font-size:13px;color:#6b7280;">${data.outOfStock} out of stock · ${data.low} low (≤${data.threshold})</p>
+    <p style="margin:18px 0 18px;font-size:15px;line-height:1.7;color:#a1a1aa;">These products need restocking:</p>
+    <div style="background:#161617;border:1px solid #202022;border-radius:12px;padding:4px 18px 10px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <thead><tr>
+          <th align="left" style="${headCell}">Product</th>
+          <th align="left" style="${headCell}">Category</th>
+          <th align="right" style="${headCell}">Stock</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${ctaButton(`${appBase()}/admin/products?stock=out`, 'Manage products')}`
+  return emailShell({
+    title: 'Stock alert',
+    preheader: `${data.outOfStock} out of stock, ${data.low} low at Luton Cards.`,
+    content,
+    accentColor: '#f59e0b',
+    accentBar: 'linear-gradient(90deg,#f59e0b 0%,#fbbf24 100%)',
+  })
+}
