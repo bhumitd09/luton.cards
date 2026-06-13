@@ -17,6 +17,8 @@ interface SellSubmission {
   images: string[]
   status: string
   adminNotes: string | null
+  offerAmount: number | null
+  offerSentAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -41,6 +43,13 @@ export default function AdminSellPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const confirm = useConfirm()
   const toast = useToast()
+  const [offerInput, setOfferInput] = useState('')
+  const [offerBusy, setOfferBusy] = useState(false)
+  const [convertBusy, setConvertBusy] = useState(false)
+
+  useEffect(() => {
+    setOfferInput(active?.offerAmount != null ? String(active.offerAmount) : '')
+  }, [active])
 
   const load = () => {
     setLoading(true)
@@ -57,7 +66,10 @@ export default function AdminSellPage() {
 
   const filtered = statusFilter === 'all' ? submissions : submissions.filter(s => s.status === statusFilter)
 
-  const updateSubmission = async (id: string, patch: Partial<Pick<SellSubmission, 'status' | 'adminNotes'>>) => {
+  const updateSubmission = async (
+    id: string,
+    patch: Partial<Pick<SellSubmission, 'status' | 'adminNotes'>> & { offerAmount?: number; sendOffer?: boolean },
+  ) => {
     const res = await fetch(`/api/admin/sell/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -68,8 +80,56 @@ export default function AdminSellPage() {
       setSubmissions(prev => prev.map(s => (s.id === id ? data.submission : s)))
       if (active?.id === id) setActive(data.submission)
       toast.success('Updated')
+      return true
+    }
+    toast.error('Could not update')
+    return false
+  }
+
+  const sendOffer = async (id: string) => {
+    const amount = Number(offerInput)
+    if (!offerInput.trim() || !Number.isFinite(amount) || amount < 0) {
+      toast.error('Enter a valid offer amount')
+      return
+    }
+    setOfferBusy(true)
+    const res = await fetch(`/api/admin/sell/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ offerAmount: amount, sendOffer: true }),
+    })
+    setOfferBusy(false)
+    if (res.ok) {
+      const data = await res.json()
+      setSubmissions(prev => prev.map(s => (s.id === id ? data.submission : s)))
+      if (active?.id === id) setActive(data.submission)
+      toast.success(`Offer of £${amount} sent`)
     } else {
-      toast.error('Could not update')
+      const err = await res.json().catch(() => null)
+      toast.error(err?.error || 'Could not send offer')
+    }
+  }
+
+  const convertToProduct = async (id: string) => {
+    const ok = await confirm({
+      message: 'Convert this submission into a draft product? It will be created inactive with 0 stock, and the submission will be closed.',
+      confirmLabel: 'Convert',
+    })
+    if (!ok) return
+    setConvertBusy(true)
+    const res = await fetch(`/api/admin/sell/${id}/convert`, { method: 'POST' })
+    setConvertBusy(false)
+    if (res.ok) {
+      const data = await res.json()
+      setSubmissions(prev => prev.map(s => (s.id === id ? { ...s, status: 'closed' } : s)))
+      if (active?.id === id) setActive(prev => (prev ? { ...prev, status: 'closed' } : prev))
+      toast.success('Converted to draft product')
+      if (data?.productId) {
+        window.open('/admin/products', '_blank')
+      }
+    } else {
+      const err = await res.json().catch(() => null)
+      toast.error(err?.error || 'Could not convert')
     }
   }
 
@@ -339,6 +399,69 @@ export default function AdminSellPage() {
                     <option key={s.value} value={s.value}>{s.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem', padding: '1.1rem', background: '#161617', border: '1px solid #202022', borderRadius: '13px' }}>
+                <label style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, display: 'block', marginBottom: '0.6rem' }}>
+                  Buy-back offer
+                </label>
+                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'stretch' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <span style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: '0.9rem', pointerEvents: 'none' }}>£</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={offerInput}
+                      onChange={e => setOfferInput(e.target.value)}
+                      placeholder="Offer amount"
+                      aria-label="Offer amount in pounds"
+                      style={{
+                        width: '100%', padding: '0.6rem 0.8rem 0.6rem 1.6rem',
+                        background: '#0c0c0d', border: '1px solid #202022',
+                        borderRadius: '11px', color: '#fff', fontSize: '0.875rem',
+                        outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={offerBusy}
+                    onClick={() => sendOffer(active.id)}
+                    style={{
+                      padding: '0.6rem 1.1rem',
+                      background: offerBusy ? '#202022' : 'linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%)',
+                      border: 'none', borderRadius: '11px', color: '#fff',
+                      fontSize: '0.825rem', fontWeight: 800, cursor: offerBusy ? 'default' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {offerBusy ? 'Sending…' : 'Send offer'}
+                  </button>
+                </div>
+                {active.offerSentAt && (
+                  <p style={{ fontSize: '0.78rem', color: '#10b981', margin: '0.7rem 0 0', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    Offered{active.offerAmount != null ? ` £${active.offerAmount}` : ''} on {new Date(active.offerSentAt).toLocaleString()}
+                  </p>
+                )}
+
+                {active.status === 'accepted' && (
+                  <button
+                    type="button"
+                    disabled={convertBusy}
+                    onClick={() => convertToProduct(active.id)}
+                    style={{
+                      marginTop: '0.9rem', width: '100%',
+                      padding: '0.65rem 1rem',
+                      background: convertBusy ? '#202022' : 'rgba(16,185,129,0.12)',
+                      border: '1px solid rgba(16,185,129,0.4)', borderRadius: '11px',
+                      color: '#10b981', fontSize: '0.825rem', fontWeight: 800,
+                      cursor: convertBusy ? 'default' : 'pointer',
+                    }}
+                  >
+                    {convertBusy ? 'Converting…' : 'Convert to product'}
+                  </button>
+                )}
               </div>
 
               <div>

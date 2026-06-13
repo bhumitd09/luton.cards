@@ -467,3 +467,56 @@ export async function sendBackInStockNotification(data: BackInStockEmailData): P
     html: buildBackInStockHtml(data),
   })
 }
+
+// ─── Buy-back offer (sell-back) ────────────────────────────────────────────
+
+export interface BuybackOfferEmailData {
+  to: string
+  sellerName: string
+  offerAmount: number
+  details?: string
+}
+
+function buildBuybackOfferHtml(data: BuybackOfferEmailData): string {
+  const detailsBlock = data.details
+    ? `<div style="margin-top:22px;padding:16px;background:#f9f9f9;border-radius:10px;border:1px solid #eee;">
+        <div style="font-size:11px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">What you sent us</div>
+        <div style="font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.details)}</div>
+      </div>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html><body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f5f5f5;padding:24px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+    <tr><td style="background:linear-gradient(135deg,#EC1E79 0%,#FF4DA6 100%);padding:28px 32px;text-align:center;">
+      <div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;">LUTON CARDS</div>
+      <p style="margin:12px 0 6px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;">Buy-back offer</p>
+      <h1 style="margin:0;color:#fff;font-size:24px;font-weight:900;letter-spacing:-0.02em;">We&rsquo;d like to offer &pound;${data.offerAmount.toLocaleString('en-GB')}</h1>
+    </td></tr>
+    <tr><td style="padding:28px 32px;">
+      <p style="font-size:16px;color:#333;margin:0 0 12px;">Hi ${escapeHtml(data.sellerName)},</p>
+      <p style="font-size:15px;color:#555;margin:0 0 22px;line-height:1.7;">Thanks for sending your cards over to Luton Cards. We&rsquo;ve reviewed your submission and we&rsquo;d like to offer you the amount below.</p>
+      <div style="background:#fdf2f8;border:2px solid #EC1E79;border-radius:12px;padding:24px;text-align:center;">
+        <div style="font-size:11px;font-weight:800;color:#EC1E79;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px;">Our offer</div>
+        <div style="font-size:34px;font-weight:900;color:#111;letter-spacing:-0.02em;">&pound;${data.offerAmount.toLocaleString('en-GB')}</div>
+      </div>
+      ${detailsBlock}
+      <p style="font-size:15px;color:#555;margin:22px 0 0;line-height:1.7;">If you&rsquo;re happy with this, just <strong>reply to this email to accept</strong> and we&rsquo;ll sort out the next steps. Got questions? Reply here too &mdash; we&rsquo;re glad to help.</p>
+    </td></tr>
+    <tr><td style="background:#fafafa;padding:18px 32px;border-top:1px solid #eee;text-align:center;font-size:11px;color:#999;">
+      Questions? Email <a href="mailto:hello@lutoncards.co.uk" style="color:#EC1E79;text-decoration:none;">hello@lutoncards.co.uk</a><br/>
+      Luton Cards &mdash; Pok&eacute;mon &amp; One Piece TCG, Luton UK
+    </td></tr>
+  </table>
+</body></html>`
+}
+
+export async function sendBuybackOfferEmail(data: BuybackOfferEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: getFrom(),
+    to: data.to,
+    subject: `Your Luton Cards offer — £${data.offerAmount.toLocaleString('en-GB')}`,
+    html: buildBuybackOfferHtml(data),
+  })
+}
