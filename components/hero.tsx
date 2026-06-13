@@ -99,14 +99,10 @@ export function Hero() {
           </AnimatedGradientText>
         </motion.div>
 
-        <motion.img
-          src="/logo/luton-cards.png"
-          alt="Luton Cards"
-          initial={{ opacity: 0, y: -8, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-5 h-[100px] w-auto drop-shadow-[0_14px_32px_rgba(236,30,121,0.3)] sm:h-[115px] md:h-[125px]"
-        />
+        {/* Logo intentionally removed from the hero — the sticky header
+            already shows it on every page, so doubling it here pushes the
+            headline below the fold and adds visual noise. The pink eyebrow
+            tag above keeps the brand presence at the top of the hero. */}
 
         <EditableText
           cmsKey="hero_headline"
