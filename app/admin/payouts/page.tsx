@@ -106,6 +106,33 @@ export default function AdminPayoutsPage() {
     }
   }
 
+  const markUnpaid = async (itemId: string) => {
+    if (!(await confirm({
+      title: 'Mark as unpaid?',
+      message: 'This reverses the payout tracking for this line item. Continue?',
+      confirmLabel: 'Mark unpaid',
+      danger: true,
+    }))) return
+    setMarking(true)
+    try {
+      const res = await fetch('/api/admin/payouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemIds: [itemId], action: 'unpay' }),
+      })
+      if (!res.ok) {
+        toast.error('Could not mark as unpaid')
+        return
+      }
+      toast.success('Marked as unpaid')
+      load()
+    } catch {
+      toast.error('Could not mark as unpaid')
+    } finally {
+      setMarking(false)
+    }
+  }
+
   const totalOwed = rows.reduce((s, r) => s + r.vendorPayoutOwed, 0)
   const totalPaid = rows.reduce((s, r) => s + r.vendorPayoutPaid, 0)
   const platformTotal = rows.reduce((s, r) => s + r.platformFeeTotal, 0)
@@ -283,8 +310,20 @@ export default function AdminPayoutsPage() {
                                 <td className="px-3 py-2.5 text-right text-[#6b7280]">£{item.platformFee.toFixed(2)}</td>
                                 <td className="px-3 py-2.5 text-right">
                                   {item.payoutPaidAt ? (
-                                    <span className="inline-flex items-center gap-1 rounded-full border border-[#10b981]/25 bg-[#10b981]/10 px-2 py-0.5 text-[10px] font-bold text-[#10b981]">
-                                      <Check size={9} /> Paid
+                                    <span className="inline-flex items-center justify-end gap-1.5">
+                                      <span className="inline-flex items-center gap-1 rounded-full border border-[#10b981]/25 bg-[#10b981]/10 px-2 py-0.5 text-[10px] font-bold text-[#10b981]">
+                                        <Check size={9} /> Paid
+                                      </span>
+                                      {isSuper && (
+                                        <button
+                                          onClick={() => markUnpaid(item.id)}
+                                          disabled={marking}
+                                          title="Mark unpaid"
+                                          className="inline-flex items-center gap-1 rounded-full border border-[#ef4444]/25 bg-[#ef4444]/10 px-2 py-0.5 text-[10px] font-bold text-[#ef4444] disabled:opacity-60"
+                                        >
+                                          <X size={9} /> Mark unpaid
+                                        </button>
+                                      )}
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1 rounded-full border border-[#f59e0b]/25 bg-[#f59e0b]/10 px-2 py-0.5 text-[10px] font-bold text-[#f59e0b]">

@@ -221,7 +221,8 @@ export default function ShippingPage() {
   const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set())
   const [seedingDefaults, setSeedingDefaults] = useState(false)
 
-  // New zone form state
+  // New/edit zone form state. editingZoneId !== null means the slide-over is editing.
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null)
   const [newZoneName, setNewZoneName] = useState('')
   const [newZoneCountries, setNewZoneCountries] = useState<string[]>([])
   const [newZoneCustomCode, setNewZoneCustomCode] = useState('')
@@ -319,26 +320,46 @@ export default function ShippingPage() {
     fetchZones()
   }
 
+  const openAddZone = () => {
+    setEditingZoneId(null)
+    setNewZoneName('')
+    setNewZoneCountries([])
+    setNewZoneCustomCode('')
+    setSlideOverOpen(true)
+  }
+
+  const openEditZone = (zone: ShippingZone) => {
+    setEditingZoneId(zone.id)
+    setNewZoneName(zone.name)
+    setNewZoneCountries([...zone.countries])
+    setNewZoneCustomCode('')
+    setSlideOverOpen(true)
+  }
+
   const handleAddZone = async () => {
     if (!newZoneName || newZoneCountries.length === 0) return
     setSavingZone(true)
     try {
-      const res = await fetch('/api/admin/shipping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newZoneName, countries: newZoneCountries }),
-      })
+      const res = await fetch(
+        editingZoneId ? `/api/admin/shipping/${editingZoneId}` : '/api/admin/shipping',
+        {
+          method: editingZoneId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newZoneName, countries: newZoneCountries }),
+        }
+      )
       if (res.ok) {
+        setEditingZoneId(null)
         setNewZoneName('')
         setNewZoneCountries([])
         setSlideOverOpen(false)
-        toast.success('Zone saved')
+        toast.success(editingZoneId ? 'Zone updated' : 'Zone saved')
       } else {
-        toast.error('Could not save zone')
+        toast.error(editingZoneId ? 'Could not update zone' : 'Could not save zone')
       }
       fetchZones()
     } catch {
-      toast.error('Could not save zone')
+      toast.error(editingZoneId ? 'Could not update zone' : 'Could not save zone')
     } finally {
       setSavingZone(false)
     }
@@ -402,7 +423,7 @@ export default function ShippingPage() {
           </p>
         </div>
         <button
-          onClick={() => setSlideOverOpen(true)}
+          onClick={openAddZone}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -550,6 +571,16 @@ export default function ShippingPage() {
               </button>
 
               <button
+                onClick={() => openEditZone(zone)}
+                title="Edit zone"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0.375rem', borderRadius: '9px', display: 'flex', alignItems: 'center' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#EC1E79' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#6b7280' }}
+              >
+                <Pencil size={15} />
+              </button>
+
+              <button
                 onClick={() => handleDeleteZone(zone.id)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0.375rem', borderRadius: '9px', display: 'flex', alignItems: 'center' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#ef4444' }}
@@ -676,7 +707,7 @@ export default function ShippingPage() {
       }}>
         {/* Slide-over header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #1a1a1c' }}>
-          <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '-0.02em', margin: 0 }}>Add Zone</h2>
+          <h2 style={{ color: '#fff', fontWeight: 800, fontSize: '1.125rem', letterSpacing: '-0.02em', margin: 0 }}>{editingZoneId ? 'Edit Zone' : 'Add Zone'}</h2>
           <button
             onClick={() => setSlideOverOpen(false)}
             style={{ background: '#161617', border: '1px solid #202022', borderRadius: '9px', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.3rem' }}
@@ -834,7 +865,7 @@ export default function ShippingPage() {
               opacity: savingZone || !newZoneName || newZoneCountries.length === 0 ? 0.5 : 1,
             }}
           >
-            {savingZone ? 'Saving...' : 'Save Zone'}
+            {savingZone ? 'Saving...' : editingZoneId ? 'Save Changes' : 'Save Zone'}
           </button>
         </div>
       </div>

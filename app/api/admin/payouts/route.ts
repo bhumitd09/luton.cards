@@ -18,8 +18,10 @@ import { isSuperadmin } from '@/lib/vendor-auth'
  *
  * Vendors see only their own row; superadmin sees everyone.
  *
- * POST → mark a list of OrderItem ids as paid. Body: { itemIds: string[], note?: string }
- *   Superadmin only. Idempotent — already-paid items skipped.
+ * POST → mark a list of OrderItem ids paid/unpaid.
+ *   Body: { itemIds: string[], action?: 'pay' | 'unpay', note?: string }
+ *   action defaults to 'pay'. 'unpay' clears payoutPaidAt + payoutNote.
+ *   Superadmin only. Idempotent — only items in the relevant state are touched.
  */
 
 export const dynamic = 'force-dynamic'
@@ -142,8 +144,22 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { itemIds, note } = body
+    // action defaults to 'pay' for backwards-compatibility with older callers.
+    const action: 'pay' | 'unpay' = body.action === 'unpay' ? 'unpay' : 'pay'
     if (!Array.isArray(itemIds) || itemIds.length === 0) {
       return NextResponse.json({ error: 'itemIds[] required' }, { status: 400 })
+    }
+
+    if (action === 'unpay') {
+      // Reverse a payout: clear paid timestamp + note for already-paid items.
+      const result = await db.orderItem.updateMany({
+        where: { id: { in: itemIds }, payoutPaidAt: { not: null } },
+        data: {
+          payoutPaidAt: null,
+          payoutNote: null,
+        },
+      })
+      return NextResponse.json({ marked: result.count })
     }
 
     const now = new Date()

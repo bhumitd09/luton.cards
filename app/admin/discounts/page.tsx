@@ -34,6 +34,7 @@ export default function DiscountsPage() {
   const [slideOverOpen, setSlideOverOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   // Form state
   const [code, setCode] = useState('')
@@ -60,6 +61,7 @@ export default function DiscountsPage() {
   }, [fetchDiscounts])
 
   const resetForm = () => {
+    setEditingId(null)
     setCode('')
     setType('percentage')
     setValue('')
@@ -71,6 +73,27 @@ export default function DiscountsPage() {
 
   const openSlideOver = () => {
     resetForm()
+    setSlideOverOpen(true)
+  }
+
+  // Convert an ISO timestamp to the value a datetime-local input expects.
+  const toLocalInput = (iso: string | null) => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return ''
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  const openEdit = (d: Discount) => {
+    setEditingId(d.id)
+    setCode(d.code)
+    setType(d.type === 'fixed' ? 'fixed' : 'percentage')
+    setValue(String(d.value))
+    setMinOrder(d.minOrder != null ? String(d.minOrder) : '')
+    setMaxUses(d.maxUses != null ? String(d.maxUses) : '')
+    setExpiresAt(toLocalInput(d.expiresAt))
+    setFormError(null)
     setSlideOverOpen(true)
   }
 
@@ -97,29 +120,34 @@ export default function DiscountsPage() {
     setFormError(null)
 
     try {
-      const res = await fetch('/api/admin/discounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: code.trim(),
-          type,
-          value: Number(value),
-          minOrder: minOrder ? Number(minOrder) : null,
-          maxUses: maxUses ? Number(maxUses) : null,
-          expiresAt: expiresAt || null,
-        }),
-      })
+      const payload = {
+        code: code.trim(),
+        type,
+        value: Number(value),
+        minOrder: minOrder ? Number(minOrder) : null,
+        maxUses: maxUses ? Number(maxUses) : null,
+        expiresAt: expiresAt || null,
+      }
+      const res = await fetch(
+        editingId ? `/api/admin/discounts/${editingId}` : '/api/admin/discounts',
+        {
+          method: editingId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      )
 
       const data = await res.json()
       if (!res.ok) {
-        setFormError(data.error || 'Failed to create discount')
-        toast.error(data.error || 'Failed to create discount')
+        const msg = data.error || (editingId ? 'Failed to update discount' : 'Failed to create discount')
+        setFormError(msg)
+        toast.error(msg)
         return
       }
 
       closeSlideOver()
       await fetchDiscounts()
-      toast.success('Discount saved')
+      toast.success(editingId ? 'Discount updated' : 'Discount saved')
     } catch {
       setFormError('Network error. Please try again.')
       toast.error('Network error. Please try again.')
@@ -375,27 +403,48 @@ export default function DiscountsPage() {
                     </button>
                   </td>
                   <td style={{ padding: '0.875rem 1rem' }}>
-                    <button
-                      onClick={() => handleDelete(d.id)}
-                      style={{
-                        background: 'rgba(239,68,68,0.1)',
-                        border: '1px solid rgba(239,68,68,0.25)',
-                        cursor: 'pointer',
-                        padding: '0.4rem',
-                        borderRadius: '9px',
-                        color: '#ef4444',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                      title="Delete"
-                    >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                        <path d="M10 11v6M14 11v6" />
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                      </svg>
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button
+                        onClick={() => openEdit(d)}
+                        style={{
+                          background: '#161617',
+                          border: '1px solid #202022',
+                          cursor: 'pointer',
+                          padding: '0.4rem',
+                          borderRadius: '9px',
+                          color: '#9ca3af',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        title="Edit"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(d.id)}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid rgba(239,68,68,0.25)',
+                          cursor: 'pointer',
+                          padding: '0.4rem',
+                          borderRadius: '9px',
+                          color: '#ef4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        title="Delete"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6M14 11v6" />
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -447,7 +496,7 @@ export default function DiscountsPage() {
           flexShrink: 0,
         }}>
           <h2 style={{ fontSize: '1.05rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#fff', margin: 0 }}>
-            New discount
+            {editingId ? 'Edit discount' : 'New discount'}
           </h2>
           <button
             onClick={closeSlideOver}
@@ -650,7 +699,7 @@ export default function DiscountsPage() {
               boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
             }}
           >
-            {saving ? 'Saving...' : 'Save Code'}
+            {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Save Code'}
           </button>
         </div>
       </div>

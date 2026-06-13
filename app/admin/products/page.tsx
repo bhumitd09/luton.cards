@@ -40,6 +40,7 @@ interface Product {
     price: number
     stock: number
     active: boolean
+    sku?: string | null
   }[]
   createdAt: string
   updatedAt: string
@@ -63,6 +64,8 @@ type VariantRow = {
   foil: string
   price: string
   stock: string
+  sku: string
+  active: boolean
 }
 
 const EMPTY_FORM = {
@@ -291,6 +294,8 @@ function ProductModal({
           foil: v.foil ?? '',
           price: String(v.price),
           stock: String(v.stock),
+          sku: v.sku ?? '',
+          active: v.active !== false,
         })),
       }
     : { ...EMPTY_FORM, variants: [] }
@@ -318,6 +323,8 @@ function ProductModal({
         foil: v.foil || null,
         price: Number(v.price),
         stock: Number.parseInt(v.stock || '0', 10),
+        sku: v.sku?.trim() || null,
+        active: v.active !== false,
       }))
       for (const v of cleanedVariants) {
         if (!v.condition || !Number.isFinite(v.price) || v.price < 0 || !Number.isInteger(v.stock) || v.stock < 0) {
@@ -638,7 +645,7 @@ function ProductModal({
                 const nextCond = CONDITIONS.find(c => !used.has(`${c.slug}|`))?.slug ?? CONDITIONS[0].slug
                 update('variants', [
                   ...form.variants,
-                  { condition: nextCond, foil: '', price: form.price || '', stock: '0' },
+                  { condition: nextCond, foil: '', price: form.price || '', stock: '0', sku: '', active: true },
                 ])
               }}
               style={{
@@ -665,7 +672,7 @@ function ProductModal({
                   key={i}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1.4fr 1.2fr 0.9fr 0.7fr auto',
+                    gridTemplateColumns: '1.4fr 1.2fr 0.9fr 0.7fr 1fr auto auto',
                     gap: '0.5rem',
                     alignItems: 'center',
                     background: '#0c0c0d',
@@ -706,6 +713,28 @@ function ProductModal({
                     onChange={e => update('variants', form.variants.map((x, j) => j === i ? { ...x, stock: e.target.value } : x))}
                     style={{ ...inputStyle, padding: '0.5rem 0.65rem', fontSize: '0.82rem' }}
                   />
+                  <input
+                    type="text"
+                    placeholder="SKU"
+                    value={v.sku}
+                    onChange={e => update('variants', form.variants.map((x, j) => j === i ? { ...x, sku: e.target.value } : x))}
+                    style={{ ...inputStyle, padding: '0.5rem 0.65rem', fontSize: '0.82rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => update('variants', form.variants.map((x, j) => j === i ? { ...x, active: !x.active } : x))}
+                    aria-label={v.active ? 'Variant active' : 'Variant inactive'}
+                    title={v.active ? 'Active' : 'Inactive'}
+                    style={{
+                      background: v.active ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.12)',
+                      border: `1px solid ${v.active ? 'rgba(16,185,129,0.25)' : 'rgba(107,114,128,0.25)'}`,
+                      color: v.active ? '#10b981' : '#9ca3af',
+                      fontSize: '0.72rem', fontWeight: 700, padding: '0.45rem 0.5rem',
+                      borderRadius: 9, cursor: 'pointer', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {v.active ? 'Active' : 'Inactive'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => update('variants', form.variants.filter((_, j) => j !== i))}
