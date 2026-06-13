@@ -33,6 +33,9 @@ interface AnalyticsData {
   totalOrders: number
   productsByCategory: Record<string, number>
   recentOrders: RecentOrder[]
+  ordersToday?: number
+  revenueLast30Days?: number
+  revenueSeries?: { date: string; revenue: number }[]
 }
 
 interface RecentOrder {
@@ -319,7 +322,9 @@ export default function AdminDashboard() {
       .catch(() => setLoading(false))
   }, [])
 
-  const ordersToday = analytics?.recentOrders?.filter(o => isToday(o.createdAt)).length ?? 0
+  // Use the real server-computed figure; fall back to the (approximate)
+  // recent-orders derivation only if the API is old/unavailable.
+  const ordersToday = analytics?.ordersToday ?? analytics?.recentOrders?.filter(o => isToday(o.createdAt)).length ?? 0
   const last5Orders = analytics?.recentOrders?.slice(0, 5) ?? []
 
   const catCounts = analytics?.productsByCategory ?? {}
@@ -330,28 +335,14 @@ export default function AdminDashboard() {
     { label: 'Sealed',   key: 'sealed',  color: '#34d399' },
   ]
 
-  // ── Derived data for the sidebar/aggregates ─────────────────────────────
-  const recentOrdersAll = analytics?.recentOrders ?? []
-  const now = new Date()
-  const last30: { date: string; revenue: number }[] = []
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(now.getDate() - i)
-    last30.push({ date: d.toISOString().slice(0, 10), revenue: 0 })
-  }
-  recentOrdersAll.forEach(order => {
-    const key = new Date(order.createdAt).toISOString().slice(0, 10)
-    const entry = last30.find(e => e.date === key)
-    if (entry) entry.revenue += order.total
-  })
+  // ── 30-day revenue series — now comes from the API as a real range query
+  //    (was derived here from only the 5 most-recent orders). ──────────────
+  const last30: { date: string; revenue: number }[] =
+    analytics?.revenueSeries ?? []
   const maxRev = Math.max(...last30.map(e => e.revenue), 1)
-  const monthRevenue = last30
-    .filter(e => {
-      const d = new Date(e.date)
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    })
-    .reduce((sum, e) => sum + e.revenue, 0)
-  const allZeroRev = last30.every(e => e.revenue === 0)
+  // "Last 30 days" revenue from the server total.
+  const monthRevenue = analytics?.revenueLast30Days ?? 0
+  const allZeroRev = last30.length === 0 || last30.every(e => e.revenue === 0)
 
   return (
     <div className="dash-padding" style={{ padding: '1.5rem', background: '#0a0a0a', color: '#f4f4f5', maxWidth: '1500px', margin: '0 auto', minHeight: '100%' }}>
@@ -634,7 +625,7 @@ export default function AdminDashboard() {
             <div className="dash-card" style={{ padding: '1.1rem 1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  This month
+                  Last 30 days
                 </span>
                 <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>30d</span>
               </div>

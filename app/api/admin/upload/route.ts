@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   let mediaId: string | null = null
   try {
     const media = await db.media.create({
-      data: { url: saved.url, filename, size, mimeType },
+      data: { url: saved.url, filename, size, mimeType, vendorId: admin.userId },
     })
     mediaId = media.id
   } catch (err) {

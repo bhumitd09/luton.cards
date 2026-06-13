@@ -134,20 +134,15 @@ export default function AdminInstagramPage() {
           body: JSON.stringify({ value: JSON.stringify(cleanedPosts), type: 'json', label: 'Instagram Posts' }),
         }),
       ]
-      // Only write the token if it's been touched (avoid storing whitespace)
+      // Only write the token if it's been touched (avoid storing whitespace).
+      // Uses the dedicated /api/admin/instagram/token route — the generic
+      // content endpoint blocks token-like keys as "sensitive".
       if (token.trim()) {
         writes.push(
-          fetch('/api/admin/content/instagram_access_token', {
+          fetch('/api/admin/instagram/token', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ value: token.trim(), type: 'text', label: 'Instagram Access Token' }),
-          }),
-        )
-        writes.push(
-          fetch('/api/admin/content/instagram_token_refreshed_at', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ value: new Date().toISOString(), type: 'text', label: 'Instagram Token Refreshed At' }),
+            body: JSON.stringify({ token: token.trim() }),
           }),
         )
       }

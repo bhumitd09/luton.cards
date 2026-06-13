@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
+import { isSuperadmin } from '@/lib/vendor-auth'
 
-// GET /api/admin/media — return all media items ordered by createdAt desc
+// GET /api/admin/media — media items, vendor-scoped (superadmin sees all)
 export async function GET(req: NextRequest) {
   try {
     const admin = await verifyAdminSession(req)
@@ -16,9 +17,11 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit
     const search = searchParams.get('search') || ''
 
-    const where = search
-      ? { filename: { contains: search, mode: 'insensitive' as const } }
-      : {}
+    // Vendors see only their own uploads; superadmin sees everything.
+    const where = {
+      ...(isSuperadmin(admin) ? {} : { vendorId: admin.userId }),
+      ...(search ? { filename: { contains: search, mode: 'insensitive' as const } } : {}),
+    }
 
     const [items, total] = await Promise.all([
       db.media.findMany({
@@ -72,6 +75,7 @@ export async function POST(req: NextRequest) {
         size: typeof size === 'number' ? size : 0,
         mimeType: (mimeType && typeof mimeType === 'string') ? mimeType : 'image/jpeg',
         alt: (alt && typeof alt === 'string' && alt.trim()) ? alt.trim() : null,
+        vendorId: admin.userId,
       },
     })
 

@@ -96,6 +96,52 @@ export async function GET(req: NextRequest) {
       0,
     )
 
+    // ── Real 30-day revenue series + orders-today (was derived client-side
+    //    from only the 5 most-recent orders, so the dashboard sparkline +
+    //    "this month" figure were structurally wrong). Computed here via a
+    //    proper range query, scoped to the vendor's own payout share. ──
+    const now = new Date()
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const start30 = new Date(startOfToday)
+    start30.setDate(start30.getDate() - 29) // 30 inclusive buckets
+
+    const rangeOrders = await db.order.findMany({
+      where: {
+        status: { in: PAID_STATUSES },
+        createdAt: { gte: start30 },
+        ...(isSuper ? {} : { items: { some: { vendorId: admin.userId } } }),
+      },
+      select: {
+        createdAt: true,
+        total: true,
+        items: { select: { vendorId: true, vendorPayout: true } },
+      },
+    })
+
+    // Seed 30 day-buckets (oldest → newest) at zero.
+    const series: { date: string; revenue: number }[] = []
+    const bucketIndex = new Map<string, number>()
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(start30)
+      d.setDate(d.getDate() + i)
+      const key = d.toISOString().slice(0, 10)
+      bucketIndex.set(key, series.length)
+      series.push({ date: key, revenue: 0 })
+    }
+
+    let ordersTodayCount = 0
+    let revenueLast30 = 0
+    for (const o of rangeOrders) {
+      const amount = isSuper
+        ? o.total
+        : o.items.filter(it => it.vendorId === admin.userId).reduce((s, it) => s + it.vendorPayout, 0)
+      const key = o.createdAt.toISOString().slice(0, 10)
+      const idx = bucketIndex.get(key)
+      if (idx !== undefined) series[idx].revenue += amount
+      revenueLast30 += amount
+      if (o.createdAt >= startOfToday) ordersTodayCount++
+    }
+
     // Vendors only see their own line items on the recent-orders list.
     const recentOrders = isSuper
       ? recentOrdersRaw
@@ -122,6 +168,10 @@ export async function GET(req: NextRequest) {
       },
       recentOrders,
       catalogueValue,
+      // Real figures so the dashboard stops guessing from 5 orders.
+      ordersToday: ordersTodayCount,
+      revenueLast30Days: revenueLast30,
+      revenueSeries: series,
     })
   } catch (error) {
     console.error('Analytics GET error:', error)

@@ -79,13 +79,18 @@ model Content {
 }
 
 model Media {
-  id        String   @id @default(cuid())
-  filename  String
-  url       String
-  size      Int
-  mimeType  String
-  alt       String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  filename   String
+  url        String
+  size       Int
+  mimeType   String
+  alt        String?
+  // Who uploaded it — for vendor scoping. Null for legacy/system uploads
+  // (visible to superadmin only). Vendors see + manage only their own.
+  vendorId   String?
+  createdAt  DateTime @default(now())
+
+  @@index([vendorId])
 }
 
 model AdminUser {
@@ -204,6 +209,14 @@ model Order {
   // adding Square doesn't require schema changes.
   paymentProvider  String?
   paymentRef       String?
+  // Refund tracking. refundedAmount accumulates partial refunds; refundedAt
+  // stamps the most recent refund. A 'cancelled' status + non-null refund
+  // means money went back.
+  refundedAmount   Float?      @default(0)
+  refundedAt       DateTime?
+  // True for admin-created orders (phone / in-person / marketplace) so they
+  // can be told apart from customer web checkouts.
+  isManual         Boolean     @default(false)
   items            OrderItem[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -325,6 +338,10 @@ model SellSubmission {
   images      String[]
   status      String   @default("new") // 'new' | 'reviewing' | 'offered' | 'accepted' | 'declined' | 'closed'
   adminNotes  String?  @db.Text
+  // Concrete £ offer the admin makes for the collection. Set when status
+  // moves to 'offered'; emailed to the seller.
+  offerAmount Float?
+  offerSentAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -377,4 +394,52 @@ model StockNotification {
   @@unique([userId, productId])
   @@index([productId])
   @@index([notifiedAt])
+}
+
+// ─── Customer profiles ──────────────────────────────────────────────────
+// Keyed by email so it covers BOTH registered users and guest checkouts.
+// Lets the admin add notes/tags and block an email from checkout. The
+// customers admin page joins this onto the order rollup.
+model CustomerProfile {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  adminNotes String?  @db.Text
+  tags       String[]
+  // When true, /api/orders refuses new orders for this email.
+  blocked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([blocked])
+}
+
+// ─── Contact form inbox ─────────────────────────────────────────────────
+// Replaces stuffing enquiries into the Content table. status: new|read|archived.
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String   @db.Text
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── CMS pages (FAQ / Privacy / Terms / Cookies …) ──────────────────────
+// Editable standalone pages so legal/help copy changes without a deploy.
+// `body` is markdown/HTML rendered by the public page.
+model Page {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  body      String   @db.Text
+  published Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([slug])
 }

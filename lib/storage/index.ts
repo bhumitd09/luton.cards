@@ -66,3 +66,26 @@ export function storage(): StorageDriver {
       return _driver
   }
 }
+
+/**
+ * Derive the storage key from a public upload URL so we can delete the
+ * underlying file. URLs look like `${UPLOAD_PUBLIC_BASE}/<key>` (default
+ * base `/api/uploads`). Returns null for external/absolute URLs we don't
+ * own (e.g. a pasted https:// image), so the caller can skip the delete.
+ */
+export function keyFromUrl(url: string): string | null {
+  if (!url) return null
+  const base = (process.env.UPLOAD_PUBLIC_BASE || '/api/uploads').replace(/\/$/, '')
+  // Only our own uploads are deletable. Match either a relative
+  // "/api/uploads/<key>" or an absolute URL whose path starts with base.
+  let path = url
+  try {
+    if (/^https?:\/\//i.test(url)) path = new URL(url).pathname
+  } catch {
+    return null
+  }
+  const prefix = base + '/'
+  if (!path.startsWith(prefix)) return null
+  const key = path.slice(prefix.length)
+  return key || null
+}

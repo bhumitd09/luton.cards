@@ -62,16 +62,24 @@ export default function IntegrationsPage() {
   const [payProviders, setPayProviders] = useState<ProviderStatus[]>([])
   const [activeProvider, setActiveProvider] = useState<string>('stripe')
 
-  const webhookUrl = 'https://lutoncards.com/api/webhooks/collecttcg'
+  // Derive the webhook URL from the actual origin so it's correct on any
+  // domain (was hardcoded to lutoncards.com).
+  const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')}/api/webhooks/collecttcg`
 
   useEffect(() => {
-    // Load saved settings
-    fetch('/api/content?keys=collecttcg_api_url,collecttcg_api_key,collecttcg_webhook_secret')
-      .then(r => r.json())
-      .then((data: Record<string, string>) => {
-        if (data.collecttcg_api_url) setApiUrl(data.collecttcg_api_url)
-        if (data.collecttcg_api_key) setApiKey(data.collecttcg_api_key)
-        if (data.collecttcg_webhook_secret) setWebhookSecret(data.collecttcg_webhook_secret)
+    // Load saved settings via the superadmin content collection. The public
+    // /api/content endpoint now filters to an allowlist (collecttcg_* keys are
+    // intentionally NOT public), so we read them from the authenticated
+    // admin collection instead — secrets never hit a public endpoint.
+    fetch('/api/admin/content')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        const rows: { key: string; value: string }[] = data?.content ?? []
+        const byKey: Record<string, string> = {}
+        rows.forEach(r => { byKey[r.key] = r.value })
+        if (byKey.collecttcg_api_url) setApiUrl(byKey.collecttcg_api_url)
+        if (byKey.collecttcg_api_key) setApiKey(byKey.collecttcg_api_key)
+        if (byKey.collecttcg_webhook_secret) setWebhookSecret(byKey.collecttcg_webhook_secret)
       })
       .catch(() => {})
 

@@ -14,7 +14,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const admin = await verifyAdminSession(req)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const source = await db.product.findUnique({ where: { id: params.id } })
+  const source = await db.product.findUnique({
+    where: { id: params.id },
+    include: { variants: true },
+  })
   if (!source) {
     return NextResponse.json({ error: 'Source product not found' }, { status: 404 })
   }
@@ -64,7 +67,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // vendor. Lets a superadmin clone an orphan / legacy product into their
       // own catalogue cleanly.
       vendorId: admin.userId,
+      // Copy condition variants too (price + foil + sku preserved; stock
+      // reset to 0 to match the product-level draft behaviour above).
+      ...(source.variants.length > 0
+        ? {
+            variants: {
+              create: source.variants.map(v => ({
+                condition: v.condition,
+                foil: v.foil,
+                price: v.price,
+                stock: 0,
+                sku: v.sku,
+                active: v.active,
+              })),
+            },
+          }
+        : {}),
     },
+    include: { variants: true },
   })
 
   return NextResponse.json({ product: duplicate }, { status: 201 })
