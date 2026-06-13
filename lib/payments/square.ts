@@ -1,4 +1,4 @@
-import type { CheckoutOrder, CheckoutResult, PaymentDriver } from './index'
+import type { CheckoutOrder, CheckoutResult, PaymentDriver, RefundRequest, RefundResult } from './index'
 import { orderLineItems } from './index'
 
 /**
@@ -62,6 +62,16 @@ export class SquareDriver implements PaymentDriver {
     throw new Error(
       'Square payments are not implemented yet. Set PAYMENT_PROVIDER=stripe, ' +
       'or implement lib/payments/square.ts (see the comment block in this file).',
+    )
+  }
+
+  async refund(req: RefundRequest): Promise<RefundResult> {
+    // When implementing: client.refundsApi.refundPayment({ idempotencyKey,
+    // paymentId: req.ref, amountMoney: { amount: BigInt(Math.round((req.amount ?? total) * 100)), currency: 'GBP' } })
+    void req
+    throw new Error(
+      'Square refunds are not implemented yet. Set PAYMENT_PROVIDER=stripe, ' +
+      'or implement refund() in lib/payments/square.ts.',
     )
   }
 }

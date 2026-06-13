@@ -52,11 +52,31 @@ export interface CheckoutResult {
   ref: string
 }
 
+export interface RefundRequest {
+  /** The provider reference stored on the order (Order.paymentRef). For
+   *  Stripe this is the Checkout Session id; the driver resolves it to the
+   *  underlying PaymentIntent. */
+  ref: string
+  /** Amount to refund in major currency units (GBP). Omit for a full refund. */
+  amount?: number
+  /** Optional human reason, surfaced to the gateway where supported. */
+  reason?: string
+}
+
+export interface RefundResult {
+  /** Provider refund id. */
+  refundId: string
+  /** Amount actually refunded, in major currency units (GBP). */
+  amount: number
+}
+
 export interface PaymentDriver {
   /** 'stripe' | 'square' — persisted as Order.paymentProvider. */
   readonly name: string
   /** Create a hosted checkout session for the given (already validated) order. */
   createCheckout(order: CheckoutOrder): Promise<CheckoutResult>
+  /** Refund all or part of a captured payment. */
+  refund(req: RefundRequest): Promise<RefundResult>
 }
 
 /**

@@ -25,6 +25,11 @@ import {
   Printer,
   Download,
   Zap,
+  Plus,
+  Trash2,
+  Pencil,
+  RotateCcw,
+  Save,
 } from 'lucide-react'
 import { useToast } from '@/components/admin/toast'
 import { useConfirm } from '@/components/admin/confirm-dialog'
@@ -37,6 +42,9 @@ interface OrderItem {
   productName: string
   price: number
   quantity: number
+  variantId?: string | null
+  variantCondition?: string | null
+  variantFoil?: string | null
 }
 
 interface Order {
@@ -57,9 +65,40 @@ interface Order {
   shippingCost?: number
   trackingNumber?: string
   trackingCarrier?: string
+  refundedAmount?: number
+  refundedAt?: string
+  isManual?: boolean
+  paymentProvider?: string
+  paymentRef?: string
   items: OrderItem[]
   createdAt: string
   updatedAt: string
+}
+
+// Product catalogue shape returned by GET /api/admin/products.
+// Only the fields the line-item builder needs are typed here.
+interface ProductVariant {
+  id: string
+  condition: string
+  foil?: string | null
+  price: number
+  stock: number
+  active: boolean
+}
+
+interface CatalogueProduct {
+  id: string
+  name: string
+  price: number
+  variants?: ProductVariant[]
+}
+
+// A single editable line in the manual-order / edit-items builders.
+interface LineDraft {
+  key: string
+  product: CatalogueProduct | null
+  variantId: string | null
+  quantity: number
 }
 
 interface Pagination {
@@ -133,6 +172,199 @@ function matchesDateRange(createdAt: string, range: DateRange): boolean {
   const { from } = getDateRangeFilter(range)
   if (!from) return true
   return new Date(createdAt) >= from
+}
+
+// Human label for a variant (e.g. "Near mint · Holofoil").
+function variantLabel(v: Pick<ProductVariant, 'condition' | 'foil'>): string {
+  const cond = v.condition.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const foil = v.foil ? ` · ${v.foil.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}` : ''
+  return `${cond}${foil}`
+}
+
+// Unit price for a draft line: the selected variant's price, else the
+// product base price. Display-only — the server re-prices on submit.
+function draftUnitPrice(line: LineDraft): number {
+  if (!line.product) return 0
+  if (line.variantId) {
+    const v = line.product.variants?.find(vr => vr.id === line.variantId)
+    if (v) return v.price
+  }
+  return line.product.price
+}
+
+let lineKeySeq = 0
+function nextLineKey(): string {
+  lineKeySeq += 1
+  return `line-${Date.now()}-${lineKeySeq}`
+}
+
+// ─── Line Item Builder (shared by manual create + edit items) ────────────────────
+//
+// Renders editable line rows: each has a product picker (search-filtered
+// select), an optional variant select (required when the product has
+// variants), a quantity input, and a remove button. Display-only unit
+// price + subtotal are shown for the admin's reference — the server is
+// always authoritative on price.
+
+function LineItemBuilder({
+  lines,
+  products,
+  loadingProducts,
+  onChange,
+}: {
+  lines: LineDraft[]
+  products: CatalogueProduct[]
+  loadingProducts: boolean
+  onChange: (lines: LineDraft[]) => void
+}) {
+  const updateLine = (key: string, patch: Partial<LineDraft>) => {
+    onChange(lines.map(l => (l.key === key ? { ...l, ...patch } : l)))
+  }
+  const removeLine = (key: string) => onChange(lines.filter(l => l.key !== key))
+  const addLine = () => onChange([...lines, { key: nextLineKey(), product: null, variantId: null, quantity: 1 }])
+
+  const inputStyle: React.CSSProperties = {
+    background: '#0c0c0d', border: '1px solid #202022',
+    borderRadius: '11px', color: '#f4f4f5',
+    padding: '0.5rem 0.75rem', fontSize: '0.8125rem',
+    outline: 'none', boxSizing: 'border-box',
+  }
+  const selectStyle: React.CSSProperties = {
+    ...inputStyle,
+    cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none',
+    padding: '0.5rem 2rem 0.5rem 0.75rem',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 0.6rem center',
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {lines.length === 0 && (
+        <div style={{ fontSize: '0.8125rem', color: '#6b7280', padding: '0.5rem 0' }}>
+          No items yet — add at least one line.
+        </div>
+      )}
+      {lines.map(line => {
+        const hasVariants = !!line.product?.variants && line.product.variants.length > 0
+        const unit = draftUnitPrice(line)
+        return (
+          <div key={line.key} style={{
+            display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-end',
+            padding: '0.75rem',
+            background: '#161617', border: '1px solid #202022', borderRadius: '11px',
+          }}>
+            {/* Product picker */}
+            <div style={{ flex: 2, minWidth: 180 }}>
+              <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.3rem' }}>
+                Product
+              </label>
+              <select
+                value={line.product?.id ?? ''}
+                disabled={loadingProducts}
+                onChange={e => {
+                  const product = products.find(p => p.id === e.target.value) ?? null
+                  // Auto-select the first variant when the product has them.
+                  const firstVariant = product?.variants?.find(v => v.active) ?? product?.variants?.[0] ?? null
+                  updateLine(line.key, { product, variantId: firstVariant ? firstVariant.id : null })
+                }}
+                style={selectStyle}
+              >
+                <option value="" style={{ background: '#161617', color: '#f4f4f5' }}>
+                  {loadingProducts ? 'Loading…' : 'Select a product'}
+                </option>
+                {products.map(p => (
+                  <option key={p.id} value={p.id} style={{ background: '#161617', color: '#f4f4f5' }}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Variant picker (only when the product has variants) */}
+            {hasVariants && (
+              <div style={{ flex: 1.5, minWidth: 140 }}>
+                <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.3rem' }}>
+                  Variant
+                </label>
+                <select
+                  value={line.variantId ?? ''}
+                  onChange={e => updateLine(line.key, { variantId: e.target.value || null })}
+                  style={selectStyle}
+                >
+                  <option value="" style={{ background: '#161617', color: '#f4f4f5' }}>Select variant</option>
+                  {line.product?.variants?.map(v => (
+                    <option key={v.id} value={v.id} disabled={!v.active} style={{ background: '#161617', color: '#f4f4f5' }}>
+                      {variantLabel(v)} — £{v.price.toFixed(2)}{v.stock <= 0 ? ' (out of stock)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Quantity */}
+            <div style={{ width: 72 }}>
+              <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.3rem' }}>
+                Qty
+              </label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={line.quantity}
+                onChange={e => {
+                  const n = parseInt(e.target.value, 10)
+                  updateLine(line.key, { quantity: Number.isFinite(n) && n > 0 ? n : 1 })
+                }}
+                style={{ ...inputStyle, width: '100%', textAlign: 'center' }}
+              />
+            </div>
+
+            {/* Line subtotal (display only) */}
+            <div style={{ minWidth: 76, textAlign: 'right', paddingBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.625rem', color: '#6b7280', fontWeight: 700 }}>
+                {line.product ? `£${unit.toFixed(2)} ea` : '—'}
+              </div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#EC1E79' }}>
+                £{(unit * line.quantity).toFixed(2)}
+              </div>
+            </div>
+
+            {/* Remove */}
+            <button
+              type="button"
+              onClick={() => removeLine(line.key)}
+              aria-label="Remove line"
+              style={{
+                width: 34, height: 34, borderRadius: '11px',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                color: '#ef4444', cursor: 'pointer', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '0.1rem',
+              }}
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )
+      })}
+
+      <button
+        type="button"
+        onClick={addLine}
+        style={{
+          alignSelf: 'flex-start',
+          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+          padding: '0.5rem 0.875rem',
+          background: '#161617', border: '1px dashed #2a2a2c',
+          borderRadius: '11px', color: '#9ca3af',
+          fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        <Plus size={14} /> Add line
+      </button>
+    </div>
+  )
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -356,16 +588,33 @@ function openPrintWindow(order: Order) {
 function OrderDetailModal({
   order,
   onClose,
-  onUpdate,
+  onApplyOrder,
 }: {
   order: Order
   onClose: () => void
-  onUpdate: (id: string, updates: Partial<Order>) => Promise<void>
+  // Persist status/notes/tracking via the shared PUT /orders/:id helper.
+  onApplyOrder: (id: string, updates: Partial<Order>) => Promise<void>
 }) {
+  const toast = useToast()
   const [localStatus, setLocalStatus] = useState(order.status)
   const [localNotes, setLocalNotes] = useState(order.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  // ── Refund panel ──────────────────────────────────────────────────────
+  const refundedSoFar = order.refundedAmount ?? 0
+  const remainingRefund = Math.max(0, Math.round((order.total - refundedSoFar) * 100) / 100)
+  const canRefund = ['paid', 'shipped', 'delivered'].includes(order.status) && refundedSoFar < order.total
+  const [showRefund, setShowRefund] = useState(false)
+  const [refundAmount, setRefundAmount] = useState<string>(remainingRefund.toFixed(2))
+  const [refundReason, setRefundReason] = useState('')
+  const [refunding, setRefunding] = useState(false)
+  // ── Line-item editor ──────────────────────────────────────────────────
+  const canEditItems = ['pending', 'paid'].includes(order.status)
+  const [editingItems, setEditingItems] = useState(false)
+  const [itemLines, setItemLines] = useState<LineDraft[]>([])
+  const [itemProducts, setItemProducts] = useState<CatalogueProduct[]>([])
+  const [loadingItemProducts, setLoadingItemProducts] = useState(false)
+  const [savingItems, setSavingItems] = useState(false)
   const [showTracking, setShowTracking] = useState(
     order.status === 'shipped' || !!order.trackingNumber
   )
@@ -383,7 +632,7 @@ function OrderDetailModal({
 
   const handleSave = async () => {
     setSaving(true)
-    await onUpdate(order.id, { status: localStatus, notes: localNotes })
+    await onApplyOrder(order.id, { status: localStatus, notes: localNotes })
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -398,7 +647,7 @@ function OrderDetailModal({
     setLocalStatus('shipped')
     setShowTracking(true)
     setSaving(true)
-    await onUpdate(order.id, { status: 'shipped', notes: localNotes })
+    await onApplyOrder(order.id, { status: 'shipped', notes: localNotes })
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -406,7 +655,7 @@ function OrderDetailModal({
 
   const handleSaveTracking = async () => {
     setTrackingSaving(true)
-    await onUpdate(order.id, { trackingNumber, trackingCarrier })
+    await onApplyOrder(order.id, { trackingNumber, trackingCarrier })
     setTrackingSaving(false)
     setTrackingSaved(true)
     setTimeout(() => setTrackingSaved(false), 2500)
@@ -421,7 +670,7 @@ function OrderDetailModal({
   const handleNotesBlur = () => {
     if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current)
     notesDebounceRef.current = setTimeout(async () => {
-      await onUpdate(order.id, { notes: localNotes })
+      await onApplyOrder(order.id, { notes: localNotes })
       setNotesUpdatedAt(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
     }, 300)
   }
@@ -429,6 +678,119 @@ function OrderDetailModal({
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === backdropRef.current) onClose()
   }
+
+  // ── Refund ──────────────────────────────────────────────────────────────
+  const parsedRefund = Number(refundAmount)
+  const refundValid = Number.isFinite(parsedRefund) && parsedRefund > 0 && parsedRefund <= remainingRefund + 0.001
+
+  const handleRefund = async () => {
+    if (!refundValid || refunding) return
+    setRefunding(true)
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Math.round(parsedRefund * 100) / 100, reason: refundReason.trim() || undefined }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error || 'Refund failed')
+        return
+      }
+      // The refund endpoint returns the updated order (and flips status to
+      // 'cancelled' on a full refund) — push it through the same applier the
+      // status save uses so the list + selected order stay in sync.
+      if (data.order) await onApplyOrder(order.id, data.order as Partial<Order>)
+      toast.success(`Refunded £${Number(data.refunded ?? parsedRefund).toFixed(2)}${data.fullyRefunded ? ' — order cancelled' : ''}`)
+      setShowRefund(false)
+      setRefundReason('')
+    } catch {
+      toast.error('Network error. Try again.')
+    } finally {
+      setRefunding(false)
+    }
+  }
+
+  // ── Line-item edit ───────────────────────────────────────────────────────
+  // Lazily fetch the catalogue when the editor opens, then seed the draft
+  // rows from the order's existing items (matching them to catalogue products
+  // so the pickers + variants are pre-selected).
+  const enterItemEdit = async () => {
+    setEditingItems(true)
+    setLoadingItemProducts(true)
+    try {
+      const res = await fetch('/api/admin/products?limit=200')
+      const data = await res.json().catch(() => ({}))
+      const products: CatalogueProduct[] = Array.isArray(data.products) ? data.products : []
+      setItemProducts(products)
+      setItemLines(order.items.map(it => {
+        const product = products.find(p => p.id === it.productId)
+          ?? { id: it.productId, name: it.productName, price: it.price, variants: [] }
+        return {
+          key: nextLineKey(),
+          product,
+          variantId: it.variantId ?? null,
+          quantity: it.quantity,
+        }
+      }))
+    } catch {
+      toast.error('Could not load products')
+      setItemProducts([])
+      setItemLines(order.items.map(it => ({
+        key: nextLineKey(),
+        product: { id: it.productId, name: it.productName, price: it.price, variants: [] },
+        variantId: it.variantId ?? null,
+        quantity: it.quantity,
+      })))
+    } finally {
+      setLoadingItemProducts(false)
+    }
+  }
+
+  const cancelItemEdit = () => {
+    setEditingItems(false)
+    setItemLines([])
+  }
+
+  const itemsValid = itemLines.length > 0 && itemLines.every(l =>
+    l.product && l.quantity > 0 &&
+    // Require a variant choice whenever the product offers variants.
+    (!(l.product.variants && l.product.variants.length > 0) || !!l.variantId)
+  )
+
+  const handleSaveItems = async () => {
+    if (!itemsValid || savingItems) return
+    setSavingItems(true)
+    try {
+      const payload = {
+        items: itemLines.map(l => ({
+          productId: l.product!.id,
+          quantity: l.quantity,
+          variantId: l.variantId ?? undefined,
+        })),
+      }
+      const res = await fetch(`/api/admin/orders/${order.id}/items`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to update items')
+        return
+      }
+      if (data.order) await onApplyOrder(order.id, data.order as Partial<Order>)
+      toast.success(`Items updated — total £${Number(data.total ?? order.total).toFixed(2)}`)
+      setEditingItems(false)
+      setItemLines([])
+    } catch {
+      toast.error('Network error. Try again.')
+    } finally {
+      setSavingItems(false)
+    }
+  }
+
+  const itemsDraftSubtotal = itemLines.reduce((s, l) => s + draftUnitPrice(l) * l.quantity, 0)
 
   const isDirty = localStatus !== order.status
 
@@ -605,9 +967,77 @@ function OrderDetailModal({
               background: '#0f0f10', border: '1px solid #202022',
               borderRadius: '16px',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
-                Items ({order.items.reduce((s, i) => s + i.quantity, 0)})
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <span>Items ({order.items.reduce((s, i) => s + i.quantity, 0)})</span>
+                {/* Edit items — only for pending/paid orders (server rejects others). */}
+                {canEditItems && !editingItems && (
+                  <button
+                    onClick={enterItemEdit}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                      padding: '0.3rem 0.7rem',
+                      background: '#161617', border: '1px solid #202022',
+                      borderRadius: '999px', color: '#9ca3af',
+                      fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer',
+                      textTransform: 'none', letterSpacing: 0,
+                    }}
+                  >
+                    <Pencil size={11} /> Edit items
+                  </button>
+                )}
               </div>
+
+              {editingItems ? (
+                <div style={{ marginBottom: '1rem' }}>
+                  <LineItemBuilder
+                    lines={itemLines}
+                    products={itemProducts}
+                    loadingProducts={loadingItemProducts}
+                    onChange={setItemLines}
+                  />
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem 0.625rem 0', marginTop: '0.5rem',
+                    borderTop: '1px solid #1a1a1c',
+                  }}>
+                    <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>Items subtotal (est.)</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#9ca3af' }}>
+                      £{itemsDraftSubtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.875rem' }}>
+                    <button
+                      onClick={cancelItemEdit}
+                      disabled={savingItems}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#161617', border: '1px solid #202022',
+                        borderRadius: '11px', color: '#e4e4e7',
+                        fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveItems}
+                      disabled={!itemsValid || savingItems}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                        padding: '0.5rem 1.125rem',
+                        background: itemsValid && !savingItems ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
+                        border: itemsValid && !savingItems ? 'none' : '1px solid #202022',
+                        borderRadius: '11px',
+                        color: itemsValid && !savingItems ? '#fff' : '#6b7280',
+                        fontSize: '0.8125rem', fontWeight: 800,
+                        cursor: !itemsValid || savingItems ? 'not-allowed' : 'pointer',
+                        boxShadow: itemsValid && !savingItems ? '0 8px 22px -10px rgba(236,30,121,0.6)' : 'none',
+                      }}
+                    >
+                      <Save size={13} /> {savingItems ? 'Saving…' : 'Save items'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                 <div style={{
                   display: 'grid', gridTemplateColumns: '1fr 60px 80px 80px',
@@ -636,9 +1066,16 @@ function OrderDetailModal({
                       }}>
                         <Package size={12} color="#EC1E79" />
                       </div>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#f4f4f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.productName}
-                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#f4f4f5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.productName}
+                        </span>
+                        {(item.variantCondition || item.variantFoil) && (
+                          <span style={{ display: 'block', fontSize: '0.6875rem', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {variantLabel({ condition: item.variantCondition ?? '', foil: item.variantFoil })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span style={{ fontSize: '0.8125rem', color: '#9ca3af', textAlign: 'center', fontWeight: 600 }}>
                       {item.quantity}
@@ -652,6 +1089,7 @@ function OrderDetailModal({
                   </div>
                 ))}
               </div>
+              )}
               {/* Shipping cost + total */}
               {order.shippingCost !== undefined && order.shippingCost !== null && order.shippingCost > 0 && (
                 <div style={{
@@ -675,7 +1113,132 @@ function OrderDetailModal({
                   £{order.total.toFixed(2)}
                 </span>
               </div>
+              {refundedSoFar > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '0.5rem 0.625rem',
+                }}>
+                  <span style={{ fontSize: '0.8125rem', color: '#ef4444', fontWeight: 700 }}>Refunded</span>
+                  <span style={{ fontSize: '0.875rem', color: '#ef4444', fontWeight: 800 }}>
+                    −£{refundedSoFar.toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Refund */}
+            {canRefund && (
+              <div style={{
+                padding: '1.25rem',
+                background: '#0f0f10', border: '1px solid rgba(239,68,68,0.25)',
+                borderRadius: '16px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <RotateCcw size={12} color="#ef4444" />
+                      Refund
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.4rem' }}>
+                      £{remainingRefund.toFixed(2)} refundable
+                    </div>
+                  </div>
+                  {!showRefund && (
+                    <button
+                      onClick={() => { setRefundAmount(remainingRefund.toFixed(2)); setShowRefund(true) }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                        padding: '0.55rem 1rem',
+                        background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                        borderRadius: '11px', color: '#ef4444',
+                        fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      <RotateCcw size={13} /> Refund
+                    </button>
+                  )}
+                </div>
+
+                {showRefund && (
+                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '0 0 auto', minWidth: 140 }}>
+                        <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
+                          Amount (£)
+                        </label>
+                        <input
+                          type="number"
+                          min={0.01}
+                          step={0.01}
+                          max={remainingRefund}
+                          value={refundAmount}
+                          onChange={e => setRefundAmount(e.target.value)}
+                          style={{
+                            width: 140, boxSizing: 'border-box',
+                            background: '#0c0c0d', border: `1px solid ${refundValid ? '#202022' : 'rgba(239,68,68,0.45)'}`,
+                            borderRadius: '11px', color: '#f4f4f5',
+                            padding: '0.5rem 0.75rem', fontSize: '0.875rem',
+                            outline: 'none', fontWeight: 700,
+                          }}
+                        />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 180 }}>
+                        <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
+                          Reason <span style={{ color: '#4b5563', fontWeight: 600 }}>— optional</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={refundReason}
+                          onChange={e => setRefundReason(e.target.value)}
+                          placeholder="e.g. Damaged in transit"
+                          style={{
+                            width: '100%', boxSizing: 'border-box',
+                            background: '#0c0c0d', border: '1px solid #202022',
+                            borderRadius: '11px', color: '#f4f4f5',
+                            padding: '0.5rem 0.75rem', fontSize: '0.875rem', outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {!refundValid && (
+                      <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>
+                        Enter an amount between £0.01 and £{remainingRefund.toFixed(2)}.
+                      </span>
+                    )}
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <button
+                        onClick={() => { setShowRefund(false); setRefundReason('') }}
+                        disabled={refunding}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          background: '#161617', border: '1px solid #202022',
+                          borderRadius: '11px', color: '#e4e4e7',
+                          fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleRefund}
+                        disabled={!refundValid || refunding}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                          padding: '0.5rem 1.125rem',
+                          background: refundValid && !refunding ? 'rgba(239,68,68,0.15)' : '#161617',
+                          border: `1px solid ${refundValid && !refunding ? 'rgba(239,68,68,0.4)' : '#202022'}`,
+                          borderRadius: '11px',
+                          color: refundValid && !refunding ? '#ef4444' : '#6b7280',
+                          fontSize: '0.8125rem', fontWeight: 800,
+                          cursor: !refundValid || refunding ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        <RotateCcw size={13} /> {refunding ? 'Refunding…' : `Refund £${refundValid ? parsedRefund.toFixed(2) : remainingRefund.toFixed(2)}`}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Status Update */}
             <div style={{
@@ -1002,6 +1565,7 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [copyAddrFeedback, setCopyAddrFeedback] = useState<string | null>(null)
+  const [showNewOrder, setShowNewOrder] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchOrders = useCallback(async (status: StatusFilter, page: number, searchQuery: string) => {
@@ -1179,6 +1743,13 @@ export default function OrdersPage() {
     )
   }
 
+  // Refresh the list + counts after a manual order is created.
+  const handleOrderCreated = async () => {
+    setShowNewOrder(false)
+    await fetchOrders(statusFilter, pagination.page, search)
+    fetchStatusCounts()
+  }
+
   const handleCopyAddress = (order: Order) => {
     const addr = formatAddress(order)
     if (!addr) return
@@ -1262,7 +1833,27 @@ export default function OrdersPage() {
               {statusCounts.all ?? pagination.total} total
             </motion.span>
           )}
-          <div style={{ marginLeft: 'auto' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setShowNewOrder(true)}
+              style={{
+                background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+                border: 'none',
+                color: '#fff',
+                padding: '0.6rem 1.1rem',
+                borderRadius: '11px',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                boxShadow: '0 8px 22px -10px rgba(236,30,121,0.6)',
+              }}
+            >
+              <Plus size={14} />
+              New Order
+            </button>
             <button
               onClick={() => window.open('/api/admin/orders/export', '_blank')}
               onMouseEnter={e => {
@@ -1841,7 +2432,17 @@ export default function OrdersPage() {
           <OrderDetailModal
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
-            onUpdate={handleOrderUpdate}
+            onApplyOrder={handleOrderUpdate}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Manual new-order modal */}
+      <AnimatePresence>
+        {showNewOrder && (
+          <NewOrderModal
+            onClose={() => setShowNewOrder(false)}
+            onCreated={handleOrderCreated}
           />
         )}
       </AnimatePresence>
@@ -2066,6 +2667,309 @@ function FulfilModal({
             }}
           >
             <Truck size={14} /> {submitting ? 'Shipping…' : 'Ship & email'}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ─── Manual New Order modal ──────────────────────────────────────────────
+// Records an offline / phone / in-person sale. Line prices are NEVER trusted
+// from the client — items carry only { productId, quantity, variantId? } and
+// the server re-prices via the shared pricer. The running totals shown here
+// are display-only estimates.
+function NewOrderModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void
+  onCreated: () => void | Promise<void>
+}) {
+  const toast = useToast()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [line1, setLine1] = useState('')
+  const [line2, setLine2] = useState('')
+  const [city, setCity] = useState('')
+  const [postcode, setPostcode] = useState('')
+  const [country, setCountry] = useState('GB')
+  const [shippingMethod, setShippingMethod] = useState('')
+  const [shippingCost, setShippingCost] = useState('0')
+  const [status, setStatus] = useState('paid')
+  const [lines, setLines] = useState<LineDraft[]>([{ key: nextLineKey(), product: null, variantId: null, quantity: 1 }])
+  const [products, setProducts] = useState<CatalogueProduct[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const res = await fetch('/api/admin/products?limit=200')
+        const data = await res.json().catch(() => ({}))
+        if (active) setProducts(Array.isArray(data.products) ? data.products : [])
+      } catch {
+        if (active) toast.error('Could not load products')
+      } finally {
+        if (active) setLoadingProducts(false)
+      }
+    })()
+    return () => { active = false }
+  }, [toast])
+
+  const shippingNum = (() => {
+    const n = Number(shippingCost)
+    return Number.isFinite(n) && n > 0 ? n : 0
+  })()
+  const itemsSubtotal = lines.reduce((s, l) => s + draftUnitPrice(l) * l.quantity, 0)
+  const estTotal = itemsSubtotal + shippingNum
+
+  const validLines = lines.filter(l => l.product && l.quantity > 0)
+  const everyLineComplete = validLines.length === lines.length && lines.length > 0 && lines.every(l =>
+    !(l.product?.variants && l.product.variants.length > 0) || !!l.variantId
+  )
+  const canSubmit = name.trim() !== '' && email.trim() !== '' && validLines.length > 0 && everyLineComplete && !submitting
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return
+    setSubmitting(true)
+    try {
+      const payload = {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        shippingLine1: line1.trim() || undefined,
+        shippingLine2: line2.trim() || undefined,
+        shippingCity: city.trim() || undefined,
+        shippingPostcode: postcode.trim() || undefined,
+        shippingCountry: country.trim() || 'GB',
+        shippingMethod: shippingMethod.trim() || undefined,
+        shippingCost: shippingNum,
+        status,
+        items: validLines.map(l => ({
+          productId: l.product!.id,
+          quantity: l.quantity,
+          variantId: l.variantId ?? undefined,
+        })),
+      }
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to create order')
+        return
+      }
+      toast.success(`Order created — total £${Number(data.total ?? estTotal).toFixed(2)}`)
+      await onCreated()
+    } catch {
+      toast.error('Network error. Try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const fieldStyle: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    background: '#0c0c0d', border: '1px solid #202022',
+    borderRadius: '11px', color: '#f4f4f5',
+    padding: '0.6rem 0.8rem', fontSize: '0.875rem', outline: 'none',
+  }
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280',
+    textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem',
+  }
+
+  return (
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label="New manual order"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        padding: '2rem 1rem', overflowY: 'auto',
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.96, y: 12 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.96, y: 12 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          width: '100%', maxWidth: 720, background: '#0f0f10',
+          border: '1px solid #202022', borderRadius: 16, overflow: 'hidden',
+          boxShadow: '0 28px 80px -20px rgba(0,0,0,0.8)',
+          display: 'flex', flexDirection: 'column', maxHeight: '100%',
+        }}
+      >
+        <div style={{ padding: '1.25rem 1.35rem', borderBottom: '1px solid #1a1a1c', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, background: '#0f0f10', zIndex: 5 }}>
+          <span style={{
+            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+            background: 'linear-gradient(135deg,#EC1E79,#FF4DA6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Plus size={19} color="#fff" />
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#f4f4f5', letterSpacing: '-0.02em' }}>
+              New manual order
+            </h3>
+            <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: '#9ca3af' }}>
+              Record an offline / phone sale — pricing is recomputed server-side.
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 2 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ padding: '1.35rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', overflowY: 'auto' }}>
+          {/* Customer */}
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+              Customer
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+              <div>
+                <label style={labelStyle}>Name *</label>
+                <input value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith" style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Email *</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jane@example.com" style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Phone</label>
+                <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Optional" style={fieldStyle} />
+              </div>
+            </div>
+          </div>
+
+          {/* Shipping */}
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+              Shipping
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+              <div>
+                <label style={labelStyle}>Address line 1</label>
+                <input value={line1} onChange={e => setLine1(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Address line 2</label>
+                <input value={line2} onChange={e => setLine2(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>City</label>
+                <input value={city} onChange={e => setCity(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Postcode</label>
+                <input value={postcode} onChange={e => setPostcode(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Country</label>
+                <input value={country} onChange={e => setCountry(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Shipping method</label>
+                <input value={shippingMethod} onChange={e => setShippingMethod(e.target.value)} placeholder="Optional" style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Shipping cost (£)</label>
+                <input type="number" min={0} step={0.01} value={shippingCost} onChange={e => setShippingCost(e.target.value)} style={fieldStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Status</label>
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  style={{
+                    ...fieldStyle, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none',
+                    padding: '0.6rem 2rem 0.6rem 0.8rem',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.6rem center',
+                  }}
+                >
+                  {['pending', 'paid', 'shipped', 'delivered'].map(s => (
+                    <option key={s} value={s} style={{ background: '#161617', color: '#f4f4f5' }}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Items */}
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>
+              Items
+            </div>
+            <LineItemBuilder
+              lines={lines}
+              products={products}
+              loadingProducts={loadingProducts}
+              onChange={setLines}
+            />
+          </div>
+
+          {/* Running totals (display only) */}
+          <div style={{
+            padding: '0.875rem 1rem',
+            background: '#161617', border: '1px solid #202022', borderRadius: '11px',
+            display: 'flex', flexDirection: 'column', gap: '0.4rem',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#9ca3af' }}>
+              <span>Subtotal (est.)</span><span>£{itemsSubtotal.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', color: '#9ca3af' }}>
+              <span>Shipping</span><span>{shippingNum > 0 ? `£${shippingNum.toFixed(2)}` : 'Free'}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', fontWeight: 800, color: '#f4f4f5', borderTop: '1px solid #202022', paddingTop: '0.4rem' }}>
+              <span>Total (est.)</span><span>£{estTotal.toFixed(2)}</span>
+            </div>
+            <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+              Final total is calculated server-side from live prices.
+            </span>
+          </div>
+        </div>
+
+        <div style={{ padding: '1rem 1.35rem', borderTop: '1px solid #1a1a1c', display: 'flex', justifyContent: 'flex-end', gap: 8, position: 'sticky', bottom: 0, background: '#0f0f10' }}>
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            style={{
+              background: '#161617', border: '1px solid #202022', color: '#e4e4e7',
+              fontSize: '0.85rem', fontWeight: 700, padding: '0.55rem 1rem', borderRadius: 11, cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            style={{
+              background: canSubmit ? 'linear-gradient(135deg,#EC1E79,#FF4DA6)' : '#161617',
+              border: canSubmit ? 'none' : '1px solid #202022',
+              color: canSubmit ? '#fff' : '#6b7280',
+              fontSize: '0.85rem', fontWeight: 800, padding: '0.55rem 1.1rem', borderRadius: 11,
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              boxShadow: canSubmit ? '0 8px 22px -10px rgba(236,30,121,0.7)' : 'none',
+            }}
+          >
+            <Plus size={14} /> {submitting ? 'Creating…' : 'Create order'}
           </button>
         </div>
       </motion.div>

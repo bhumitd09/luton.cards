@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin, orderListScope } from '@/lib/vendor-auth'
+import { priceOrderLines, applyDiscountCode, buildOrderItemCreates, decrementStockForLines, PricingError } from '@/lib/orders'
 
 /**
  * GET /api/admin/orders
@@ -77,5 +78,87 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST removed — admin-created orders now route through /api/orders so they
-// share the same server-side price + stock validation as customer orders.
+/**
+ * POST /api/admin/orders — superadmin manual order creation.
+ *
+ * For phone/in-person/offline sales the admin records directly. Pricing is
+ * NEVER trusted from the request: items carry only { productId, quantity,
+ * variantId? } and prices are recomputed via the same shared pricer the
+ * public checkout uses. The order is flagged isManual and, because there is
+ * no gateway webhook to do it, stock is decremented at creation when the
+ * order is created in a stock-consuming status (anything but 'pending'/'cancelled').
+ *
+ * Body: { name, email, phone?, shipping fields, shippingCost?, status?,
+ *         discountCode?, items: [{ productId, quantity, variantId? }] }
+ */
+export async function POST(req: NextRequest) {
+  try {
+    const admin = await verifyAdminSession(req)
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isSuperadmin(admin)) {
+      return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
+    }
+
+    const body = await req.json().catch(() => ({}))
+    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    const email = typeof body.email === 'string' ? body.email.trim() : ''
+    if (!name || !email) {
+      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
+    }
+
+    const VALID = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
+    const status = VALID.includes(body.status) ? body.status : 'paid'
+
+    const { lines, subtotal } = await priceOrderLines(Array.isArray(body.items) ? body.items : [])
+
+    const requestedShipping = typeof body.shippingCost === 'number' && isFinite(body.shippingCost) ? body.shippingCost : 0
+    const safeShipping = Math.max(0, Math.min(100, requestedShipping))
+
+    const appliedDiscount = await applyDiscountCode(body.discountCode, subtotal)
+    const discountSavings = appliedDiscount?.savings ?? 0
+    const finalTotal = Math.max(0, subtotal + safeShipping - discountSavings)
+
+    const order = await db.order.create({
+      data: {
+        name,
+        email,
+        phone: body.phone ?? null,
+        shippingLine1: body.shippingLine1 ?? null,
+        shippingLine2: body.shippingLine2 ?? null,
+        shippingCity: body.shippingCity ?? null,
+        shippingPostcode: body.shippingPostcode ?? null,
+        shippingCountry: body.shippingCountry ?? 'GB',
+        shippingMethod: body.shippingMethod ?? null,
+        shippingCost: safeShipping,
+        status,
+        total: finalTotal,
+        isManual: true,
+        discountCode: appliedDiscount?.code ?? null,
+        discountAmount: discountSavings,
+        items: { create: buildOrderItemCreates(lines) },
+      },
+      include: { items: true },
+    })
+
+    // No gateway webhook for manual orders, so decrement stock here whenever
+    // the order consumes inventory (i.e. not a draft 'pending' or 'cancelled').
+    if (status !== 'pending' && status !== 'cancelled') {
+      await decrementStockForLines(lines)
+    }
+
+    if (appliedDiscount?.id) {
+      db.discount.update({
+        where: { id: appliedDiscount.id },
+        data: { uses: { increment: 1 } },
+      }).catch(err => console.error('Discount usage increment failed:', err))
+    }
+
+    return NextResponse.json({ order, orderId: order.id, total: finalTotal, success: true }, { status: 201 })
+  } catch (error) {
+    if (error instanceof PricingError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    console.error('Manual order create error:', error)
+    return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
+  }
+}

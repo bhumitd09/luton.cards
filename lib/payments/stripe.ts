@@ -1,5 +1,5 @@
 import Stripe from 'stripe'
-import type { CheckoutOrder, CheckoutResult, PaymentDriver } from './index'
+import type { CheckoutOrder, CheckoutResult, PaymentDriver, RefundRequest, RefundResult } from './index'
 import { orderLineItems } from './index'
 
 /**
@@ -74,5 +74,33 @@ export class StripeDriver implements PaymentDriver {
 
     if (!session.url) throw new Error('Stripe did not return a checkout URL')
     return { url: session.url, ref: session.id }
+  }
+
+  async refund(req: RefundRequest): Promise<RefundResult> {
+    // The stored ref is a Checkout Session id. Resolve it to the underlying
+    // PaymentIntent — that's what Stripe refunds against.
+    let paymentIntentId: string | null = null
+    if (req.ref.startsWith('pi_')) {
+      paymentIntentId = req.ref
+    } else if (req.ref.startsWith('cs_')) {
+      const session = await this.stripe.checkout.sessions.retrieve(req.ref)
+      paymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id ?? null
+    }
+    if (!paymentIntentId) {
+      throw new Error('Could not resolve a Stripe payment to refund for this order.')
+    }
+
+    const refund = await this.stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      ...(req.amount !== undefined ? { amount: Math.round(req.amount * 100) } : {}),
+      ...(req.reason ? { metadata: { reason: req.reason.slice(0, 500) } } : {}),
+    })
+
+    return {
+      refundId: refund.id,
+      amount: (refund.amount ?? 0) / 100,
+    }
   }
 }

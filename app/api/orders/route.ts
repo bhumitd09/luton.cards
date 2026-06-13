@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
-import { splitLineTotal } from '@/lib/vendor-auth'
+import { priceOrderLines, applyDiscountCode, buildOrderItemCreates, PricingError } from '@/lib/orders'
 
 /**
  * POST /api/orders — guest or logged-in checkout.
@@ -101,131 +101,11 @@ export async function POST(req: NextRequest) {
     }
     const safeShipping = Math.min(MAX_SHIPPING_COST, requestedShipping)
 
-    // ─── Server-side price + stock validation ─────────────────────────────
-    // Fetch all products in one query, then walk items.
-    const productIds = items
-      .map(i => i.productId)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0)
-    if (productIds.length !== items.length) {
-      return NextResponse.json({ error: 'Every item must have a productId.' }, { status: 400 })
-    }
+    // ─── Server-side price + stock validation (shared with admin orders) ──
+    const { lines, subtotal } = await priceOrderLines(items)
 
-    const products = await db.product.findMany({
-      where: { id: { in: productIds }, active: true },
-      select: {
-        id: true, name: true, price: true, stock: true,
-        vendorId: true,
-        vendor: { select: { commissionRate: true } },
-        variants: { select: { id: true, condition: true, foil: true, price: true, stock: true, active: true } },
-      },
-    })
-    const productById = new Map(products.map(p => [p.id, p]))
-
-    // Validate every line + build the trusted lineItems we'll persist.
-    type Line = {
-      productId: string
-      productName: string
-      price: number
-      quantity: number
-      variantId: string | null
-      variantCondition: string | null
-      variantFoil: string | null
-      vendorId: string | null
-      commissionRate: number
-    }
-    const lines: Line[] = []
-    for (const item of items) {
-      const qty = Number(item.quantity)
-      if (!Number.isInteger(qty) || qty <= 0 || qty > 99) {
-        return NextResponse.json({ error: 'Invalid quantity.' }, { status: 400 })
-      }
-      const p = productById.get(item.productId as string)
-      if (!p) {
-        return NextResponse.json(
-          { error: 'A product in your basket is no longer available.' },
-          { status: 400 },
-        )
-      }
-
-      // Variant-aware pricing + stock: if the client passed a variantId,
-      // it MUST exist on this product, be active, and have stock. Price +
-      // stock come from the variant row, never from the request body.
-      let variantId: string | null = null
-      let variantCondition: string | null = null
-      let variantFoil: string | null = null
-      let unitPrice = p.price
-      let availableStock = p.stock
-
-      if (item.variantId) {
-        const v = p.variants.find(x => x.id === item.variantId)
-        if (!v || !v.active) {
-          return NextResponse.json(
-            { error: `The selected variant of "${p.name}" is no longer available.` },
-            { status: 400 },
-          )
-        }
-        variantId = v.id
-        variantCondition = v.condition
-        variantFoil = v.foil
-        unitPrice = v.price
-        availableStock = v.stock
-      } else if (p.variants.length > 0) {
-        // Product has variants but caller didn't pick one — reject so we
-        // don't sell at the (likely undefined) base price by accident.
-        return NextResponse.json(
-          { error: `Please choose a condition for "${p.name}" before checking out.` },
-          { status: 400 },
-        )
-      }
-
-      if (availableStock < qty) {
-        return NextResponse.json(
-          { error: `Only ${availableStock} of "${p.name}" left in stock.` },
-          { status: 400 },
-        )
-      }
-
-      lines.push({
-        productId: p.id,
-        productName: p.name,
-        price: unitPrice,
-        quantity: qty,
-        variantId,
-        variantCondition,
-        variantFoil,
-        vendorId: p.vendorId ?? null,
-        commissionRate: p.vendor?.commissionRate ?? 0,
-      })
-    }
-
-    // ─── Subtotal + discount math (all server-side) ───────────────────────
-    const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
-
-    let appliedDiscount: { id: string; code: string; type: string; value: number; savings: number } | null = null
-    if (discountCode && typeof discountCode === 'string') {
-      const discount = await db.discount.findUnique({
-        where: { code: discountCode.trim().toUpperCase() },
-      })
-      const ok = discount
-        && discount.active
-        && (!discount.expiresAt || discount.expiresAt > new Date())
-        && (discount.maxUses == null || discount.uses < discount.maxUses)
-        && (discount.minOrder == null || subtotal >= discount.minOrder)
-      if (ok && discount) {
-        const savingsRaw = discount.type === 'percentage'
-          ? (subtotal * discount.value) / 100
-          : discount.value
-        const savings = Math.min(savingsRaw, subtotal)
-        appliedDiscount = {
-          id: discount.id,
-          code: discount.code,
-          type: discount.type,
-          value: discount.value,
-          savings,
-        }
-      }
-    }
-
+    // ─── Discount math (all server-side) ──────────────────────────────────
+    const appliedDiscount = await applyDiscountCode(discountCode, subtotal)
     const discountSavings = appliedDiscount?.savings ?? 0
     const finalTotal = Math.max(0, subtotal + safeShipping - discountSavings)
 
@@ -251,22 +131,7 @@ export async function POST(req: NextRequest) {
         discountCode: appliedDiscount?.code ?? null,
         discountAmount: discountSavings,
         items: {
-          create: lines.map(l => {
-            const lineTotal = l.price * l.quantity
-            const { vendorPayout, platformFee } = splitLineTotal(lineTotal, l.commissionRate)
-            return {
-              productId: l.productId,
-              productName: l.productName,
-              price: l.price,
-              quantity: l.quantity,
-              variantId: l.variantId,
-              variantCondition: l.variantCondition,
-              variantFoil: l.variantFoil,
-              vendorId: l.vendorId,
-              vendorPayout,
-              platformFee,
-            }
-          }),
+          create: buildOrderItemCreates(lines),
         },
       },
       include: { items: true },
@@ -306,6 +171,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ orderId: order.id, total: finalTotal, success: true }, { status: 201 })
   } catch (error) {
+    if (error instanceof PricingError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Failed to create order:', error)
     return NextResponse.json(
       { error: 'Failed to create order' },
