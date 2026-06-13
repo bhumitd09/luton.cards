@@ -8,6 +8,7 @@
 // email and the customer's own confirmation.
 
 import { escapeHtml } from '@/lib/html-escape'
+import { db } from '@/lib/db'
 
 export interface OrderEmailData {
   orderId: string
@@ -250,29 +251,48 @@ async function sendEmail(payload: {
   if (!res.ok) {
     const text = await res.text().catch(() => '')
     console.error('Resend API error:', res.status, text)
+    // Surface a concise, human reason so callers (e.g. the "Send test"
+    // button) can tell the admin WHY it failed — usually an unverified
+    // sending domain. Resend returns JSON like {"message":"..."}.
+    let reason = text
+    try { reason = JSON.parse(text)?.message || text } catch { /* keep raw text */ }
+    throw new Error(reason || `Email provider returned ${res.status}`)
   }
 }
 
-// In production we refuse to send from the shared Resend test sender
-// (looks like phishing and trashes deliverability). EMAIL_FROM and
-// ADMIN_EMAIL must be configured explicitly. In dev/test we fall back to
-// the test sender so contributors can boot without env config.
-//
-// Resolved lazily at call time so importing this module never crashes the
-// Next build's page-data collection step.
-function getFrom(): string {
+// The "From" + admin recipient resolve from the Settings UI first (the
+// `email_from_address` / `contact_email` Content rows the admin saves), then
+// fall back to the EMAIL_FROM / ADMIN_EMAIL env vars, then a dev-only test
+// sender. This is what makes Settings → Email actually take effect; without
+// it the saved address was cosmetic. Resolved lazily at call time so importing
+// this module never touches the DB during the Next build.
+async function contentValue(key: string): Promise<string | null> {
+  try {
+    const row = await db.content.findUnique({ where: { key }, select: { value: true } })
+    const v = row?.value?.trim()
+    return v && v.length > 0 ? v : null
+  } catch {
+    return null
+  }
+}
+
+async function getFrom(): Promise<string> {
+  const saved = await contentValue('email_from_address')
+  if (saved) return saved
   const env = process.env.EMAIL_FROM
   if (env) return env
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('EMAIL_FROM env var is required in production.')
+    throw new Error('No sender address is set. Add one in Settings → Email (or set the EMAIL_FROM env var).')
   }
   return 'onboarding@resend.dev'
 }
-function getAdminEmail(): string {
+async function getAdminEmail(): Promise<string> {
   const env = process.env.ADMIN_EMAIL
   if (env) return env
+  const saved = await contentValue('contact_email')
+  if (saved) return saved
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('ADMIN_EMAIL env var is required in production.')
+    throw new Error('No admin recipient is set. Set the contact email in Settings (or the ADMIN_EMAIL env var).')
   }
   return 'admin@lutoncards.co.uk'
 }
@@ -280,7 +300,7 @@ function getAdminEmail(): string {
 export async function sendOrderConfirmation(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
+    from: await getFrom(),
     to: data.customerEmail,
     subject: `Order confirmed: #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildOrderConfirmationHtml(data),
@@ -290,8 +310,8 @@ export async function sendOrderConfirmation(data: OrderEmailData): Promise<void>
 export async function sendAdminOrderNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
-    to: getAdminEmail(),
+    from: await getFrom(),
+    to: await getAdminEmail(),
     subject: `New order #${data.orderId.slice(-8).toUpperCase()} from ${data.customerName}`,
     html: buildAdminNotificationHtml(data),
   })
@@ -300,7 +320,7 @@ export async function sendAdminOrderNotification(data: OrderEmailData): Promise<
 export async function sendShippingNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
+    from: await getFrom(),
     to: data.customerEmail,
     subject: `Your order is on its way! #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildShippingNotificationHtml(data),
@@ -341,7 +361,7 @@ function buildSimpleStatusHtml(opts: {
 export async function sendDeliveredNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
+    from: await getFrom(),
     to: data.customerEmail,
     subject: `Delivered: #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildSimpleStatusHtml({
@@ -358,7 +378,7 @@ export async function sendDeliveredNotification(data: OrderEmailData): Promise<v
 export async function sendOrderCancelledNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
+    from: await getFrom(),
     to: data.customerEmail,
     subject: `Order cancelled: #${data.orderId.slice(-8).toUpperCase()}`,
     html: buildSimpleStatusHtml({
@@ -461,7 +481,7 @@ function buildBackInStockHtml(data: BackInStockEmailData): string {
 export async function sendBackInStockNotification(data: BackInStockEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
+    from: await getFrom(),
     to: data.customerEmail,
     subject: `Back in stock: ${data.productName}`,
     html: buildBackInStockHtml(data),
@@ -514,7 +534,7 @@ function buildBuybackOfferHtml(data: BuybackOfferEmailData): string {
 export async function sendBuybackOfferEmail(data: BuybackOfferEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
-    from: getFrom(),
+    from: await getFrom(),
     to: data.to,
     subject: `Your Luton Cards offer: £${data.offerAmount.toLocaleString('en-GB')}`,
     html: buildBuybackOfferHtml(data),

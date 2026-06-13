@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sent: true })
   } catch (error) {
     console.error('Test email error:', error)
-    return NextResponse.json({ sent: false, reason: 'Failed to send test email' })
+    // Surface the actual reason (unverified sending domain, missing From
+    // address, etc.) so the admin knows what to fix.
+    const reason = error instanceof Error ? error.message : 'Failed to send test email'
+    return NextResponse.json({ sent: false, reason })
   }
 }
