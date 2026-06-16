@@ -13,6 +13,12 @@
 //    ids (cuids) to any third-party assets.
 //  - X-Content-Type-Options is also set per-response on /api/uploads — the
 //    global header is belt-and-braces.
+// 'unsafe-eval' is only needed by the dev server (HMR / source maps). It is
+// dropped in production so injected script can't use eval()/Function(). Full
+// nonce-based CSP (to also remove 'unsafe-inline') is the next step but needs
+// staging verification — getting it wrong dark-deploys a JS-less checkout.
+const isDev = process.env.NODE_ENV !== 'production'
+
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -25,9 +31,9 @@ const securityHeaders = [
       "default-src 'self'",
       // Images: self + data: + any https (admin can paste arbitrary CDN URLs into product images)
       "img-src 'self' data: https: blob:",
-      // Scripts: self + Stripe checkout iframe. unsafe-inline still needed
-      // for Next's runtime + Framer Motion; tighten with nonces later.
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://www.googletagmanager.com",
+      // Scripts: self + Stripe checkout iframe. 'unsafe-inline' still needed
+      // for Next's inline runtime (no nonce yet); 'unsafe-eval' only in dev.
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://www.googletagmanager.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://api.stripe.com https://www.google-analytics.com",
