@@ -16,6 +16,8 @@ import {
   Database,
   Send,
   SlidersHorizontal,
+  ShieldCheck,
+  Copy,
 } from 'lucide-react'
 
 interface AdminProfile {
@@ -27,7 +29,13 @@ interface AdminProfile {
   lastLogin: string | null
 }
 
-type Tab = 'profile' | 'store' | 'email' | 'data'
+type Tab = 'profile' | 'store' | 'email' | 'security' | 'data'
+
+interface TwoFactorStatus {
+  enabled: boolean
+  pending: boolean
+  recoveryCodesRemaining: number
+}
 
 // ───────────────────────────────────────────────────────────────────────────
 // Settings page — single-screen tabbed layout
@@ -65,6 +73,19 @@ export default function SettingsPage() {
 
   // Data
   const [exportLoading, setExportLoading] = useState(false)
+
+  // Security (2FA)
+  const [twoFactor, setTwoFactor] = useState<TwoFactorStatus | null>(null)
+  const [twoFactorLoading, setTwoFactorLoading] = useState(false)
+  const [setupLoading, setSetupLoading] = useState(false)
+  const [setupData, setSetupData] = useState<{ secret: string; uri: string; qr: string } | null>(null)
+  const [enableCode, setEnableCode] = useState('')
+  const [enableLoading, setEnableLoading] = useState(false)
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null)
+  const [disablePassword, setDisablePassword] = useState('')
+  const [showDisablePassword, setShowDisablePassword] = useState(false)
+  const [disablePrompt, setDisablePrompt] = useState(false)
+  const [disableLoading, setDisableLoading] = useState(false)
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -108,6 +129,115 @@ export default function SettingsPage() {
       }
     }).finally(() => setLoadingEmailFrom(false))
   }, [])
+
+  // ── Security (2FA) ───────────────────────────────────────────────────────
+  const loadTwoFactorStatus = async () => {
+    setTwoFactorLoading(true)
+    try {
+      const res = await fetch('/api/admin/auth/2fa')
+      const data = await res.json()
+      setTwoFactor({
+        enabled: !!data.enabled,
+        pending: !!data.pending,
+        recoveryCodesRemaining: data.recoveryCodesRemaining ?? 0,
+      })
+    } catch {
+      showToast('Failed to load two-factor status', 'error')
+    } finally {
+      setTwoFactorLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (tab === 'security' && !twoFactor && !twoFactorLoading) {
+      void loadTwoFactorStatus()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
+
+  const handleBeginSetup = async () => {
+    setSetupLoading(true)
+    setRecoveryCodes(null)
+    setEnableCode('')
+    try {
+      const res = await fetch('/api/admin/auth/2fa/setup', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok && data.qr) {
+        setSetupData({ secret: data.secret, uri: data.uri, qr: data.qr })
+      } else {
+        showToast(data.error || 'Failed to start setup', 'error')
+      }
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setSetupLoading(false)
+    }
+  }
+
+  const handleConfirmEnable = async () => {
+    setEnableLoading(true)
+    try {
+      const res = await fetch('/api/admin/auth/2fa/enable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: enableCode }),
+      })
+      const data = await res.json()
+      if (res.ok && data.enabled) {
+        setRecoveryCodes(Array.isArray(data.recoveryCodes) ? data.recoveryCodes : [])
+        setSetupData(null)
+        setEnableCode('')
+      } else {
+        showToast(data.error || 'Invalid code', 'error')
+      }
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setEnableLoading(false)
+    }
+  }
+
+  const handleEnableDone = async () => {
+    setRecoveryCodes(null)
+    await loadTwoFactorStatus()
+  }
+
+  const handleDisable = async () => {
+    if (!disablePassword) {
+      showToast('Password is required', 'error')
+      return
+    }
+    setDisableLoading(true)
+    try {
+      const res = await fetch('/api/admin/auth/2fa/disable', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: disablePassword }),
+      })
+      const data = await res.json()
+      if (res.ok && data.disabled) {
+        setDisablePrompt(false)
+        setDisablePassword('')
+        showToast('Two-factor authentication disabled', 'success')
+        await loadTwoFactorStatus()
+      } else {
+        showToast(data.error || 'Failed to disable', 'error')
+      }
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setDisableLoading(false)
+    }
+  }
+
+  const handleCopy = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      showToast(`${label} copied`, 'success')
+    } catch {
+      showToast('Copy failed', 'error')
+    }
+  }
 
   // ── Handlers ────────────────────────────────────────────────────────────
   const handleSaveProfileName = async () => {
@@ -259,6 +389,7 @@ export default function SettingsPage() {
     { id: 'profile', label: 'Profile', icon: User, description: 'Name + password' },
     { id: 'store', label: 'Store', icon: Store, description: 'Site name + contact email' },
     { id: 'email', label: 'Email', icon: Mail, description: 'From address + test' },
+    { id: 'security', label: 'Security', icon: ShieldCheck, description: 'Two-factor auth' },
     { id: 'data', label: 'Data', icon: Database, description: 'Export + danger zone' },
   ]
 
@@ -500,6 +631,168 @@ export default function SettingsPage() {
                     <div className="mt-4 rounded-[11px] border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 text-[12.5px] leading-[1.55] text-[#f59e0b]">
                       Email provider not configured. Set the <code className="rounded bg-black/40 px-1 py-0.5 text-[#f59e0b]">RESEND_API_KEY</code> env var
                       in Railway to enable transactional emails (order confirmation, admin notifications, test sends).
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {tab === 'security' && (
+                <motion.div
+                  key="security"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mx-auto max-w-[520px]"
+                >
+                  <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
+                    Two-factor authentication
+                  </h2>
+
+                  {twoFactorLoading && !twoFactor ? (
+                    <div className="flex items-center gap-2 text-[13px] text-[#9ca3af]">
+                      <Loader2 size={14} className="animate-spin" /> Loading…
+                    </div>
+                  ) : recoveryCodes ? (
+                    // ── Just enabled: show recovery codes ──
+                    <div>
+                      <div className="mb-4 flex items-center gap-2 text-[#10b981]">
+                        <CheckCircle size={16} />
+                        <span className="text-[13px] font-bold">Two-factor authentication is on</span>
+                      </div>
+                      <div className="mb-3 rounded-[11px] border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 text-[12.5px] leading-[1.55] text-[#f59e0b]">
+                        Save these now — each works once and they won&apos;t be shown again.
+                      </div>
+                      <div className="mb-3 grid grid-cols-2 gap-2 rounded-[11px] border border-[#202022] bg-[#0c0c0d] p-4 font-mono text-[13px] text-[#f4f4f5]">
+                        {recoveryCodes.map(rc => (
+                          <span key={rc} className="select-all">{rc}</span>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => handleCopy(recoveryCodes.join('\n'), 'Recovery codes')}
+                          className={secondaryBtn}
+                        >
+                          <Copy size={13} /> Copy all
+                        </button>
+                        <button onClick={handleEnableDone} className={primaryBtn}>
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  ) : twoFactor?.enabled ? (
+                    // ── Enabled state ──
+                    <div>
+                      <div className="mb-3 flex items-center gap-2 text-[#10b981]">
+                        <CheckCircle size={16} />
+                        <span className="text-[13px] font-bold">Two-factor authentication is on</span>
+                      </div>
+                      <p className="m-0 mb-5 text-[13px] text-[#9ca3af]">
+                        {twoFactor.recoveryCodesRemaining} recovery code{twoFactor.recoveryCodesRemaining === 1 ? '' : 's'} remaining
+                      </p>
+
+                      {disablePrompt ? (
+                        <div className="rounded-[11px] border border-[#202022] bg-[#0c0c0d] p-4">
+                          <p className="m-0 mb-3 text-[13px] text-[#9ca3af]">
+                            Enter your account password to turn off two-factor authentication.
+                          </p>
+                          <Field label="Account password">
+                            <PasswordInput
+                              value={disablePassword}
+                              onChange={setDisablePassword}
+                              show={showDisablePassword}
+                              toggle={() => setShowDisablePassword(v => !v)}
+                              placeholder="Account password"
+                            />
+                          </Field>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={handleDisable}
+                              disabled={disableLoading || !disablePassword}
+                              className={primaryBtn}
+                            >
+                              {disableLoading && <Loader2 size={13} className="animate-spin" />}
+                              Disable 2FA
+                            </button>
+                            <button
+                              onClick={() => { setDisablePrompt(false); setDisablePassword('') }}
+                              disabled={disableLoading}
+                              className={secondaryBtn}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDisablePrompt(true)} className={secondaryBtn}>
+                          Disable 2FA
+                        </button>
+                      )}
+                    </div>
+                  ) : setupData ? (
+                    // ── Setup in progress ──
+                    <div>
+                      <p className="m-0 mb-4 text-[13px] leading-[1.55] text-[#9ca3af]">
+                        Scan the QR code with your authenticator app, then enter the 6-digit code to confirm.
+                      </p>
+                      <div className="mb-4 flex justify-center rounded-[11px] border border-[#202022] bg-white p-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={setupData.qr} alt="Scan with your authenticator app" width={200} height={200} />
+                      </div>
+                      <Field label="Or enter this code manually">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 select-all break-all rounded-[11px] border border-[#202022] bg-[#0c0c0d] px-3 py-2.5 font-mono text-[13px] text-[#f4f4f5]">
+                            {setupData.secret}
+                          </div>
+                          <button
+                            onClick={() => handleCopy(setupData.secret, 'Secret')}
+                            className={secondaryBtn}
+                            title="Copy secret"
+                          >
+                            <Copy size={13} />
+                          </button>
+                        </div>
+                      </Field>
+                      <Field label="Verification code">
+                        <input
+                          value={enableCode}
+                          onChange={e => setEnableCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="123456"
+                          autoComplete="one-time-code"
+                          className={darkInput}
+                        />
+                      </Field>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={handleConfirmEnable}
+                          disabled={enableLoading || enableCode.length !== 6}
+                          className={primaryBtn}
+                        >
+                          {enableLoading && <Loader2 size={13} className="animate-spin" />}
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => { setSetupData(null); setEnableCode('') }}
+                          disabled={enableLoading}
+                          className={secondaryBtn}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // ── Not enabled ──
+                    <div>
+                      <p className="m-0 mb-5 text-[13px] leading-[1.55] text-[#9ca3af]">
+                        Add a second step at sign-in using an authenticator app (such as Google
+                        Authenticator or 1Password). This protects your account even if your
+                        password is compromised.
+                      </p>
+                      <button onClick={handleBeginSetup} disabled={setupLoading} className={primaryBtn}>
+                        {setupLoading ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} />}
+                        Enable 2FA
+                      </button>
                     </div>
                   )}
                 </motion.div>

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { signAdminToken, verifyAdminSession, ADMIN_TOKEN_COOKIE_NAME, invalidateAdminSession } from '@/lib/admin-auth'
 import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
+import { verifyTotp, decryptSecret, matchRecoveryCode } from '@/lib/totp'
 
 /**
  * Admin sign-in / session check / sign-out.
@@ -58,6 +59,54 @@ export async function POST(req: NextRequest) {
     if (!adminUser || !passwordValid || !adminUser.active) {
       // Same response for missing user, wrong password, disabled account.
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
+
+    // ─── Second factor ───────────────────────────────────────────────────
+    // Password is correct. If this account has 2FA enabled, do NOT issue a
+    // session yet — require a valid TOTP (or recovery) code in this same
+    // request. The client resubmits email+password+code on the 2FA prompt.
+    if (adminUser.totpEnabled) {
+      const code = typeof body.code === 'string' ? body.code.trim() : ''
+      const recoveryCode = typeof body.recoveryCode === 'string' ? body.recoveryCode.trim() : ''
+
+      if (!code && !recoveryCode) {
+        return NextResponse.json({ twoFactorRequired: true }, { status: 200 })
+      }
+
+      // Hard rate-limit the code-check step per account to stop brute force of
+      // the 6-digit space once a password is known.
+      const codeBlock = enforceRateLimit(req, {
+        bucket: 'admin-login-2fa',
+        keyParts: [adminUser.id],
+        max: 10,
+        windowMs: 5 * 60_000,
+      })
+      if (codeBlock) return codeBlock
+
+      let ok = false
+      if (code && adminUser.totpSecret) {
+        try {
+          ok = verifyTotp(code, decryptSecret(adminUser.totpSecret))
+        } catch {
+          ok = false
+        }
+      }
+      if (!ok && recoveryCode) {
+        const idx = matchRecoveryCode(recoveryCode, adminUser.totpRecoveryCodes)
+        if (idx >= 0) {
+          ok = true
+          // Consume the recovery code (single use).
+          const remaining = adminUser.totpRecoveryCodes.filter((_, i) => i !== idx)
+          await db.adminUser.update({
+            where: { id: adminUser.id },
+            data: { totpRecoveryCodes: remaining },
+          })
+        }
+      }
+
+      if (!ok) {
+        return NextResponse.json({ error: 'Invalid authentication code', twoFactorRequired: true }, { status: 401 })
+      }
     }
 
     await db.adminUser.update({
