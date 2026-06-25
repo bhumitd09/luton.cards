@@ -235,7 +235,7 @@ export default function AdminCardDatabasePage() {
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
   const [comparePrice, setComparePrice] = useState('')
-  const [category, setCategory] = useState('singles')
+  const [category, setCategory] = useState('single')
   const [game, setGame] = useState<SuggestedGame>('pokemon')
   const [condition, setCondition] = useState('near-mint')
   const [stock, setStock] = useState('1')
@@ -388,7 +388,7 @@ export default function AdminCardDatabasePage() {
       setDescription(buildDefaultDescription(card))
       setPrice('')
       setComparePrice('')
-      setCategory('singles')
+      setCategory('single')
       setGame(normaliseGame(lookup.suggestedGame))
       setCondition('near-mint')
       setStock('1')
@@ -407,7 +407,7 @@ export default function AdminCardDatabasePage() {
     setDescription('')
     setPrice('')
     setComparePrice('')
-    setCategory('singles')
+    setCategory('single')
     setGame('pokemon')
     setCondition('near-mint')
     setStock('1')
@@ -693,14 +693,17 @@ export default function AdminCardDatabasePage() {
                   <label style={labelStyle} htmlFor="cd-category">
                     Category
                   </label>
-                  <input
+                  <select
                     id="cd-category"
-                    type="text"
                     value={category}
                     onChange={e => setCategory(e.target.value)}
-                    placeholder="singles"
-                    style={inputStyle}
-                  />
+                    style={{ ...inputStyle, cursor: 'pointer' }}
+                  >
+                    <option value="single">Single</option>
+                    <option value="graded">Graded</option>
+                    <option value="booster">Booster</option>
+                    <option value="sealed">Sealed</option>
+                  </select>
                 </div>
 
                 <div>

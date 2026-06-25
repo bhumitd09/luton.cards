@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     const description = (typeof body.description === 'string' && body.description.trim()) || defaultDesc
 
     const game = body.game ? normalizeGame(body.game) : ctcgGame(tcg)
-    const category = (typeof body.category === 'string' && body.category.trim()) || 'singles'
+    const category = (typeof body.category === 'string' && body.category.trim()) || 'single'
     const stock = Number.isInteger(body.stock) && body.stock >= 0 ? body.stock : 1
     const comparePrice = body.comparePrice !== undefined && body.comparePrice !== null && body.comparePrice !== ''
       ? Number(body.comparePrice) : null
