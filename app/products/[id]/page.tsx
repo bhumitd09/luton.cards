@@ -13,7 +13,7 @@ import { BackInStockButton } from '@/components/back-in-stock-button'
 import { ProductReviews } from '@/components/reviews'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
-import { variantLabel } from '@/lib/conditions'
+import { variantLabel, conditionLabel, conditionColor } from '@/lib/conditions'
 
 /** A variant row as returned by /api/products/[id]. */
 interface Variant {
@@ -565,6 +565,20 @@ export default function ProductDetailPage() {
                       letterSpacing: '0.03em',
                     }}>
                       {product.grader ? `${product.grader} ` : ''}{product.grade}
+                    </span>
+                  )}
+                  {/* Scalar condition pill — only for ungraded singles that
+                      don't drive condition through a variant selector. */}
+                  {!product.grade && !hasVariants && product.condition && (
+                    <span style={{
+                      background: `${conditionColor(product.condition)}1a`,
+                      border: `1.5px solid ${conditionColor(product.condition)}`,
+                      color: conditionColor(product.condition),
+                      padding: '0.3rem 0.85rem', borderRadius: '9999px',
+                      fontSize: '0.8125rem', fontWeight: 800,
+                      letterSpacing: '0.03em',
+                    }}>
+                      {conditionLabel(product.condition)}
                     </span>
                   )}
                 </div>

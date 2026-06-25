@@ -14,6 +14,7 @@ export interface Product {
   description?: string
   grade?: string | null
   grader?: string | null
+  condition?: string | null
   featured: boolean
   active?: boolean
   images?: string[]

@@ -5,6 +5,7 @@ import { enforceRateLimit } from '@/lib/rate-limit'
 import { storage } from '@/lib/storage'
 import { slugify } from '@/lib/slug'
 import { normalizeGame } from '@/lib/games'
+import { isValidCondition } from '@/lib/conditions'
 import { getCard, ctcgGame, isAllowedCtcgImage, CtcgError } from '@/lib/ctcg'
 
 /**
@@ -107,6 +108,8 @@ export async function POST(req: NextRequest) {
         stock,
         category,
         game,
+        // Raw singles from the catalogue: default to Near Mint, admin can change.
+        condition: isValidCondition(body.condition) ? body.condition : 'near-mint',
         images: stored,
         featured: Boolean(body.featured),
         active: body.active !== undefined ? Boolean(body.active) : true,

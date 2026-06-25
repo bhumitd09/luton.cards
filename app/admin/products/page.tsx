@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { ImageUploader } from '@/components/admin/image-uploader'
 import { useToast } from '@/components/admin/toast'
-import { CONDITIONS, FOILS } from '@/lib/conditions'
+import { CONDITIONS, FOILS, conditionShort, conditionColor } from '@/lib/conditions'
 import { GAMES, GAME_LABELS, normalizeGame } from '@/lib/games'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -27,6 +27,9 @@ interface Product {
   images: string[]
   grade: string | null
   grader: string | null
+  /** Raw-single card condition slug (Near Mint, Lightly Played, …). Null for
+   *  graded cards / products where condition isn't relevant. */
+  condition?: string | null
   featured: boolean
   active: boolean
   tags: string[]
@@ -78,6 +81,7 @@ const EMPTY_FORM = {
   stock: '',
   grade: '',
   grader: 'PSA',
+  condition: '',
   description: '',
   tags: '',
   featured: false,
@@ -283,6 +287,7 @@ function ProductModal({
         stock: String(product.stock),
         grade: product.grade ?? '',
         grader: product.grader ?? 'PSA',
+        condition: product.condition ?? '',
         description: product.description ?? '',
         tags: product.tags.join(', '),
         featured: product.featured,
@@ -344,6 +349,8 @@ function ProductModal({
         stock: Number(form.stock),
         grade: form.category === 'graded' ? form.grade || null : null,
         grader: form.category === 'graded' ? form.grader || null : null,
+        // Raw-single condition — send null when "— None —" is selected.
+        condition: form.condition || null,
         description: form.description || null,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         featured: form.featured,
@@ -550,6 +557,21 @@ function ProductModal({
               </div>
             </>
           )}
+
+          {/* Condition — for raw singles. Graded cards can leave this on None. */}
+          <div>
+            <label style={labelStyle}>Condition</label>
+            <select
+              style={{ ...inputStyle, cursor: 'pointer' }}
+              value={form.condition}
+              onChange={e => update('condition', e.target.value)}
+            >
+              <option value="">— None —</option>
+              {CONDITIONS.map(c => (
+                <option key={c.slug} value={c.slug}>{c.label}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Description */}
           <div style={{ gridColumn: '1/-1' }}>
@@ -1407,7 +1429,8 @@ export default function AdminProductsPage() {
                   {/* Vendor column — superadmin only */}
                   {/* Rendered between Grade and Star to keep the layout
                       readable. Shows initials chip + name. */}
-                  {/* Grade */}
+                  {/* Grade — graded cards show the PSA pill; raw singles with a
+                      condition show a tinted condition pill instead of "—". */}
                   <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
                     {product.grade ? (
                       <span style={{
@@ -1417,6 +1440,16 @@ export default function AdminProductsPage() {
                         fontSize: '0.7rem', fontWeight: 700,
                       }}>
                         {product.grader} {product.grade}
+                      </span>
+                    ) : product.condition ? (
+                      <span style={{
+                        background: `${conditionColor(product.condition)}1a`,
+                        color: conditionColor(product.condition),
+                        border: `1px solid ${conditionColor(product.condition)}40`,
+                        padding: '0.2rem 0.5rem', borderRadius: '999px',
+                        fontSize: '0.7rem', fontWeight: 700,
+                      }}>
+                        {conditionShort(product.condition)}
                       </span>
                     ) : (
                       <span style={{ color: '#6b7280' }}>—</span>

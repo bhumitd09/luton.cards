@@ -9,6 +9,7 @@ import { BorderBeam } from '@/components/magicui/border-beam'
 import { WishlistButton } from '@/components/wishlist-button'
 import { formatGrade } from '@/lib/utils'
 import type { Product } from '@/lib/products'
+import { conditionShort, conditionLabel, conditionColor } from '@/lib/conditions'
 
 const TABS = [
   { value: 'all', label: 'All' },
@@ -85,7 +86,15 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
               {formatGrade(product.grade, product.grader)}
             </span>
           )}
-          {product.stock === 0 ? (
+          {/* Top-right badge priority: condition (non-graded) > stock state */}
+          {!product.grade && product.condition ? (
+            <span
+              className="absolute right-2.5 top-2.5 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white"
+              style={{ background: conditionColor(product.condition) }}
+            >
+              {conditionShort(product.condition)}
+            </span>
+          ) : product.stock === 0 ? (
             <span className="absolute right-2.5 top-2.5 rounded-md bg-red-500 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white">
               Sold out
             </span>
@@ -95,10 +104,10 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
             </span>
           ) : null}
 
-          {/* Wishlist heart — top-right when no stock badge, otherwise just below it */}
+          {/* Wishlist heart — top-right when no top-right badge, otherwise just below it */}
           <div
             className="absolute z-10"
-            style={{ top: product.stock <= 2 ? '36px' : '10px', right: '10px' }}
+            style={{ top: (!product.grade && product.condition) || product.stock <= 2 ? '36px' : '10px', right: '10px' }}
           >
             <WishlistButton productId={product.id} size="sm" />
           </div>
@@ -109,6 +118,17 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
           <p className="m-0 mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400">
             <span className="size-1 rounded-full bg-[#EC1E79]" />
             {product.game === 'one-piece' ? 'One Piece' : 'Pokémon'} · {product.category}
+            {!product.grade && product.condition && (
+              <span
+                className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal"
+                style={{
+                  background: `${conditionColor(product.condition)}1a`,
+                  color: conditionColor(product.condition),
+                }}
+              >
+                {conditionLabel(product.condition)}
+              </span>
+            )}
           </p>
           <h3 className="m-0 mb-auto line-clamp-2 text-sm font-bold leading-snug text-neutral-900">
             {product.name}

@@ -22,6 +22,10 @@ model Product {
   images       String[]
   grade        String?
   grader       String?
+  // Card condition for raw (ungraded) singles — NM / LP / MP / HP / DMG.
+  // Shown on the storefront card instead of the stock badge. Graded slabs use
+  // grade/grader instead; products with per-condition variants use those.
+  condition    String?
   featured     Boolean  @default(false)
   active       Boolean  @default(true)
   tags         String[]

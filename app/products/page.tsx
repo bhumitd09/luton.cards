@@ -11,6 +11,7 @@ import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
 import { GAMES, GAME_LABELS, isGame } from '@/lib/games'
+import { conditionShort, conditionLabel, conditionColor } from '@/lib/conditions'
 
 const categories = [
   { value: 'all', label: 'All' },
@@ -93,7 +94,16 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
                 {formatGrade(product.grade, product.grader)}
               </span>
             )}
-            {product.stock <= 2 && !product.grade && (
+            {!product.grade && product.condition ? (
+              <span style={{
+                position: 'absolute', top: '10px', right: '10px',
+                background: conditionColor(product.condition), color: '#fff',
+                padding: '0.2rem 0.6rem', borderRadius: '6px',
+                fontSize: '0.6875rem', fontWeight: 700,
+              }}>
+                {conditionShort(product.condition)}
+              </span>
+            ) : product.stock <= 2 && !product.grade ? (
               <span style={{
                 position: 'absolute', top: '10px', right: '10px',
                 background: product.stock === 0 ? '#ef4444' : '#f59e0b',
@@ -102,7 +112,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               }}>
                 {product.stock === 0 ? 'Sold Out' : `${product.stock} left`}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </Link>
@@ -111,7 +121,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
           <Tag size={11} color="#9ca3af" />
           <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'capitalize' }}>{product.category}</span>
-          {formatGrade(product.grade, product.grader) && (
+          {formatGrade(product.grade, product.grader) ? (
             <span style={{
               background: '#fef3c7', color: '#92400e',
               padding: '0.1rem 0.45rem', borderRadius: '4px',
@@ -119,7 +129,16 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             }}>
               {formatGrade(product.grade, product.grader)}
             </span>
-          )}
+          ) : product.condition ? (
+            <span style={{
+              background: `${conditionColor(product.condition)}1a`,
+              color: conditionColor(product.condition),
+              padding: '0.1rem 0.45rem', borderRadius: '4px',
+              fontSize: '0.6875rem', fontWeight: 700, marginLeft: 'auto',
+            }}>
+              {conditionLabel(product.condition)}
+            </span>
+          ) : null}
         </div>
 
         <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>

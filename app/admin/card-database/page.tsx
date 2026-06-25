@@ -12,6 +12,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useToast } from '@/components/admin/toast'
+import { CONDITIONS } from '@/lib/conditions'
 
 // ─── Types from /api/admin/ctcg/* ──────────────────────────────────────────
 
@@ -236,6 +237,7 @@ export default function AdminCardDatabasePage() {
   const [comparePrice, setComparePrice] = useState('')
   const [category, setCategory] = useState('singles')
   const [game, setGame] = useState<SuggestedGame>('pokemon')
+  const [condition, setCondition] = useState('near-mint')
   const [stock, setStock] = useState('1')
   const [featured, setFeatured] = useState(false)
   const [active, setActive] = useState(true)
@@ -388,6 +390,7 @@ export default function AdminCardDatabasePage() {
       setComparePrice('')
       setCategory('singles')
       setGame(normaliseGame(lookup.suggestedGame))
+      setCondition('near-mint')
       setStock('1')
       setFeatured(false)
       setActive(true)
@@ -406,6 +409,7 @@ export default function AdminCardDatabasePage() {
     setComparePrice('')
     setCategory('singles')
     setGame('pokemon')
+    setCondition('near-mint')
     setStock('1')
     setFeatured(false)
     setActive(true)
@@ -433,6 +437,7 @@ export default function AdminCardDatabasePage() {
             comparePrice.trim() !== '' && Number.isFinite(compareValue) ? compareValue : undefined,
           category: category.trim() || undefined,
           game,
+          condition: condition || undefined,
           name: name.trim() || undefined,
           description: description.trim() || undefined,
           stock:
@@ -711,6 +716,25 @@ export default function AdminCardDatabasePage() {
                     {GAME_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={labelStyle} htmlFor="cd-condition">
+                    Condition
+                  </label>
+                  <select
+                    id="cd-condition"
+                    value={condition}
+                    onChange={e => setCondition(e.target.value)}
+                    aria-label="Card condition"
+                    style={inputStyle}
+                  >
+                    {CONDITIONS.map(c => (
+                      <option key={c.slug} value={c.slug}>
+                        {c.label}
                       </option>
                     ))}
                   </select>
