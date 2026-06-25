@@ -18,7 +18,7 @@ interface PsaCert {
   category: string
   cardNumber: string
   variety: string
-  population: string
+  population: number | null
 }
 
 interface PsaListingSuggestion {
@@ -588,8 +588,9 @@ export default function AdminPsaPage() {
 
 // ─── Small components ──────────────────────────────────────────────────────
 
-function Fact({ label, value }: { label: string; value: string }) {
-  if (!value || !value.trim()) return null
+function Fact({ label, value }: { label: string; value: string | number | null | undefined }) {
+  const text = value === null || value === undefined ? '' : String(value)
+  if (!text.trim()) return null
   return (
     <div>
       <div
@@ -604,7 +605,7 @@ function Fact({ label, value }: { label: string; value: string }) {
       >
         {label}
       </div>
-      <div style={{ fontSize: '0.9rem', color: '#f4f4f5', fontWeight: 600 }}>{value}</div>
+      <div style={{ fontSize: '0.9rem', color: '#f4f4f5', fontWeight: 600 }}>{text}</div>
     </div>
   )
 }

@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     const emails = Array.from(customerMap.keys())
     const profiles = await db.customerProfile.findMany({
       where: { email: { in: emails } },
-      select: { email: true, blocked: true, tags: true, adminNotes: true },
+      select: { email: true, name: true, blocked: true, tags: true, adminNotes: true },
     })
     const profileByEmail = new Map(profiles.map(p => [p.email, p]))
 
@@ -72,6 +72,8 @@ export async function GET(req: NextRequest) {
         const p = profileByEmail.get(c.email)
         return {
           ...c,
+          // An admin-set profile name overrides the name pulled from orders.
+          name: (p?.name && p.name.trim()) ? p.name : c.name,
           blocked: p?.blocked ?? false,
           tags: p?.tags ?? [],
           hasNotes: !!(p?.adminNotes && p.adminNotes.length > 0),

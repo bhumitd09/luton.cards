@@ -73,6 +73,8 @@ export async function GET(req: NextRequest) {
     const featured = searchParams.get('featured')
     const active = searchParams.get('active')
     const search = searchParams.get('search')
+    const stockMin = searchParams.get('stockMin')
+    const stockMax = searchParams.get('stockMax')
     const vendorFilter = searchParams.get('vendor') // 'mine' | adminUserId | null
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
@@ -97,6 +99,12 @@ export async function GET(req: NextRequest) {
         { description: { contains: search, mode: 'insensitive' } },
       ]
     }
+
+    // Stock filter — the UI sends stockMin/stockMax (In >=3, Low 1..2, Out <=0).
+    const stockCond: Record<string, number> = {}
+    if (stockMin !== null && stockMin !== '' && Number.isFinite(Number(stockMin))) stockCond.gte = parseInt(stockMin, 10)
+    if (stockMax !== null && stockMax !== '' && Number.isFinite(Number(stockMax))) stockCond.lte = parseInt(stockMax, 10)
+    if (Object.keys(stockCond).length > 0) where.stock = stockCond
 
     const [products, total] = await Promise.all([
       db.product.findMany({

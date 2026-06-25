@@ -111,7 +111,9 @@ export default function IntegrationsPage() {
     setSaving(true)
     setSaveMsg(null)
     try {
-      await Promise.all([
+      // fetch only rejects on network failure, so a 401/400/500 would still
+      // fall through to "saved" — check res.ok on every response.
+      const responses = await Promise.all([
         fetch('/api/admin/content', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -128,7 +130,12 @@ export default function IntegrationsPage() {
           body: JSON.stringify({ key: 'collecttcg_webhook_secret', value: webhookSecret, label: 'CollectTCG Webhook Secret' }),
         }),
       ])
-      setSaveMsg('Settings saved.')
+      if (responses.every((r) => r.ok)) {
+        setSaveMsg('Settings saved.')
+      } else {
+        const failed = responses.find((r) => !r.ok)
+        setSaveMsg(failed?.status === 403 ? 'Only a superadmin can save these.' : 'Failed to save settings.')
+      }
     } catch {
       setSaveMsg('Failed to save settings.')
     } finally {

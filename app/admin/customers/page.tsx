@@ -151,6 +151,7 @@ function SlideOver({
   const toast = useToast()
   // Profile (notes / tags / blocked) loaded on open from the [email] route.
   const [blocked, setBlocked] = useState(!!customer.blocked)
+  const [name, setName] = useState(customer.name ?? '')
   const [notes, setNotes] = useState('')
   const [tags, setTags] = useState('')
   const [profileSaving, setProfileSaving] = useState(false)
@@ -164,15 +165,16 @@ function SlideOver({
         if (aborted || !data) return
         const p = data.profile
         setBlocked(!!p?.blocked)
+        setName(p?.name ?? customer.name ?? '')
         setNotes(p?.adminNotes ?? '')
         setTags((p?.tags ?? []).join(', '))
         setProfileLoaded(true)
       })
       .catch(() => setProfileLoaded(true))
     return () => { aborted = true }
-  }, [customer.email])
+  }, [customer.email, customer.name])
 
-  const saveProfile = async (patch: { blocked?: boolean; adminNotes?: string; tags?: string[] }) => {
+  const saveProfile = async (patch: { name?: string; blocked?: boolean; adminNotes?: string; tags?: string[] }) => {
     setProfileSaving(true)
     try {
       const res = await fetch(`/api/admin/customers/${encodeURIComponent(customer.email)}`, {
@@ -200,6 +202,7 @@ function SlideOver({
 
   const saveNotesTags = async () => {
     const ok = await saveProfile({
+      name: name.trim(),
       adminNotes: notes,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
     })
@@ -348,6 +351,19 @@ function SlideOver({
             >
               {blocked ? 'Unblock' : 'Block'}
             </button>
+          </div>
+
+          {/* Name */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+              Name
+            </label>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Customer name"
+              style={{ width: '100%', padding: '0.55rem 0.75rem', background: '#0c0c0d', border: '1px solid #202022', borderRadius: 10, color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+            />
           </div>
 
           {/* Tags */}

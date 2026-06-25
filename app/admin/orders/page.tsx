@@ -589,13 +589,42 @@ function OrderDetailModal({
   order,
   onClose,
   onApplyOrder,
+  onDeleted,
 }: {
   order: Order
   onClose: () => void
   // Persist status/notes/tracking via the shared PUT /orders/:id helper.
   onApplyOrder: (id: string, updates: Partial<Order>) => Promise<void>
+  onDeleted: (id: string) => void
 }) {
   const toast = useToast()
+  const confirm = useConfirm()
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete this order permanently?',
+      message: 'This removes the order and its line items for good and skews your sales history. For a real order, cancel + refund instead — only use this for test or spam orders.',
+      confirmLabel: 'Delete order',
+      danger: true,
+    })
+    if (!ok) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success('Order deleted')
+        onDeleted(order.id)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.error(res.status === 403 ? 'Only a superadmin can delete orders' : (data.error || 'Could not delete order'))
+      }
+    } catch {
+      toast.error('Network error')
+    } finally {
+      setDeleting(false)
+    }
+  }
   const [localStatus, setLocalStatus] = useState(order.status)
   const [localNotes, setLocalNotes] = useState(order.notes ?? '')
   const [saving, setSaving] = useState(false)
@@ -1498,6 +1527,21 @@ function OrderDetailModal({
             display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem',
           }}>
             <button
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Permanently delete (superadmin) — for test/spam orders"
+              style={{
+                marginRight: 'auto',
+                padding: '0.6rem 1.1rem',
+                background: 'transparent', border: '1px solid rgba(239,68,68,0.4)',
+                borderRadius: '11px', color: '#ef4444',
+                fontSize: '0.85rem', fontWeight: 600,
+                cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.6 : 1,
+              }}
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+            <button
               onClick={onClose}
               style={{
                 padding: '0.6rem 1.1rem',
@@ -1642,6 +1686,13 @@ export default function OrdersPage() {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const handleOrderDeleted = (orderId: string) => {
+    setOrders(prev => prev.filter(o => o.id !== orderId))
+    setSelectedOrder(null)
+    setPagination(prev => ({ ...prev, total: Math.max(0, prev.total - 1) }))
+    fetchStatusCounts()
   }
 
   const handleQuickStatusChange = async (order: Order, newStatus: string) => {
@@ -2433,6 +2484,7 @@ export default function OrdersPage() {
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
             onApplyOrder={handleOrderUpdate}
+            onDeleted={handleOrderDeleted}
           />
         )}
       </AnimatePresence>

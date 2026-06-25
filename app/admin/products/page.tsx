@@ -870,7 +870,9 @@ export default function AdminProductsPage() {
         setTotal(data.length)
       } else {
         setProducts(data.products ?? [])
-        setTotal(data.total ?? data.products?.length ?? 0)
+        // The route nests the real count under pagination.total — without this
+        // the count badge + Prev/Next pager are wrong once you pass one page.
+        setTotal(data.pagination?.total ?? data.total ?? data.products?.length ?? 0)
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load products')
