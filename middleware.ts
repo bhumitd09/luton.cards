@@ -56,7 +56,13 @@ export function middleware(req: NextRequest) {
   // Pass the path to the root layout (maintenance gate) via a request header.
   const headers = new Headers(req.headers)
   headers.set('x-pathname', pathname)
-  return NextResponse.next({ request: { headers } })
+  const res = NextResponse.next({ request: { headers } })
+  // Stop the CDN (Cloudflare) caching page HTML. Pages are dynamic (they
+  // reflect live stock + the maintenance lock), so a cached copy goes stale
+  // and the site lock can't engage. Static assets are excluded by the matcher.
+  res.headers.set('Cache-Control', 'no-store, must-revalidate')
+  res.headers.set('CDN-Cache-Control', 'no-store')
+  return res
 }
 
 export const config = {
