@@ -43,7 +43,16 @@ export function middleware(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid origin' }, { status: 403 })
   }
 
+  // "Our host" must be derived from the headers the BROWSER actually used —
+  // behind Railway's proxy, req.nextUrl.host can be the internal upstream host
+  // while the real public host is in x-forwarded-host. Same-origin = the
+  // Origin host matches the host the browser sent. (Both are set by the trusted
+  // proxy / the browser, so they can't be forged cross-site.)
   const allowed = new Set<string>([req.nextUrl.host])
+  const fwdHost = req.headers.get('x-forwarded-host')
+  const host = req.headers.get('host')
+  if (fwdHost) fwdHost.split(',').forEach((h) => allowed.add(h.trim()))
+  if (host) allowed.add(host.trim())
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
   if (appUrl) {
     try { allowed.add(new URL(appUrl).host) } catch { /* ignore malformed env */ }
