@@ -4,8 +4,9 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { AlertCircle, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
 import { identify } from '@/lib/analytics'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -15,14 +16,13 @@ import { BorderBeam } from '@/components/magicui/border-beam'
 function LoginContent() {
   const router = useRouter()
   const params = useSearchParams()
+  const toast = useToast()
   const nextUrl = params.get('next')
   const [form, setForm] = useState({ email: '', password: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setSubmitting(true)
     try {
       const res = await fetch('/api/auth/login', {
@@ -32,7 +32,7 @@ function LoginContent() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data?.error || 'Could not sign in.')
+        toast.error(data?.error || 'Could not sign in.')
         setSubmitting(false)
         return
       }
@@ -45,7 +45,7 @@ function LoginContent() {
       router.replace(dest)
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
       setSubmitting(false)
     }
   }
@@ -108,13 +108,6 @@ function LoginContent() {
                   Forgot password?
                 </Link>
               </Field>
-
-              {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-3 text-[13px] text-red-300">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
 
               <ShimmerButton
                 type="submit"

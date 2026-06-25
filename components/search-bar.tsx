@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Loader2, Package } from 'lucide-react'
 import { formatGrade } from '@/lib/utils'
+import { highlightMatch } from '@/lib/highlight'
 
 type SearchHit = {
   id: string
@@ -182,7 +183,7 @@ export function SearchBar({ variant = 'header', onNavigate }: { variant?: Varian
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="m-0 truncate text-[13px] font-bold text-neutral-900">{r.name}</p>
+                        <p className="m-0 truncate text-[13px] font-bold text-neutral-900">{highlightMatch(r.name, query)}</p>
                         <p className="m-0 mt-0.5 text-[11px] text-neutral-500">
                           {r.game === 'one-piece' ? 'One Piece' : 'Pokémon'} · {r.category}
                           {formatGrade(r.grade, r.grader) ? ` · ${formatGrade(r.grade, r.grader)}` : ''}

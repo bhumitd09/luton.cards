@@ -73,7 +73,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             }}
           >
             {product.image && (
-              <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '0.5rem' }} />
+              <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', aspectRatio: '4/3', objectFit: 'contain', padding: '0.5rem' }} />
             )}
             <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <span style={{

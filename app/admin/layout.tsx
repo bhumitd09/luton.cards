@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ToastProvider } from '@/components/admin/toast'
 import { ConfirmProvider } from '@/components/admin/confirm-dialog'
 import {
   LayoutDashboard,
@@ -165,23 +164,36 @@ function Clock() {
 
 function Breadcrumb({ pathname }: { pathname: string }) {
   const segments = pathname.replace('/admin', '').split('/').filter(Boolean)
-  const parts = ['Admin', ...segments.map(s => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' '))]
+  // Each crumb carries the cumulative href so ancestors are clickable.
+  const crumbs = [
+    { label: 'Admin', href: '/admin' },
+    ...segments.map((s, i) => ({
+      label: s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' '),
+      href: '/admin/' + segments.slice(0, i + 1).join('/'),
+    })),
+  ]
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-      {parts.map((part, i) => (
-        <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          {i > 0 && <span style={{ color: '#3f3f46', fontSize: '0.75rem' }}>/</span>}
-          <span style={{
-            color: i === parts.length - 1 ? '#fff' : T.textFaint,
-            fontSize: '0.875rem',
-            fontWeight: i === parts.length - 1 ? 700 : 500,
-            letterSpacing: '-0.01em',
-          }}>
-            {part}
-          </span>
-        </span>
-      ))}
-    </div>
+    <nav aria-label="Breadcrumb">
+      <ol style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', listStyle: 'none', margin: 0, padding: 0 }}>
+        {crumbs.map((c, i) => {
+          const last = i === crumbs.length - 1
+          return (
+            <li key={c.href} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {i > 0 && <span aria-hidden="true" style={{ color: '#3f3f46', fontSize: '0.75rem' }}>/</span>}
+              {last ? (
+                <span aria-current="page" style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
+                  {c.label}
+                </span>
+              ) : (
+                <Link href={c.href} style={{ color: T.textFaint, fontSize: '0.875rem', fontWeight: 500, letterSpacing: '-0.01em', textDecoration: 'none' }}>
+                  {c.label}
+                </Link>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
   )
 }
 
@@ -331,7 +343,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ConfirmProvider>
-    <ToastProvider>
     <div style={{ display: 'flex', minHeight: '100vh', background: T.bg }}>
       <style>{`
         @media (max-width: 900px) {
@@ -559,7 +570,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
     </div>
-    </ToastProvider>
     </ConfirmProvider>
   )
 }

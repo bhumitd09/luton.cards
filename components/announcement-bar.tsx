@@ -49,9 +49,9 @@ export function AnnouncementBar() {
       return
     }
 
-    // Small delay so the animate-in is visible
-    const t = setTimeout(() => setVisible(true), 30)
-    return () => clearTimeout(t)
+    // Show immediately at natural height — we only fade opacity in, we do NOT
+    // animate height from 0, so the page body never gets shoved down after load.
+    setVisible(true)
   }, [data])
 
   const handleDismiss = () => {
@@ -84,9 +84,11 @@ export function AnnouncementBar() {
         color: colors.text,
         width: '100%',
         overflow: 'hidden',
-        maxHeight: visible ? '120px' : '0px',
+        // Render at natural height immediately and only fade opacity in. We do
+        // NOT animate height from 0 → 120px, so the page body is never shoved
+        // down after the announcement loads (avoids cumulative layout shift).
         opacity: visible ? 1 : 0,
-        transition: 'max-height 0.3s ease, opacity 0.3s ease',
+        transition: 'opacity 0.3s ease',
       }}
     >
       <style>{`

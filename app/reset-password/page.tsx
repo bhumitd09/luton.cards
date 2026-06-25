@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, KeyRound } from 'lucide-react'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -16,6 +17,7 @@ const MIN_PASSWORD = 8
 function ResetPasswordContent() {
   const router = useRouter()
   const params = useSearchParams()
+  const toast = useToast()
   const token = params.get('token')
 
   const [password, setPassword] = useState('')
@@ -54,13 +56,14 @@ function ResetPasswordContent() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data?.error || 'Could not reset your password.')
+        toast.error(data?.error || 'Could not reset your password.')
         setSubmitting(false)
         return
       }
       setDone(true)
+      toast.success('Password updated.')
     } catch {
-      setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
       setSubmitting(false)
     }
   }

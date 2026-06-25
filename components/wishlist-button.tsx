@@ -4,6 +4,7 @@ import { useEffect, useState, MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useToast } from '@/components/admin/toast'
 
 type Size = 'sm' | 'md' | 'lg'
 
@@ -17,10 +18,10 @@ export function WishlistButton({
   variant?: 'overlay' | 'inline'
 }) {
   const router = useRouter()
+  const toast = useToast()
   const [inWishlist, setInWishlist] = useState<boolean | null>(null)
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
-  const [tooltip, setTooltip] = useState<string | null>(null)
 
   // Fetch current state on mount
   useEffect(() => {
@@ -54,7 +55,7 @@ export function WishlistButton({
       if (inWishlist) {
         await fetch(`/api/account/wishlist/${productId}`, { method: 'DELETE' })
         setInWishlist(false)
-        setTooltip('Removed from wishlist')
+        toast.success('Removed from wishlist')
       } else {
         await fetch('/api/account/wishlist', {
           method: 'POST',
@@ -62,12 +63,10 @@ export function WishlistButton({
           body: JSON.stringify({ productId }),
         })
         setInWishlist(true)
-        setTooltip('Added to wishlist')
+        toast.success('Added to wishlist')
       }
-      setTimeout(() => setTooltip(null), 1500)
     } catch {
-      setTooltip('Could not update')
-      setTimeout(() => setTooltip(null), 1500)
+      toast.error('Could not update wishlist')
     } finally {
       setLoading(false)
     }
@@ -121,22 +120,6 @@ export function WishlistButton({
       >
         <Heart size={iconSize} fill={inWishlist ? '#fff' : 'none'} strokeWidth={2.2} />
       </motion.button>
-      {tooltip && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            position: 'absolute', top: '100%', right: 0, marginTop: 6,
-            padding: '4px 10px', borderRadius: 6,
-            background: '#111', color: '#fff',
-            fontSize: '0.7rem', fontWeight: 700,
-            whiteSpace: 'nowrap', zIndex: 10,
-            pointerEvents: 'none',
-          }}
-        >
-          {tooltip}
-        </motion.div>
-      )}
     </div>
   )
 }

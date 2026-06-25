@@ -71,7 +71,7 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
             <img
               src={product.image}
               alt={product.name}
-              className="size-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+              className="aspect-[4/3] size-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex flex-col items-center gap-2 text-neutral-300">

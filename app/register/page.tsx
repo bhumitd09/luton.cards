@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { AlertCircle, UserPlus } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -13,13 +14,12 @@ import { BorderBeam } from '@/components/magicui/border-beam'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const toast = useToast()
   const [form, setForm] = useState({ name: '', email: '', password: '', marketingOptIn: false })
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setSubmitting(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -29,14 +29,14 @@ export default function RegisterPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data?.error || 'Could not create account.')
+        toast.error(data?.error || 'Could not create account.')
         setSubmitting(false)
         return
       }
       router.replace('/account')
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
       setSubmitting(false)
     }
   }
@@ -114,13 +114,6 @@ export default function RegisterPage() {
                 />
                 Email me about new drops, restocks and offers.
               </label>
-
-              {error && (
-                <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-3 text-[13px] text-red-300">
-                  <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
 
               <ShimmerButton
                 type="submit"

@@ -6,6 +6,7 @@ import { AnnouncementBar } from '@/components/announcement-bar'
 import { CookieBanner } from '@/components/cookie-banner'
 import { Analytics } from '@/components/analytics'
 import { PostHogProvider } from '@/components/posthog-provider'
+import { ToastProvider } from '@/components/admin/toast'
 import { EditModeIndicator } from '@/components/editable/edit-mode-indicator'
 import { escapeJsonForScriptTag } from '@/lib/html-escape'
 import './globals.css'
@@ -90,14 +91,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: escapeJsonForScriptTag(localBusinessJsonLd) }}
         />
         <PostHogProvider>
-          <AdminProvider>
-            <CartProvider>
-              <AnnouncementBar />
-              {children}
-              <CookieBanner />
-              <EditModeIndicator />
-            </CartProvider>
-          </AdminProvider>
+          <ToastProvider>
+            <AdminProvider>
+              <CartProvider>
+                <AnnouncementBar />
+                {children}
+                <CookieBanner />
+                <EditModeIndicator />
+              </CartProvider>
+            </AdminProvider>
+          </ToastProvider>
         </PostHogProvider>
         <Analytics />
       </body>

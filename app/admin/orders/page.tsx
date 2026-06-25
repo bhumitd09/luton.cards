@@ -660,6 +660,17 @@ function OrderDetailModal({
     new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   const handleSave = async () => {
+    // Cancelling an order is destructive (emails the customer, frees stock) —
+    // confirm before committing it.
+    if (localStatus === 'cancelled' && order.status !== 'cancelled') {
+      const ok = await confirm({
+        title: 'Cancel this order?',
+        message: `Order #${order.id.slice(-8).toUpperCase()} for ${order.name} will be marked cancelled and the customer emailed. To refund money, use Refund.`,
+        confirmLabel: 'Cancel order',
+        danger: true,
+      })
+      if (!ok) return
+    }
     setSaving(true)
     await onApplyOrder(order.id, { status: localStatus, notes: localNotes })
     setSaving(false)

@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { AlertCircle, KeyRound, MailCheck } from 'lucide-react'
+import { KeyRound, MailCheck } from 'lucide-react'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -11,14 +12,13 @@ import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { BorderBeam } from '@/components/magicui/border-beam'
 
 export default function ForgotPasswordPage() {
+  const toast = useToast()
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [sent, setSent] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
     setSubmitting(true)
     try {
       await fetch('/api/auth/forgot', {
@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
       // Anti-enumeration: always show the same neutral confirmation.
       setSent(true)
     } catch {
-      setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
       setSubmitting(false)
     }
   }
@@ -96,13 +96,6 @@ export default function ForgotPasswordPage() {
                       placeholder="you@example.com"
                     />
                   </Field>
-
-                  {error && (
-                    <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-3 text-[13px] text-red-300">
-                      <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                      <span>{error}</span>
-                    </div>
-                  )}
 
                   <ShimmerButton
                     type="submit"

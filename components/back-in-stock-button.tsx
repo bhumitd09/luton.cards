@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, BellOff, Check, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/components/admin/toast'
 
 /**
  * Sits on the PDP only when the product is out of stock.
@@ -12,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion'
  */
 export function BackInStockButton({ productId }: { productId: string }) {
   const router = useRouter()
+  const toast = useToast()
   const [subscribed, setSubscribed] = useState<boolean | null>(null)
   const [authenticated, setAuthenticated] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
@@ -37,12 +39,23 @@ export function BackInStockButton({ productId }: { productId: string }) {
     setLoading(true)
     try {
       if (subscribed) {
-        await fetch(`/api/products/${productId}/notify`, { method: 'DELETE' })
-        setSubscribed(false)
+        const res = await fetch(`/api/products/${productId}/notify`, { method: 'DELETE' })
+        if (res.ok) {
+          setSubscribed(false)
+        } else {
+          toast.error('Could not update your notification. Please try again.')
+        }
       } else {
         const res = await fetch(`/api/products/${productId}/notify`, { method: 'POST' })
-        if (res.ok) setSubscribed(true)
+        if (res.ok) {
+          setSubscribed(true)
+          toast.success("You're on the list — we'll email you when it's back in stock.")
+        } else {
+          toast.error('Could not subscribe. Please try again.')
+        }
       }
+    } catch {
+      toast.error('Network error. Please try again.')
     } finally {
       setLoading(false)
     }

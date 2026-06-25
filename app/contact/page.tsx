@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Mail, Instagram, MapPin, Send, Check, AlertCircle, Loader2, ArrowRight,
+  Mail, Instagram, MapPin, Send, Check, Loader2, ArrowRight,
 } from 'lucide-react'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -29,11 +30,11 @@ type FormState = {
 }
 
 export default function ContactPage() {
+  const toast = useToast()
   const [content, setContent] = useState<Record<string, string> | null>(null)
   const [form, setForm] = useState<FormState>({ name: '', email: '', subject: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState('')
   const [formHovered, setFormHovered] = useState(false)
   const heroRef = useRef<HTMLDivElement>(null)
 
@@ -57,13 +58,11 @@ export default function ContactPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-    setError('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
-    setError('')
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
@@ -72,12 +71,13 @@ export default function ContactPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error || 'Could not send your message. Try again.')
+        toast.error(data.error || 'Could not send your message. Try again.')
       } else {
         setSubmitted(true)
+        toast.success("Message sent — we'll get back to you shortly.")
       }
     } catch {
-      setError('Network error. Try again.')
+      toast.error('Network error. Try again.')
     } finally {
       setSubmitting(false)
     }
@@ -224,13 +224,6 @@ export default function ContactPage() {
                       className="lc-cinput resize-y min-h-[130px]"
                     />
                   </Field>
-
-                  {error && (
-                    <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-[13px] font-medium text-red-600">
-                      <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                      <span>{error}</span>
-                    </div>
-                  )}
 
                   <button
                     type="submit"

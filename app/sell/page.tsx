@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Upload, X, Check, AlertCircle, Banknote } from 'lucide-react'
@@ -22,6 +23,7 @@ function readFileAsDataURL(file: File): Promise<string> {
 }
 
 export default function SellPage() {
+  const toast = useToast()
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -77,13 +79,14 @@ export default function SellPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data?.error || 'Could not submit. Please try again.')
+        toast.error(data?.error || 'Could not submit. Please try again.')
         setSubmitting(false)
         return
       }
       setSuccess(true)
+      toast.success('Submission received — we will be in touch within 48 hours.')
     } catch {
-      setError('Network error. Please try again.')
+      toast.error('Network error. Please try again.')
     } finally {
       setSubmitting(false)
     }

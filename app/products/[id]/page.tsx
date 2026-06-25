@@ -11,6 +11,7 @@ import { Footer } from '@/components/footer'
 import { WishlistButton } from '@/components/wishlist-button'
 import { BackInStockButton } from '@/components/back-in-stock-button'
 import { ProductReviews } from '@/components/reviews'
+import { useToast } from '@/components/admin/toast'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
 import { variantLabel, conditionLabel, conditionColor } from '@/lib/conditions'
@@ -30,11 +31,13 @@ type ProductWithVariants = Product & { variants?: Variant[] }
 // ── Related Products Card ──────────────────────────────────────────────────
 function RelatedProductCard({ product, index }: { product: Product; index: number }) {
   const { addToCart } = useCart()
+  const toast = useToast()
   const [added, setAdded] = useState(false)
 
   const handleAdd = () => {
     addToCart(product)
     setAdded(true)
+    toast.success(`${product.name} added to cart`)
     setTimeout(() => setAdded(false), 1500)
   }
 
@@ -262,6 +265,7 @@ export default function ProductDetailPage() {
   const id = params?.id as string
 
   const { addToCart, canAddMore, cartQuantity } = useCart()
+  const toast = useToast()
   const [product, setProduct] = useState<ProductWithVariants | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -336,6 +340,7 @@ export default function ProductDetailPage() {
       addToCart(product)
     }
     setAdded(true)
+    toast.success(`${product.name} added to cart`)
     setTimeout(() => setAdded(false), 1500)
   }
 
@@ -472,6 +477,7 @@ export default function ProductDetailPage() {
                           transition={{ duration: 0.25 }}
                           style={{
                             width: '100%', height: '100%',
+                            aspectRatio: '4/3',
                             objectFit: 'contain', padding: '1.5rem',
                           }}
                         />

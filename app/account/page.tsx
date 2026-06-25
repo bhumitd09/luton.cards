@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { resetAnalytics } from '@/lib/analytics'
+import { useToast } from '@/components/admin/toast'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { Package, LogOut, MapPin, Mail, Check, ArrowRight, Heart, Trash2 } from 'lucide-react'
+import { Package, LogOut, MapPin, Mail, ArrowRight, Heart, Trash2 } from 'lucide-react'
 import { formatGrade } from '@/lib/utils'
 
 interface Profile {
@@ -63,12 +64,12 @@ interface WishlistItem {
 
 export default function AccountPage() {
   const router = useRouter()
+  const toast = useToast()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [wishlist, setWishlist] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('orders')
-  const [saved, setSaved] = useState(false)
 
   const removeFromWishlist = async (productId: string) => {
     await fetch(`/api/account/wishlist/${productId}`, { method: 'DELETE' })
@@ -102,16 +103,22 @@ export default function AccountPage() {
   }
 
   const saveProfile = async (patch: Partial<Profile>) => {
-    const res = await fetch('/api/account', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    })
-    if (res.ok) {
-      const data = await res.json()
-      setProfile(data.user)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 1500)
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setProfile(data.user)
+        toast.success('Changes saved.')
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data?.error || 'Could not save your changes.')
+      }
+    } catch {
+      toast.error('Network error. Please try again.')
     }
   }
 
@@ -285,7 +292,6 @@ export default function AccountPage() {
                 <ProfileForm
                   profile={profile}
                   onSave={saveProfile}
-                  saved={saved}
                   fields={['name', 'phone', 'marketingOptIn']}
                   title="Profile details"
                 />
@@ -294,7 +300,6 @@ export default function AccountPage() {
                 <ProfileForm
                   profile={profile}
                   onSave={saveProfile}
-                  saved={saved}
                   fields={['addressLine1', 'addressLine2', 'city', 'postcode', 'country']}
                   title="Shipping address"
                 />
@@ -401,13 +406,11 @@ const FIELD_LABELS: Record<string, string> = {
 function ProfileForm({
   profile,
   onSave,
-  saved,
   fields,
   title,
 }: {
   profile: Profile
   onSave: (patch: Partial<Profile>) => Promise<void>
-  saved: boolean
   fields: (keyof Profile)[]
   title: string
 }) {
@@ -469,11 +472,6 @@ function ProfileForm({
         >
           {submitting ? 'Saving…' : 'Save changes'}
         </button>
-        {saved && (
-          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600">
-            <Check size={13} /> Saved
-          </span>
-        )}
       </div>
     </form>
   )

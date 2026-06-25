@@ -8,6 +8,7 @@ import { Search, Package, Loader2, ArrowLeft } from 'lucide-react'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { formatGrade } from '@/lib/utils'
+import { highlightMatch } from '@/lib/highlight'
 
 type SearchHit = {
   id: string
@@ -137,7 +138,7 @@ function SearchContent() {
                           <img
                             src={r.image}
                             alt={r.name}
-                            className="size-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+                            className="aspect-[4/3] size-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
                           <Package size={32} className="text-neutral-300" />
@@ -158,7 +159,7 @@ function SearchContent() {
                           {r.game === 'one-piece' ? 'One Piece' : 'Pokémon'} · {r.category}
                         </p>
                         <h3 className="m-0 mb-2 line-clamp-2 text-sm font-bold leading-snug text-neutral-900">
-                          {r.name}
+                          {highlightMatch(r.name, q)}
                         </h3>
                         <p className="m-0 text-lg font-black tracking-tight text-[#EC1E79]">
                           £{r.price.toLocaleString()}
