@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { Inter } from 'next/font/google'
+import { getMaintenanceState, shouldGate } from '@/lib/maintenance'
+import { Holding } from './maintenance/holding'
 import { CartProvider } from '@/lib/cart-context'
 import { AdminProvider } from '@/lib/admin-context'
 import { AnnouncementBar } from '@/components/announcement-bar'
@@ -82,27 +85,41 @@ const localBusinessJsonLd = {
   ],
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Site lock: when enabled in the back office, replace the storefront with the
+  // holding page — unless this request is exempt (back office, signed-in admin,
+  // or a visitor who unlocked with the password). Read straight from the DB so
+  // it's reliable (no edge self-fetch).
+  const pathname = headers().get('x-pathname') || ''
+  const maintenance = await getMaintenanceState()
+  const gated = await shouldGate(pathname, maintenance)
+
   return (
     <html lang="en">
       <body className={inter.className}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: escapeJsonForScriptTag(localBusinessJsonLd) }}
-        />
-        <PostHogProvider>
-          <ToastProvider>
-            <AdminProvider>
-              <CartProvider>
-                <AnnouncementBar />
-                {children}
-                <CookieBanner />
-                <EditModeIndicator />
-              </CartProvider>
-            </AdminProvider>
-          </ToastProvider>
-        </PostHogProvider>
-        <Analytics />
+        {gated ? (
+          <Holding title={maintenance.title} message={maintenance.message} />
+        ) : (
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: escapeJsonForScriptTag(localBusinessJsonLd) }}
+            />
+            <PostHogProvider>
+              <ToastProvider>
+                <AdminProvider>
+                  <CartProvider>
+                    <AnnouncementBar />
+                    {children}
+                    <CookieBanner />
+                    <EditModeIndicator />
+                  </CartProvider>
+                </AdminProvider>
+              </ToastProvider>
+            </PostHogProvider>
+            <Analytics />
+          </>
+        )}
       </body>
     </html>
   )
