@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { verifyAdminSession } from '@/lib/admin-auth'
+import { verifyAdminSession, clearAdminSessionsForUser } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,6 +103,7 @@ export async function PATCH(req: NextRequest) {
         lastLogin: true,
       },
     })
+    if (newPasswordHash !== undefined) clearAdminSessionsForUser(admin.userId) // immediate revocation
 
     return NextResponse.json(updated)
   } catch (error) {

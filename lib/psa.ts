@@ -65,7 +65,10 @@ function str(v: unknown): string {
 /** Only PSA-owned hosts may have their images fetched server-side (SSRF guard). */
 export function isPsaImageUrl(url: string): boolean {
   try {
-    const host = new URL(url).hostname.toLowerCase()
+    const u = new URL(url)
+    if (u.protocol !== 'https:') return false // no http:// / file:// / etc.
+    if (u.username || u.password) return false // no userinfo tricks
+    const host = u.hostname.toLowerCase()
     return host === 'psacard.com' || host.endsWith('.psacard.com')
   } catch {
     return false

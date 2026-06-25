@@ -94,13 +94,16 @@ export async function POST(req: NextRequest) {
       if (!ok && recoveryCode) {
         const idx = matchRecoveryCode(recoveryCode, adminUser.totpRecoveryCodes)
         if (idx >= 0) {
-          ok = true
-          // Consume the recovery code (single use).
+          // Consume the matched code ATOMICALLY: the updateMany only succeeds
+          // while that exact hash is still present, so two concurrent logins
+          // can't both spend the same single-use code.
+          const matchedHash = adminUser.totpRecoveryCodes[idx]
           const remaining = adminUser.totpRecoveryCodes.filter((_, i) => i !== idx)
-          await db.adminUser.update({
-            where: { id: adminUser.id },
+          const consumed = await db.adminUser.updateMany({
+            where: { id: adminUser.id, totpRecoveryCodes: { has: matchedHash } },
             data: { totpRecoveryCodes: remaining },
           })
+          ok = consumed.count > 0
         }
       }
 

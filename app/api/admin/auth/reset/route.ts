@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { hashResetToken } from '@/lib/password-reset'
+import { clearAdminSessionsForUser } from '@/lib/admin-auth'
 
 /**
  * POST /api/admin/auth/reset — admin/vendor completes a password reset.
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
       tokenVersion: { increment: 1 },
     },
   })
+  clearAdminSessionsForUser(adminUser.id) // immediate revocation, no 30s cache wait
 
   return NextResponse.json({ ok: true })
 }

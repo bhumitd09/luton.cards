@@ -21,12 +21,18 @@ import { fetchPsaCert, fetchPsaImages, buildListingFromCert, guessGame, isPsaIma
 const MAX_IMG_BYTES = 10 * 1024 * 1024
 
 async function storePsaImage(url: string): Promise<string | null> {
-  if (!isPsaImageUrl(url)) return null // SSRF guard: PSA hosts only
+  if (!isPsaImageUrl(url)) return null // SSRF guard: PSA https hosts only
   try {
-    const res = await fetch(url, { cache: 'no-store' })
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10_000) })
     if (!res.ok) return null
+    // SSRF guard part 2: if the request was redirected, the FINAL host must
+    // still be on the PSA allowlist — blocks redirect-to-internal.
+    if (res.url && !isPsaImageUrl(res.url)) return null
     const type = (res.headers.get('content-type') || '').split(';')[0].trim()
     if (!type.startsWith('image/') || type === 'image/svg+xml') return null
+    // Reject before buffering if the server advertises an oversized body.
+    const len = Number(res.headers.get('content-length'))
+    if (Number.isFinite(len) && len > MAX_IMG_BYTES) return null
     const buf = Buffer.from(await res.arrayBuffer())
     if (buf.length === 0 || buf.length > MAX_IMG_BYTES) return null
     const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg'

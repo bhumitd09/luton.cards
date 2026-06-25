@@ -117,8 +117,19 @@ export function requireAdmin(req: NextRequest): AdminJwtPayload {
 // ─── Async session check with 30s memoization ─────────────────────────────
 // Cache map: cookie token string → { ok, validatedAt }. Avoids hitting the DB
 // on every single admin API call when the same browser is making many.
-const sessionCache = new Map<string, { ok: boolean; validatedAt: number }>()
+const sessionCache = new Map<string, { ok: boolean; validatedAt: number; userId: string }>()
 const SESSION_CACHE_TTL_MS = 30_000
+
+/**
+ * Drop all cached sessions for one admin. Call right after bumping their
+ * tokenVersion (password change / reset / disable / 2FA disable) so revocation
+ * is immediate instead of waiting out the 30s cache window.
+ */
+export function clearAdminSessionsForUser(userId: string): void {
+  for (const [token, entry] of sessionCache) {
+    if (entry.userId === userId) sessionCache.delete(token)
+  }
+}
 
 /**
  * Full-fidelity session check: JWT valid + admin exists + active + token
@@ -150,7 +161,7 @@ export async function verifyAdminSession(req: NextRequest): Promise<AdminJwtPayl
       select: { active: true, role: true, tokenVersion: true },
     })
     const ok = !!user && user.active && user.tokenVersion === payload.tv
-    sessionCache.set(token, { ok, validatedAt: Date.now() })
+    sessionCache.set(token, { ok, validatedAt: Date.now(), userId: payload.userId })
     // Bound the cache to avoid runaway memory
     if (sessionCache.size > 2000) {
       const firstKey = sessionCache.keys().next().value

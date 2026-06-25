@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { verifyAdminSession } from '@/lib/admin-auth'
+import { verifyAdminSession, clearAdminSessionsForUser } from '@/lib/admin-auth'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
 // PUT /api/admin/auth/password
@@ -56,6 +56,7 @@ export async function PUT(req: NextRequest) {
         tokenVersion: { increment: 1 },
       },
     })
+    clearAdminSessionsForUser(admin.userId) // immediate revocation
 
     return NextResponse.json({ success: true })
   } catch (error) {
