@@ -936,12 +936,18 @@ export default function AdminProductsPage() {
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('Delete failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.error || 'Delete failed')
+      }
+      // Remove it from the list immediately, then refetch to stay in sync.
+      setProducts(prev => prev.filter(p => p.id !== id))
+      setTotal(prev => Math.max(0, prev - 1))
       toast.success('Product deleted')
       setDeleteId(null)
       loadProducts()
-    } catch {
-      toast.error('Could not delete product')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete product')
       setError('Failed to delete product.')
     }
   }

@@ -275,20 +275,33 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       )
     }
 
+    // Soft delete (deactivate) only when explicitly asked — the storefront's
+    // own "Active" toggle is the way to hide a product. A real Delete means
+    // GONE. Default is a hard delete.
     const { searchParams } = new URL(req.url)
-    const hard = searchParams.get('hard') === 'true'
+    const soft = searchParams.get('soft') === 'true'
 
-    if (hard) {
-      await db.product.delete({ where: { id: params.id } })
-      return NextResponse.json({ success: true, deleted: true })
+    if (soft) {
+      const product = await db.product.update({
+        where: { id: params.id },
+        data: { active: false },
+      })
+      return NextResponse.json({ success: true, product, softDeleted: true })
     }
 
-    const product = await db.product.update({
-      where: { id: params.id },
-      data: { active: false },
-    })
+    // Hard delete. Safe to do:
+    //  - ProductVariant rows cascade (onDelete: Cascade).
+    //  - OrderItem keeps productId/productName as plain snapshots (no FK
+    //    relation), so order history is fully preserved.
+    //  - Wishlist / StockNotification rows reference productId as a plain
+    //    string, so we clean those up here to avoid dangling entries.
+    await db.$transaction([
+      db.wishlist.deleteMany({ where: { productId: params.id } }),
+      db.stockNotification.deleteMany({ where: { productId: params.id } }),
+      db.product.delete({ where: { id: params.id } }),
+    ])
 
-    return NextResponse.json({ success: true, product })
+    return NextResponse.json({ success: true, deleted: true })
   } catch (error) {
     console.error('Product DELETE error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
