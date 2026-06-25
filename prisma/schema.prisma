@@ -377,6 +377,14 @@ model User {
   // Password reset — SHA-256 hash of the single-use token, cleared after use.
   resetTokenHash   String?
   resetTokenExpiry DateTime?
+  // Email verification — true once the user clicks the verify link. Until then
+  // no past guest orders are attached to the account (signup emails are
+  // unverified, so email-matching before verification would leak order history
+  // + shipping addresses). verifyTokenHash is the SHA-256 of the single-use
+  // verify token, cleared once consumed.
+  emailVerified     Boolean   @default(false)
+  verifyTokenHash   String?
+  verifyTokenExpiry DateTime?
   createdAt     DateTime  @default(now())
   lastLogin     DateTime?
   orders        Order[]

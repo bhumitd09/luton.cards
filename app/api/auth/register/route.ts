@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { signCustomerToken, CUSTOMER_TOKEN_COOKIE } from '@/lib/customer-auth'
 import { enforceRateLimit } from '@/lib/rate-limit'
+import { generateVerifyToken, VERIFY_TOKEN_TTL_MS } from '@/lib/password-reset'
+import { sendEmailVerification } from '@/lib/email'
 
 function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
@@ -61,6 +63,9 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
+  // Email-verification token: stored hashed, sent in the link. Verifying it is
+  // what attaches any past guest orders (matching email) to this account.
+  const verify = generateVerifyToken()
   const user = await db.user.create({
     data: {
       email,
@@ -68,8 +73,18 @@ export async function POST(req: NextRequest) {
       name: name || null,
       marketingOptIn,
       lastLogin: new Date(),
+      verifyTokenHash: verify.hash,
+      verifyTokenExpiry: verify.expiry,
     },
   })
+
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://lutoncards.com').replace(/\/+$/, '')
+  sendEmailVerification({
+    to: user.email,
+    name: user.name,
+    verifyUrl: `${appUrl}/verify-email?token=${encodeURIComponent(verify.token)}`,
+    expiresInHours: Math.round(VERIFY_TOKEN_TTL_MS / 3_600_000),
+  }).catch((e) => console.error('Verification email failed:', e))
 
   const token = signCustomerToken({
     userId: user.id,

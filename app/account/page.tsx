@@ -21,6 +21,7 @@ interface Profile {
   city: string | null
   postcode: string | null
   country: string | null
+  emailVerified?: boolean
 }
 
 interface OrderItem {
@@ -95,6 +96,20 @@ export default function AccountPage() {
       .catch(() => router.replace('/login'))
   }, [router])
 
+  const [resending, setResending] = useState(false)
+  const resendVerification = async () => {
+    setResending(true)
+    try {
+      const res = await fetch('/api/auth/verify-email/resend', { method: 'POST' })
+      if (res.ok) toast.success('Verification email sent — check your inbox.')
+      else toast.error('Could not send the email right now. Please try again shortly.')
+    } catch {
+      toast.error('Network error. Please try again.')
+    } finally {
+      setResending(false)
+    }
+  }
+
   const handleLogout = async () => {
     await fetch('/api/auth/login', { method: 'DELETE' })
     resetAnalytics() // un-link analytics so the next visitor is anonymous
@@ -149,6 +164,25 @@ export default function AccountPage() {
             </h1>
             <p className="m-0 mt-1 text-sm text-neutral-500">{profile.email}</p>
           </div>
+
+          {profile.emailVerified === false && (
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+              <div className="flex items-start gap-2.5">
+                <Mail size={17} className="mt-0.5 shrink-0 text-amber-600" />
+                <p className="m-0 text-[13.5px] leading-snug text-amber-900">
+                  <span className="font-bold">Verify your email</span> to confirm your account and attach any past orders you placed with this address.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resendVerification}
+                disabled={resending}
+                className="shrink-0 rounded-lg bg-amber-600 px-3.5 py-2 text-xs font-extrabold uppercase tracking-[0.06em] text-white transition-colors hover:bg-amber-700 disabled:opacity-60"
+              >
+                {resending ? 'Sending…' : 'Resend email'}
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-7 md:grid-cols-[240px_1fr] md:items-start">
             {/* sidebar */}

@@ -14,7 +14,7 @@ export interface OrderEmailData {
   orderId: string
   customerName: string
   customerEmail: string
-  items: { productName: string; quantity: number; price: number }[]
+  items: { productName: string; quantity: number; price: number; productImage?: string }[]
   subtotal: number
   shippingCost: number
   discount: number
@@ -66,8 +66,8 @@ function emailShell(opts: {
     <tr><td align="center">
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
 
-        <tr><td align="center" style="padding:6px 0 24px;">
-          <img src="${logo}" alt="Luton Cards" height="46" style="height:46px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
+        <tr><td align="center" style="padding:8px 0 26px;">
+          <img src="${logo}" alt="Luton Cards" height="78" style="height:78px;width:auto;display:block;border:0;outline:none;text-decoration:none;" />
         </td></tr>
 
         <tr><td bgcolor="#0f0f10" style="background:#0f0f10;border:1px solid #202022;border-radius:16px;overflow:hidden;">
@@ -113,16 +113,30 @@ function addressBlock(address: string): string {
   </div>`
 }
 
+// Resolve a (possibly relative) stored image path to an absolute URL email
+// clients can load.
+function absUrl(src: string): string {
+  return /^https?:\/\//i.test(src) ? src : `${appBase()}${src.startsWith('/') ? '' : '/'}${src}`
+}
+
 function buildItemRows(items: OrderEmailData['items']): string {
   return items
-    .map(
-      (item) => `
+    .map((item) => {
+      const thumb = item.productImage
+        ? `<img src="${escapeHtml(absUrl(item.productImage))}" width="44" height="44" alt="" style="width:44px;height:44px;border-radius:8px;border:1px solid #2a2a2c;object-fit:cover;display:block;" />`
+        : `<div style="width:44px;height:44px;border-radius:8px;border:1px solid #2a2a2c;background:#1a1a1c;"></div>`
+      return `
     <tr>
-      <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:14px;color:#e4e4e7;">${escapeHtml(item.productName)}</td>
-      <td style="padding:12px 10px;border-bottom:1px solid #1a1a1c;font-size:14px;color:#9ca3af;text-align:center;white-space:nowrap;">&times;${item.quantity}</td>
-      <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:14px;color:#f4f4f5;text-align:right;font-weight:600;white-space:nowrap;">${formatPrice(item.price * item.quantity)}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;">
+        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+          <td style="padding-right:12px;" valign="middle">${thumb}</td>
+          <td valign="middle" style="font-size:14px;color:#e4e4e7;line-height:1.4;">${escapeHtml(item.productName)}</td>
+        </tr></table>
+      </td>
+      <td style="padding:12px 10px;border-bottom:1px solid #1a1a1c;font-size:14px;color:#9ca3af;text-align:center;white-space:nowrap;" valign="middle">&times;${item.quantity}</td>
+      <td style="padding:12px 0;border-bottom:1px solid #1a1a1c;font-size:14px;color:#f4f4f5;text-align:right;font-weight:600;white-space:nowrap;" valign="middle">${formatPrice(item.price * item.quantity)}</td>
     </tr>`
-    )
+    })
     .join('')
 }
 
@@ -572,6 +586,36 @@ export interface PasswordResetEmailData {
   resetUrl: string
   /** Minutes until the link expires, for the copy. */
   expiresInMinutes: number
+}
+
+// ─── Email verification ────────────────────────────────────────────────────
+
+export interface EmailVerificationData {
+  to: string
+  name?: string | null
+  verifyUrl: string
+  /** Hours until the link expires, for the copy. */
+  expiresInHours: number
+}
+
+export async function sendEmailVerification(data: EmailVerificationData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  const content = `
+    ${eyebrow('Verify your email')}
+    ${heading('Confirm your email address')}
+    <p style="margin:18px 0 18px;font-size:15px;line-height:1.7;color:#a1a1aa;">${data.name ? `Hi ${escapeHtml(data.name)}, ` : ''}thanks for creating a Luton Cards account. Confirm your email to finish setting up — once verified, any past orders you placed with this email will appear in your account. This link expires in ${data.expiresInHours} hours.</p>
+    <div align="center">${ctaButton(data.verifyUrl, 'Verify my email')}</div>
+    <p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">If you didn't create an account, you can safely ignore this email.</p>`
+  await sendEmail({
+    from: await getFrom(),
+    to: data.to,
+    subject: 'Verify your Luton Cards email',
+    html: emailShell({
+      title: 'Verify your email',
+      preheader: 'Confirm your email to finish setting up your Luton Cards account.',
+      content,
+    }),
+  })
 }
 
 export async function sendPasswordResetEmail(data: PasswordResetEmailData): Promise<void> {

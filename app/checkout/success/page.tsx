@@ -8,6 +8,14 @@ import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
 import { track } from '@/lib/analytics'
 
+const accountLinkStyle = {
+  color: 'rgba(255,255,255,0.6)',
+  fontSize: '0.875rem',
+  fontWeight: 600,
+  textDecoration: 'none',
+  letterSpacing: '-0.01em',
+}
+
 function CheckoutSuccessContent() {
   const { clearCart, items, discountedTotal, totalItems } = useCart()
   const searchParams = useSearchParams()
@@ -15,6 +23,26 @@ function CheckoutSuccessContent() {
   const orderId = searchParams.get('order_id')
 
   const [visible, setVisible] = useState(false)
+  const [ref, setRef] = useState<string | null>(null)
+  const [linked, setLinked] = useState<boolean | null>(null)
+
+  // Translate the Stripe session id (or order id) into a friendly order
+  // number, and learn whether it's already attached to an account.
+  useEffect(() => {
+    const qs = sessionId ? `session_id=${encodeURIComponent(sessionId)}`
+      : orderId ? `order_id=${encodeURIComponent(orderId)}` : ''
+    if (!qs) return
+    let cancelled = false
+    fetch(`/api/orders/lookup?${qs}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (cancelled || !d) return
+        if (d.ref) setRef(d.ref)
+        setLinked(Boolean(d.linked))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [sessionId, orderId])
 
   useEffect(() => {
     // Capture the purchase (with revenue) BEFORE clearing the cart.
@@ -31,7 +59,8 @@ function CheckoutSuccessContent() {
     return () => clearTimeout(timer)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const reference = orderId || sessionId
+  // Prefer the friendly order number; never show the raw cs_… session id.
+  const reference = ref ? `#${ref}` : null
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
@@ -117,6 +146,10 @@ function CheckoutSuccessContent() {
 
           {/* CTA */}
           <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.875rem',
             opacity: visible ? 1 : 0,
             transform: visible ? 'translateY(0)' : 'translateY(8px)',
             transition: 'opacity 0.4s ease 0.35s, transform 0.4s ease 0.35s',
@@ -137,6 +170,18 @@ function CheckoutSuccessContent() {
             >
               Continue Shopping
             </Link>
+
+            {/* Account nudge: if the order's linked to an account, point there;
+                otherwise invite the shopper to create one to track it. */}
+            {linked === true ? (
+              <Link href="/account" style={accountLinkStyle}>
+                View your orders →
+              </Link>
+            ) : linked === false ? (
+              <Link href="/register" style={accountLinkStyle}>
+                Create an account to track this order →
+              </Link>
+            ) : null}
           </div>
         </div>
       </main>

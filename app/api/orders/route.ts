@@ -150,6 +150,19 @@ export async function POST(req: NextRequest) {
     // (Discount use was already claimed atomically above, before pricing.)
 
     // ─── Emails (fire-and-forget) ─────────────────────────────────────────
+    // Pull the first image per product so the confirmation/admin emails can
+    // show a thumbnail of what was bought.
+    const imageByProduct = new Map<string, string>()
+    {
+      const ids = Array.from(new Set(order.items.map(i => i.productId).filter(Boolean)))
+      if (ids.length) {
+        const prods = await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, images: true } })
+        for (const p of prods) {
+          const first = Array.isArray(p.images) ? p.images.find((u): u is string => typeof u === 'string' && !!u) : undefined
+          if (first) imageByProduct.set(p.id, first)
+        }
+      }
+    }
     const emailData = {
       orderId: order.id,
       customerName: order.name,
@@ -158,6 +171,7 @@ export async function POST(req: NextRequest) {
         productName: i.productName,
         quantity: i.quantity,
         price: i.price,
+        productImage: imageByProduct.get(i.productId),
       })),
       subtotal,
       shippingCost: safeShipping,

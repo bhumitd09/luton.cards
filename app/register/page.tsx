@@ -33,6 +33,7 @@ export default function RegisterPage() {
         setSubmitting(false)
         return
       }
+      toast.success('Account created — check your email to verify and link any past orders.')
       router.replace('/account')
       router.refresh()
     } catch {

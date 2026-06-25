@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       city: true,
       postcode: true,
       country: true,
+      emailVerified: true,
       createdAt: true,
     },
   })
