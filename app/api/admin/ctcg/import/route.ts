@@ -91,6 +91,12 @@ export async function POST(req: NextRequest) {
 
     const slug = `${slugify(name)}-${slugify(tcg)}-${slugify(cardId)}`.slice(0, 120)
 
+    // Tags: the set name (e.g. "Roaring Skies") + the game (e.g. "pokemon").
+    // De-duped, blanks dropped. No internal "ctcg" tag.
+    const tags = Array.from(new Set(
+      [card.set_name?.trim(), game].filter((t): t is string => !!t),
+    ))
+
     const product = await db.product.create({
       data: {
         name,
@@ -104,7 +110,7 @@ export async function POST(req: NextRequest) {
         images: stored,
         featured: Boolean(body.featured),
         active: body.active !== undefined ? Boolean(body.active) : true,
-        tags: ['ctcg', tcg],
+        tags,
         vendorId: admin.userId,
       },
     })
