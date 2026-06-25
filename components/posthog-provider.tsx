@@ -23,13 +23,18 @@ function isAdminPath(): boolean {
   return typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
 }
 
+// PostHog project API key. This is a PUBLISHABLE client key (it ships in the
+// browser by design and can only ingest events, never read data), so a
+// hardcoded fallback is safe — an env var override still wins if set.
+const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY || 'phc_DbWKjQihnVxdELyXfaqFUsaGnvY6ztu7oTwBDNiHrrZs'
+
 function initPostHog() {
   if (initialised || typeof window === 'undefined') return
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
-  if (!key) return
-  posthog.init(key, {
-    api_host: '/ingest',
+  if (!POSTHOG_KEY) return
+  posthog.init(POSTHOG_KEY, {
+    api_host: '/ingest',                 // proxied to eu.i.posthog.com (dodges ad-blockers)
     ui_host: 'https://eu.posthog.com',
+    defaults: '2026-05-30',
     capture_pageview: false, // captured manually below
     capture_pageleave: true,
     person_profiles: 'identified_only',
