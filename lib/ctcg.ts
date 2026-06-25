@@ -29,7 +29,7 @@ export class CtcgError extends Error {
   }
 }
 
-async function call<T>(path: string): Promise<T> {
+async function call<T>(path: string, timeoutMs = 15_000): Promise<T> {
   if (!ctcgConfigured()) {
     throw new CtcgError('Card database is not connected. Set CTCG_API_BASE + CTCG_API_KEY.', 503)
   }
@@ -38,7 +38,7 @@ async function call<T>(path: string): Promise<T> {
     res = await fetch(`${base()}${path}`, {
       headers: { 'X-API-Key': process.env.CTCG_API_KEY as string, Accept: 'application/json' },
       cache: 'no-store',
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
     })
   } catch (err) {
     throw new CtcgError(`Could not reach the card database: ${err instanceof Error ? err.message : String(err)}`)
@@ -91,8 +91,11 @@ export const browseSet = (tcg: string, code: string, page = 1, q = '') =>
   )
 
 export const searchByName = (q: string, tcg = '', page = 1) =>
+  // Longer timeout: the first search for a game may build the name index
+  // server-side (self-heal); subsequent searches are instant.
   call<{ total: number; page: number; page_size: number; cards: CtcgCompactCard[] }>(
     `/v1/search?q=${encodeURIComponent(q)}${tcg ? `&tcg=${encodeURIComponent(tcg)}` : ''}&page=${page}&page_size=50`,
+    120_000,
   )
 
 export const getCard = (tcg: string, cardId: string) =>
