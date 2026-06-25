@@ -21,9 +21,12 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const orderId = searchParams.get('order_id')
+  // Stripe returns the friendly order number directly in the URL (?ref=…), so
+  // we can show it instantly without waiting on the lookup.
+  const refParam = searchParams.get('ref')
 
   const [visible, setVisible] = useState(false)
-  const [ref, setRef] = useState<string | null>(null)
+  const [ref, setRef] = useState<string | null>(refParam)
   const [linked, setLinked] = useState<boolean | null>(null)
 
   // Translate the Stripe session id (or order id) into a friendly order

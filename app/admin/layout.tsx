@@ -32,6 +32,7 @@ import {
   BellRing,
   BadgeCheck,
   Library,
+  Lock,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -338,7 +339,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/payouts', icon: Wallet, label: 'Payouts' },
       ]
     : [{ href: '/admin/payouts', icon: Wallet, label: 'My Payouts' }]
-  const navSystem = [{ href: '/admin/settings', icon: Settings, label: 'Settings' }]
+  const navSystem = [
+    ...(isSuper ? [{ href: '/admin/maintenance', icon: Lock, label: 'Site Lock' }] : []),
+    { href: '/admin/settings', icon: Settings, label: 'Settings' },
+  ]
 
   const closeMobile = () => setMobileMenuOpen(false)
 

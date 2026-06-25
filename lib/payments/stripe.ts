@@ -68,7 +68,9 @@ export class StripeDriver implements PaymentDriver {
       customer_email: order.email,
       metadata: { orderId: order.id, customerName: order.name },
       ...(discounts.length > 0 ? { discounts } : {}),
-      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      // Carry the friendly order number in the return URL so the success page
+      // shows "#ABCD1234" immediately — never the raw cs_… session id.
+      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&ref=${encodeURIComponent(order.id.slice(-8).toUpperCase())}`,
       cancel_url: `${appUrl}/checkout`,
     })
 
