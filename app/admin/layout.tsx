@@ -30,6 +30,7 @@ import {
   BookText,
   Inbox,
   BellRing,
+  BadgeCheck,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -294,6 +295,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/admin/products', icon: Package, label: 'Products', badgeKey: 'outOfStockProducts' as const, badgeColor: '#ef4444' },
     { href: '/admin/import', icon: Upload, label: 'Bulk Import' },
+    { href: '/admin/psa', icon: BadgeCheck, label: 'Add from PSA' },
     { href: '/admin/inventory', icon: Boxes, label: 'Inventory' },
     { href: '/admin/media', icon: Image, label: 'Media' },
     { href: '/admin/content', icon: FileText, label: 'Content', superadminOnly: true },
