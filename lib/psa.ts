@@ -52,6 +52,30 @@ export interface PsaImage {
   isFront: boolean
 }
 
+// ─── Lookup cache ──────────────────────────────────────────────────────────
+// PSA's public tier is brutally rate-limited (as low as 1 call/day). The admin
+// looks a cert up, reviews it, then imports — so import must NOT call PSA again.
+// We cache the lookup (our own fetch, still authoritative) and import reuses it.
+interface PsaLookup { cert: PsaCert; images: PsaImage[]; at: number }
+const lookupCache = new Map<string, PsaLookup>()
+const LOOKUP_TTL_MS = 24 * 60 * 60_000
+
+export function cachePsaLookup(cert: PsaCert, images: PsaImage[]): void {
+  lookupCache.set(cert.certNumber, { cert, images, at: Date.now() })
+  if (lookupCache.size > 500) {
+    const oldest = lookupCache.keys().next().value
+    if (oldest !== undefined) lookupCache.delete(oldest)
+  }
+}
+
+export function getCachedPsaLookup(certNumber: string): { cert: PsaCert; images: PsaImage[] } | null {
+  const key = certNumber.replace(/[^0-9]/g, '')
+  const hit = lookupCache.get(key)
+  if (!hit) return null
+  if (Date.now() - hit.at > LOOKUP_TTL_MS) { lookupCache.delete(key); return null }
+  return { cert: hit.cert, images: hit.images }
+}
+
 function authHeaders(): Record<string, string> {
   const token = process.env.PSA_API_TOKEN
   if (!token) throw new PsaError('PSA is not configured. Set PSA_API_TOKEN.', 503)
@@ -62,14 +86,19 @@ function str(v: unknown): string {
   return v === null || v === undefined ? '' : String(v).trim()
 }
 
-/** Only PSA-owned hosts may have their images fetched server-side (SSRF guard). */
+/** Only PSA/Collectors-owned hosts may have their images fetched server-side
+ *  (SSRF guard). PSA slab photos are served from collectors.com, not
+ *  psacard.com — both are allowed. Override with PSA_IMAGE_HOSTS (comma list)
+ *  if PSA serves images from another CDN host. */
 export function isPsaImageUrl(url: string): boolean {
   try {
     const u = new URL(url)
     if (u.protocol !== 'https:') return false // no http:// / file:// / etc.
     if (u.username || u.password) return false // no userinfo tricks
     const host = u.hostname.toLowerCase()
-    return host === 'psacard.com' || host.endsWith('.psacard.com')
+    const env = (process.env.PSA_IMAGE_HOSTS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+    const allow = env.length > 0 ? env : ['psacard.com', 'collectors.com']
+    return allow.some(a => host === a || host.endsWith(`.${a}`))
   } catch {
     return false
   }

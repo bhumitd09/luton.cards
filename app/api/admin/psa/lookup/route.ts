@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { enforceRateLimit } from '@/lib/rate-limit'
-import { fetchPsaCert, fetchPsaImages, buildListingFromCert, guessGame, PsaError } from '@/lib/psa'
+import { fetchPsaCert, fetchPsaImages, buildListingFromCert, guessGame, cachePsaLookup, PsaError } from '@/lib/psa'
 
 /**
  * POST /api/admin/psa/lookup — preview a graded card from its PSA cert number.
@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
   try {
     const cert = await fetchPsaCert(certNumber)
     const images = await fetchPsaImages(certNumber)
+    // Cache so /import doesn't have to call PSA again (1/day quota on the
+    // public tier — a second fetch at import time would 429).
+    cachePsaLookup(cert, images)
     const listing = buildListingFromCert(cert)
     return NextResponse.json({
       cert,

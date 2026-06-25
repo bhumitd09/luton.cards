@@ -4,7 +4,8 @@ import { verifyAdminSession } from '@/lib/admin-auth'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { storage } from '@/lib/storage'
 import { slugify } from '@/lib/slug'
-import { fetchPsaCert, fetchPsaImages, buildListingFromCert, guessGame, isPsaImageUrl, PsaError } from '@/lib/psa'
+import { normalizeGame } from '@/lib/games'
+import { fetchPsaCert, fetchPsaImages, buildListingFromCert, guessGame, isPsaImageUrl, getCachedPsaLookup, PsaError } from '@/lib/psa'
 
 /**
  * POST /api/admin/psa/import — create a for-sale graded listing from a PSA
@@ -65,9 +66,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Card facts come from PSA, authoritative.
-    const cert = await fetchPsaCert(certNumber)
-    const psaImages = await fetchPsaImages(certNumber)
+    // Reuse the cached lookup so we don't call PSA again — the public tier is
+    // ~1 call/day, and a second fetch here would 429. Fall back to a live fetch
+    // only if the cache expired (rare).
+    const cached = getCachedPsaLookup(certNumber)
+    const cert = cached ? cached.cert : await fetchPsaCert(certNumber)
+    const psaImages = cached ? cached.images : await fetchPsaImages(certNumber)
     const listing = buildListingFromCert(cert)
 
     // Download PSA images onto our storage (front first), skipping any that fail.
@@ -80,7 +84,7 @@ export async function POST(req: NextRequest) {
     const name = (typeof body.name === 'string' && body.name.trim()) || listing.name
     const description = (typeof body.description === 'string' && body.description.trim()) || listing.description
     const category = (typeof body.category === 'string' && body.category.trim()) || 'graded'
-    const game = body.game === 'one-piece' || body.game === 'pokemon' ? body.game : guessGame(cert)
+    const game = body.game ? normalizeGame(body.game) : guessGame(cert)
     const comparePrice = body.comparePrice !== undefined && body.comparePrice !== null && body.comparePrice !== ''
       ? Number(body.comparePrice)
       : null
