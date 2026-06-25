@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ConfirmProvider } from '@/components/admin/confirm-dialog'
+import { NotificationBell } from '@/components/admin/notification-bell'
 import {
   LayoutDashboard,
   Package,
@@ -544,7 +545,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span style={{ display: 'block', width: '20px', height: '2px', background: T.textDim, borderRadius: '2px' }} />
           </button>
           <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.9375rem', letterSpacing: '-0.01em' }}>Luton Cards</span>
-          <Avatar initial={initial} size={30} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <NotificationBell />
+            <Avatar initial={initial} size={30} />
+          </div>
         </div>
 
         {/* Desktop topbar */}
@@ -556,6 +560,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Breadcrumb pathname={pathname} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <Clock />
+            <NotificationBell />
             <div style={{ width: '1px', height: '20px', background: T.border }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <span style={{ color: '#fff', fontSize: '0.84rem', fontWeight: 700, letterSpacing: '-0.01em' }}>{displayName}</span>

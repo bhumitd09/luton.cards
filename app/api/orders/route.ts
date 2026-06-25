@@ -4,6 +4,7 @@ import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
 import { priceOrderLines, applyDiscountCode, resolveShippingCost, buildOrderItemCreates, PricingError } from '@/lib/orders'
 import { enforceRateLimit } from '@/lib/rate-limit'
+import { notifyAdmins } from '@/lib/notifications'
 
 /**
  * POST /api/orders — guest or logged-in checkout.
@@ -186,6 +187,15 @@ export async function POST(req: NextRequest) {
       sendOrderConfirmation(emailData),
       sendAdminOrderNotification(emailData),
     ]).catch(() => {})
+
+    // In-app bell: a new order has come in (payment may still be pending). The
+    // 'sale' notification fires separately from the Stripe webhook once paid.
+    notifyAdmins({
+      type: 'order',
+      title: `New order — £${finalTotal.toFixed(2)}`,
+      body: `Order #${order.id.slice(-8).toUpperCase()} · ${order.name}`,
+      href: '/admin/orders',
+    }).catch(() => {})
 
     return NextResponse.json({ orderId: order.id, total: finalTotal, success: true }, { status: 201 })
   } catch (error) {

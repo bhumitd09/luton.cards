@@ -321,6 +321,36 @@ export async function sendAdminOrderNotification(data: OrderEmailData): Promise<
   })
 }
 
+// Fires when a card actually SELLS (payment captured) — distinct from the
+// "new order placed" notification, which goes out at checkout before payment.
+function buildAdminSaleHtml(data: OrderEmailData): string {
+  const ref = data.orderId.slice(-8).toUpperCase()
+  const content = `
+    ${eyebrow('Payment received', '#10b981')}
+    ${heading(`Cha-ching! ${formatPrice(data.total)} paid`)}
+    <p style="margin:16px 0 22px;font-size:15px;line-height:1.7;color:#a1a1aa;">Order #${ref} from <strong style="color:#f4f4f5;">${escapeHtml(data.customerName)}</strong> has been paid. Time to pack it up.</p>
+    ${buildOrderTable(data)}
+    ${data.shippingAddress ? addressBlock(data.shippingAddress) : ''}
+    ${ctaButton(`${appBase()}/admin/orders`, 'Open in admin')}`
+  return emailShell({
+    title: `Sale: order #${ref} paid`,
+    preheader: `${data.customerName} just paid ${formatPrice(data.total)} — order #${ref}.`,
+    content,
+    accentColor: '#10b981',
+    accentBar: 'linear-gradient(90deg,#10b981 0%,#34d399 100%)',
+  })
+}
+
+export async function sendAdminSaleNotification(data: OrderEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  await sendEmail({
+    from: await getFrom(),
+    to: await getAdminEmail(),
+    subject: `💸 Sale: order #${data.orderId.slice(-8).toUpperCase()} paid — ${formatPrice(data.total)}`,
+    html: buildAdminSaleHtml(data),
+  })
+}
+
 export async function sendShippingNotification(data: OrderEmailData): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
   await sendEmail({
@@ -390,6 +420,45 @@ export async function sendOrderCancelledNotification(data: OrderEmailData): Prom
       body: 'This order has been cancelled. If you paid, a refund will follow to your original payment method. If this was a mistake or you have any questions, just reply to this email.',
       accentColor: '#9ca3af',
       accentBar: 'linear-gradient(90deg,#6b7280 0%,#9ca3af 100%)',
+    }),
+  })
+}
+
+// ─── Refund confirmation (customer) ─────────────────────────────────────────
+
+export interface RefundEmailData {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  amount: number
+  reason?: string
+  fullyRefunded: boolean
+}
+
+export async function sendRefundNotification(data: RefundEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  const ref = data.orderId.slice(-8).toUpperCase()
+  const reasonBlock = data.reason
+    ? `<div style="margin-top:18px;background:#161617;border:1px solid #202022;border-radius:12px;padding:16px 18px;">
+        <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Reason</div>
+        <div style="font-size:14px;color:#e4e4e7;line-height:1.6;">${escapeHtml(data.reason)}</div>
+      </div>`
+    : ''
+  const content = `
+    ${eyebrow('Refund processed')}
+    ${heading(data.fullyRefunded ? 'Your refund is on its way' : 'A partial refund is on its way')}
+    <p style="margin:0;font-size:13px;color:#6b7280;">Order #${ref}</p>
+    <p style="margin:18px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">Hi ${escapeHtml(data.customerName)}, we're sorry this one didn't work out. We've refunded <strong style="color:#f4f4f5;">${formatPrice(data.amount)}</strong> to your original payment method${data.fullyRefunded ? '' : ' (a partial refund on this order)'}. It can take 5–10 working days to land, depending on your bank.</p>
+    ${reasonBlock}
+    <p style="margin:20px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">Apologies for any inconvenience — if there's anything else we can help with, just reply to this email and we'll sort it.</p>`
+  await sendEmail({
+    from: await getFrom(),
+    to: data.customerEmail,
+    subject: `Refund processed: order #${ref}`,
+    html: emailShell({
+      title: 'Refund processed',
+      preheader: `We've refunded ${formatPrice(data.amount)} for order #${ref}.`,
+      content,
     }),
   })
 }

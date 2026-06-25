@@ -2,6 +2,8 @@ import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { redeemDiscountByCode } from '@/lib/orders'
+import { sendAdminSaleNotification } from '@/lib/email'
+import { notifyAdmins } from '@/lib/notifications'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-08-16' })
 
@@ -128,6 +130,48 @@ export async function POST(req: NextRequest) {
     await redeemDiscountByCode(order.discountCode).catch(err =>
       console.error('Stripe webhook: discount redeem failed', { orderId, err }),
     )
+  }
+
+  // ─── Tell the shop owner something just SOLD: in-app bell + email ──────
+  // Best-effort; never let a notification failure affect the 200 we owe Stripe.
+  try {
+    const itemSummary = order.items.map(i => `${i.quantity}× ${i.productName}`).join(', ')
+    await notifyAdmins({
+      type: 'sale',
+      title: `Sale — £${order.total.toFixed(2)} paid`,
+      body: `Order #${order.id.slice(-8).toUpperCase()} · ${itemSummary}`,
+      href: '/admin/orders',
+    })
+
+    // Per-product thumbnails for the email.
+    const ids = Array.from(new Set(order.items.map(i => i.productId).filter(Boolean)))
+    const imageByProduct = new Map<string, string>()
+    if (ids.length) {
+      const prods = await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, images: true } })
+      for (const p of prods) {
+        const first = Array.isArray(p.images) ? p.images.find((u): u is string => typeof u === 'string' && !!u) : undefined
+        if (first) imageByProduct.set(p.id, first)
+      }
+    }
+    await sendAdminSaleNotification({
+      orderId: order.id,
+      customerName: order.name,
+      customerEmail: order.email,
+      items: order.items.map(i => ({
+        productName: i.productName,
+        quantity: i.quantity,
+        price: i.price,
+        productImage: imageByProduct.get(i.productId),
+      })),
+      subtotal: order.total - (order.shippingCost ?? 0) + (order.discountAmount ?? 0),
+      shippingCost: order.shippingCost ?? 0,
+      discount: order.discountAmount ?? 0,
+      total: order.total,
+      shippingMethod: order.shippingMethod ?? undefined,
+      shippingAddress: [order.shippingLine1, order.shippingCity, order.shippingPostcode].filter(Boolean).join(', '),
+    })
+  } catch (err) {
+    console.error('Stripe webhook: sale notification failed', { orderId, err })
   }
 
   return NextResponse.json({ received: true })

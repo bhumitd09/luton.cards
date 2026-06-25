@@ -49,7 +49,10 @@ export async function GET(req: NextRequest) {
       db.product.count({ where: { ...productScope } }),
       db.product.count({ where: { ...productScope, active: true } }),
       db.product.count({ where: { ...productScope, featured: true } }),
-      db.order.count({ where: { ...orderScope } }),
+      // "Total orders" = orders that actually went through (paid/shipped/
+      // delivered). Cancelled + still-pending orders are excluded so the
+      // headline number reflects real sales, not abandoned/cancelled ones.
+      db.order.count({ where: { ...orderScope, status: { in: PAID_STATUSES } } }),
       db.order.count({ where: { ...orderScope, status: 'pending' } }),
       db.product.count({ where: { ...productScope, stock: { lte: 2, gt: 0 } } }),
       db.product.count({ where: { ...productScope, stock: 0 } }),

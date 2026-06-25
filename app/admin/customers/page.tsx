@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Search, X, TrendingUp, ShoppingBag, DollarSign, ChevronLeft, ChevronRight, Ban, Check } from 'lucide-react'
+import { Users, Search, X, TrendingUp, ShoppingBag, DollarSign, ChevronLeft, ChevronRight, Ban, Check, Trash2 } from 'lucide-react'
 import { useToast } from '@/components/admin/toast'
+import { useConfirm } from '@/components/admin/confirm-dialog'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -487,12 +488,40 @@ function SlideOver({
 const PAGE_SIZE = 12
 
 export default function CustomersPage() {
+  const toast = useToast()
+  const confirm = useConfirm()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [sortBy, setSortBy] = useState<SortBy>('spend')
   const [page, setPage] = useState(1)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const handleDelete = async (customer: Customer) => {
+    const ok = await confirm({
+      title: 'Delete this customer?',
+      message: `This permanently removes ${customer.name || customer.email} along with their ${customer.totalOrders} order${customer.totalOrders === 1 ? '' : 's'} and account. It can't be undone — only use it for test or spam entries. For a real customer, leave them here instead.`,
+      confirmLabel: 'Delete customer',
+      danger: true,
+    })
+    if (!ok) return
+    setDeleting(customer.email)
+    try {
+      const res = await fetch(`/api/admin/customers/${encodeURIComponent(customer.email)}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data?.error || 'Could not delete this customer.')
+        return
+      }
+      setCustomers(prev => prev.filter(c => c.email !== customer.email))
+      toast.success('Customer deleted.')
+    } catch {
+      toast.error('Network error. Please try again.')
+    } finally {
+      setDeleting(null)
+    }
+  }
 
   // Reset to page 1 when filter/sort changes
   useEffect(() => { setPage(1) }, [search, sortBy])
@@ -692,7 +721,7 @@ export default function CustomersPage() {
           {/* Table header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '2fr 80px 120px 130px 100px 90px',
+            gridTemplateColumns: '2fr 80px 120px 130px 100px 120px',
             padding: '0.75rem 1.25rem',
             borderBottom: '1px solid #202022',
             background: '#161617',
@@ -716,7 +745,7 @@ export default function CustomersPage() {
                 onClick={() => setSelectedCustomer(customer)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 80px 120px 130px 100px 90px',
+                  gridTemplateColumns: '2fr 80px 120px 130px 100px 120px',
                   padding: '0.6rem 1.25rem',
                   borderBottom: i < paged.length - 1 ? '1px solid #1a1a1c' : 'none',
                   cursor: 'pointer',
@@ -776,7 +805,7 @@ export default function CustomersPage() {
                 </div>
 
                 {/* Action */}
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                   <button
                     onClick={e => { e.stopPropagation(); setSelectedCustomer(customer) }}
                     style={{
@@ -802,6 +831,31 @@ export default function CustomersPage() {
                     }}
                   >
                     View &rarr;
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); handleDelete(customer) }}
+                    disabled={deleting === customer.email}
+                    title="Delete customer"
+                    style={{
+                      background: '#161617',
+                      border: '1px solid #202022',
+                      borderRadius: '11px',
+                      color: '#9ca3af',
+                      cursor: deleting === customer.email ? 'wait' : 'pointer',
+                      padding: '0.3rem 0.45rem',
+                      display: 'flex', alignItems: 'center',
+                      transition: 'border-color 0.15s, color 0.15s, background 0.15s',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLButtonElement
+                      el.style.borderColor = 'rgba(239,68,68,0.4)'; el.style.color = '#ef4444'; el.style.background = 'rgba(239,68,68,0.08)'
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLButtonElement
+                      el.style.borderColor = '#202022'; el.style.color = '#9ca3af'; el.style.background = '#161617'
+                    }}
+                  >
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </motion.div>

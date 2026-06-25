@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin } from '@/lib/vendor-auth'
 import { paymentProvider } from '@/lib/payments'
+import { sendRefundNotification } from '@/lib/email'
+import { notifyAdmins } from '@/lib/notifications'
 
 /**
  * POST /api/admin/orders/[id]/refund — superadmin only.
@@ -126,6 +128,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       },
       include: { items: true },
     })
+
+    // Email the customer (apology + amount + reason) and log it to the bell.
+    // Best-effort — the refund itself already succeeded.
+    sendRefundNotification({
+      orderId: order.id,
+      customerName: order.name,
+      customerEmail: order.email,
+      amount,
+      reason,
+      fullyRefunded,
+    }).catch(err => console.error('Refund email failed:', err))
+    notifyAdmins({
+      type: 'refund',
+      title: `Refund — £${amount.toFixed(2)}${fullyRefunded ? ' (full)' : ''}`,
+      body: `Order #${order.id.slice(-8).toUpperCase()} · ${order.name}${reason ? ` · ${reason}` : ''}`,
+      href: '/admin/orders',
+    }).catch(() => {})
 
     return NextResponse.json({ order: updated, refunded: amount, fullyRefunded, refundId })
   } catch (error) {

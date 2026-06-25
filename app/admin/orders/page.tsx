@@ -120,6 +120,8 @@ const DATE_RANGES = ['Today', 'This week', 'This month', 'All time'] as const
 type DateRange = (typeof DATE_RANGES)[number]
 
 const CARRIERS = ['Royal Mail', 'DHL', 'DPD', 'Evri', 'Parcelforce', 'UPS', 'FedEx', 'Other'] as const
+// Quick-pick refund reasons (also typed into the customer's refund email).
+const REFUND_REASONS = ['Damaged in transit', 'Item not as described', 'Out of stock', 'Customer changed mind', 'Lost in post', 'Duplicate order'] as const
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string; Icon: React.ElementType; label: string }> = {
   pending:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)',  Icon: Clock,        label: 'Pending'   },
@@ -1224,13 +1226,34 @@ function OrderDetailModal({
                       </div>
                       <div style={{ flex: 1, minWidth: 180 }}>
                         <label style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '0.4rem' }}>
-                          Reason <span style={{ color: '#4b5563', fontWeight: 600 }}>— optional</span>
+                          Reason <span style={{ color: '#4b5563', fontWeight: 600 }}>— emailed to the customer</span>
                         </label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}>
+                          {REFUND_REASONS.map(r => {
+                            const active = refundReason === r
+                            return (
+                              <button
+                                key={r}
+                                type="button"
+                                onClick={() => setRefundReason(active ? '' : r)}
+                                style={{
+                                  padding: '0.3rem 0.6rem', borderRadius: '8px', cursor: 'pointer',
+                                  fontSize: '0.75rem', fontWeight: 700,
+                                  background: active ? 'rgba(236,30,121,0.15)' : '#161617',
+                                  border: `1px solid ${active ? 'rgba(236,30,121,0.4)' : '#202022'}`,
+                                  color: active ? '#EC1E79' : '#9ca3af',
+                                }}
+                              >
+                                {r}
+                              </button>
+                            )
+                          })}
+                        </div>
                         <input
                           type="text"
                           value={refundReason}
                           onChange={e => setRefundReason(e.target.value)}
-                          placeholder="e.g. Damaged in transit"
+                          placeholder="Or type a custom reason…"
                           style={{
                             width: '100%', boxSizing: 'border-box',
                             background: '#0c0c0d', border: '1px solid #202022',

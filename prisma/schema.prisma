@@ -464,3 +464,21 @@ model Page {
 
   @@index([slug])
 }
+
+// ─── Admin notifications (in-app bell feed) ─────────────────────────────
+// A single store-wide feed surfaced in the back-office topbar so the team
+// can see at a glance when something happens (a sale, a refund, low stock,
+// a new contact message). `read` is global (small team) — marking read
+// clears it for everyone. `href` deep-links to the relevant admin page.
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // 'sale' | 'refund' | 'order' | 'low-stock' | 'contact' | …
+  title     String
+  body      String?
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([read])
+  @@index([createdAt])
+}

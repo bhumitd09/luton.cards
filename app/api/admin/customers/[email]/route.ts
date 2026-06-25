@@ -74,3 +74,37 @@ export async function PATCH(req: NextRequest, { params }: { params: { email: str
 
   return NextResponse.json({ profile })
 }
+
+/**
+ * DELETE /api/admin/customers/[email] — superadmin only. Permanently removes a
+ * customer: their orders (+ line items), their admin profile (notes/tags), and
+ * their registered account if one exists. Intended for clearing test/spam
+ * entries. Destructive — the UI gates it behind a confirm dialog.
+ *
+ * Note: this also removes the orders' sales history. For a *real* customer you
+ * usually want to keep the record; only use this for junk/test data.
+ */
+export async function DELETE(req: NextRequest, { params }: { params: { email: string } }) {
+  const admin = await verifyAdminSession(req)
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isSuperadmin(admin)) return NextResponse.json({ error: 'Superadmin only' }, { status: 403 })
+
+  const email = decodeEmail(params.email)
+
+  try {
+    const user = await db.user.findUnique({ where: { email }, select: { id: true } })
+
+    await db.$transaction([
+      // OrderItem rows cascade off Order; delete the orders for this email.
+      db.order.deleteMany({ where: { email } }),
+      db.customerProfile.deleteMany({ where: { email } }),
+      // Wishlist + StockNotification cascade off User on delete.
+      ...(user ? [db.user.delete({ where: { id: user.id } })] : []),
+    ])
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('Customer delete error:', err)
+    return NextResponse.json({ error: 'Could not delete this customer.' }, { status: 500 })
+  }
+}
