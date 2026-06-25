@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -54,8 +53,7 @@ const COUNTRIES = [
 ]
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart, discount: cartDiscount } = useCart()
-  const router = useRouter()
+  const { items, totalPrice, discount: cartDiscount } = useCart()
 
   // Contact
   const [firstName, setFirstName] = useState('')
@@ -91,7 +89,7 @@ export default function CheckoutPage() {
   // UI state
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
-  const [submitting, setSubmitting] = useState<'card' | 'invoice' | null>(null)
+  const [submitting, setSubmitting] = useState<'card' | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const selectedRate = shippingRates.find(r => r.id === selectedRateId) ?? null
@@ -278,33 +276,6 @@ export default function CheckoutPage() {
         return
       }
       window.location.href = data.url
-    } catch {
-      setError('Network error. Please check your connection and try again.')
-      setSubmitting(null)
-    }
-  }
-
-  const handlePayLater = async () => {
-    if (!validateAll()) {
-      setError('Please fill in all required fields.')
-      return
-    }
-    setError(null)
-    setSubmitting('invoice')
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildOrderPayload()),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || 'Something went wrong. Please try again.')
-        setSubmitting(null)
-        return
-      }
-      clearCart()
-      router.push(`/checkout/success?order_id=${data.orderId}`)
     } catch {
       setError('Network error. Please check your connection and try again.')
       setSubmitting(null)
@@ -1122,35 +1093,6 @@ export default function CheckoutPage() {
                 )}
               </button>
 
-              {/* Divider */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
-                <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 500 }}>or</span>
-                <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
-              </div>
-
-              {/* Pay Later */}
-              <button
-                type="button"
-                onClick={handlePayLater}
-                disabled={submitting !== null}
-                style={{
-                  background: 'transparent',
-                  color: submitting === 'invoice' ? '#9ca3af' : '#374151',
-                  border: `1.5px solid ${submitting === 'invoice' ? '#e5e7eb' : '#d1d5db'}`,
-                  padding: '0.875rem 1.5rem',
-                  borderRadius: '12px',
-                  fontSize: '0.9375rem',
-                  fontWeight: 700,
-                  cursor: submitting !== null ? 'not-allowed' : 'pointer',
-                  transition: 'border-color 0.2s, color 0.2s',
-                  width: '100%',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {submitting === 'invoice' ? 'Placing Order...' : 'Pay Later / Invoice'}
-              </button>
-
               <p style={{
                 fontSize: '0.75rem',
                 color: '#9ca3af',
@@ -1158,7 +1100,7 @@ export default function CheckoutPage() {
                 marginTop: '0.875rem',
                 lineHeight: 1.5,
               }}>
-                Pay securely by card, or choose Pay Later and we&apos;ll send an invoice.
+                Pay securely by card. You&apos;ll be redirected to our payment provider.
               </p>
             </div>
           </div>
