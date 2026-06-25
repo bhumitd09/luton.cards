@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
-import { priceOrderLines, applyDiscountCode, redeemDiscountUse, buildOrderItemCreates, PricingError } from '@/lib/orders'
+import { priceOrderLines, applyDiscountCode, resolveShippingCost, buildOrderItemCreates, PricingError } from '@/lib/orders'
 import { enforceRateLimit } from '@/lib/rate-limit'
 
 /**
@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
       shippingPostcode,
       shippingCountry,
       shippingMethod,
-      shippingCost,
       items,
       discountCode,
     } = body
@@ -100,24 +99,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Clamp shipping to [0, MAX_SHIPPING_COST]. Reject negatives outright.
-    const requestedShipping = typeof shippingCost === 'number' && isFinite(shippingCost) ? shippingCost : 0
-    if (requestedShipping < 0) {
-      return NextResponse.json({ error: 'Invalid shipping cost' }, { status: 400 })
-    }
-    const safeShipping = Math.min(MAX_SHIPPING_COST, requestedShipping)
-
     // ─── Server-side price + stock validation (shared with admin orders) ──
     const { lines, subtotal } = await priceOrderLines(items)
 
+    // ─── Shipping: AUTHORITATIVE, never trust the client number ────────────
+    // Resolve the cost from the live ShippingZone/Rate tables by the chosen
+    // method + destination, so a buyer can't POST shippingCost:0. Capped as a
+    // defensive backstop. (`shippingCost` from the body is ignored.)
+    const safeShipping = Math.min(
+      MAX_SHIPPING_COST,
+      await resolveShippingCost(shippingCountry, shippingMethod, subtotal),
+    )
+
     // ─── Discount math (all server-side) ──────────────────────────────────
-    // Validate, then atomically claim a use BEFORE pricing it in. If the code
-    // hit its usage limit between validation and claim, drop it — never apply
-    // a discount we couldn't redeem.
-    let appliedDiscount = await applyDiscountCode(discountCode, subtotal)
-    if (appliedDiscount && !(await redeemDiscountUse(appliedDiscount))) {
-      appliedDiscount = null
-    }
+    // Validate + price it in here, but the usage count is only CLAIMED when the
+    // order is actually paid (in the Stripe webhook) — so abandoned/unpaid
+    // checkouts don't burn a limited-use code.
+    const appliedDiscount = await applyDiscountCode(discountCode, subtotal)
     const discountSavings = appliedDiscount?.savings ?? 0
     const finalTotal = Math.max(0, subtotal + safeShipping - discountSavings)
 

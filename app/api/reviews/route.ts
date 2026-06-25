@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { verifyCustomerSession } from '@/lib/customer-auth'
 
 /**
  * Public reviews API.
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = getCustomerFromRequest(req)
+  const auth = await verifyCustomerSession(req)
   if (!auth) return NextResponse.json({ error: 'You must be signed in to write a review' }, { status: 401 })
 
   let body: { productId?: string; rating?: number; title?: string; body?: string }

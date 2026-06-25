@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { hashResetToken } from '@/lib/password-reset'
+import { clearCustomerSessionsForUser } from '@/lib/customer-auth'
 
 /**
  * POST /api/auth/reset — customer completes a password reset.
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       tokenVersion: { increment: 1 },
     },
   })
+  clearCustomerSessionsForUser(user.id) // immediate revocation
 
   return NextResponse.json({ ok: true })
 }

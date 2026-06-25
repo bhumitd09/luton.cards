@@ -214,6 +214,61 @@ export function buildOrderItemCreates(lines: PricedLine[]) {
   })
 }
 
+/**
+ * Resolve the AUTHORITATIVE shipping cost from the live ShippingZone/Rate
+ * tables — the buyer must not be able to set their own shipping price. Mirrors
+ * the public /api/shipping/rates logic so the quote shown at checkout and the
+ * amount actually charged come from the same source.
+ *
+ * - No zones configured at all → 0 (shipping not set up yet; can't charge it).
+ * - Zone exists but the chosen method doesn't resolve to an active rate → throw
+ *   PricingError(400) so we never silently trust a client number.
+ * - Honours freeAbove against the SERVER subtotal.
+ *
+ * `method` is matched by rate id first, then by name (tolerating the
+ * " (FREE)" suffix the rates endpoint appends to free rates).
+ */
+export async function resolveShippingCost(
+  country: string | null | undefined,
+  method: string | null | undefined,
+  subtotal: number,
+): Promise<number> {
+  const zones = await db.shippingZone.findMany({
+    where: { active: true },
+    include: { rates: { where: { active: true } } },
+  })
+  if (zones.length === 0) return 0
+
+  const dest = (country || 'GB').trim()
+  const zone = zones.find(z => z.countries.includes(dest)) || zones.find(z => z.countries.includes('*'))
+  if (!zone) throw new PricingError('We do not ship to that country yet.', 400)
+
+  const norm = (s: string) => s.replace(/\s*\(free\)\s*$/i, '').trim().toLowerCase()
+  const wanted = norm(method || '')
+  const rate = zone.rates.find(r => r.id === method) || zone.rates.find(r => norm(r.name) === wanted)
+  if (!rate) throw new PricingError('Please choose a valid shipping option.', 400)
+
+  const free = rate.freeAbove != null && subtotal >= rate.freeAbove
+  return free ? 0 : rate.price
+}
+
+/** Atomically claim one use of a discount BY CODE (for the webhook, which only
+ *  has the order's stored code). Enforces maxUses at the DB level; safe no-op
+ *  if the code is gone or already at its limit. */
+export async function redeemDiscountByCode(code: string | null | undefined): Promise<void> {
+  if (!code) return
+  const discount = await db.discount.findUnique({ where: { code: code.trim().toUpperCase() } })
+  if (!discount) return
+  if (discount.maxUses == null) {
+    await db.discount.update({ where: { id: discount.id }, data: { uses: { increment: 1 } } }).catch(() => {})
+    return
+  }
+  await db.discount.updateMany({
+    where: { id: discount.id, uses: { lt: discount.maxUses } },
+    data: { uses: { increment: 1 } },
+  }).catch(() => {})
+}
+
 /** Decrement stock for sold lines, variant-aware. Mirrors the Stripe webhook
  *  so manual/admin orders (which have no gateway webhook) keep inventory
  *  accurate. Conditional (`stock >= qty`) so it can't drive stock negative;

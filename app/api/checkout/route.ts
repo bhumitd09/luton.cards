@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { paymentProvider } from '@/lib/payments'
+import { enforceRateLimit } from '@/lib/rate-limit'
 
 /**
  * POST /api/checkout  — provider-agnostic checkout entry point.
@@ -17,6 +18,10 @@ import { paymentProvider } from '@/lib/payments'
  * The old /api/stripe/checkout still works — it now delegates here.
  */
 export async function POST(req: NextRequest) {
+  // Cap per IP so payment-session creation can't be hammered (Stripe object churn).
+  const block = enforceRateLimit(req, { bucket: 'checkout', max: 15, windowMs: 60_000 })
+  if (block) return block
+
   let body: { orderId?: string }
   try {
     body = await req.json()

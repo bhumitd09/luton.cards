@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { redeemDiscountByCode } from '@/lib/orders'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-08-16' })
 
@@ -118,6 +119,15 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error('Stripe webhook: stock decrement error', { orderId, err })
     }
+  }
+
+  // Claim the discount use now that the order is actually paid (so abandoned
+  // checkouts never burn a limited-use code). Idempotent flip above guarantees
+  // this runs at most once per order.
+  if (order.discountCode) {
+    await redeemDiscountByCode(order.discountCode).catch(err =>
+      console.error('Stripe webhook: discount redeem failed', { orderId, err }),
+    )
   }
 
   return NextResponse.json({ received: true })

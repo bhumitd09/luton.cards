@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { getCustomerFromRequest, verifyCustomerSession } from '@/lib/customer-auth'
 import { enforceRateLimit, clientIp } from '@/lib/rate-limit'
 
 /**
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = getCustomerFromRequest(req)
+  const auth = await verifyCustomerSession(req)
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // 10 / day per user (or per IP when not logged in). Stops a malicious
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = getCustomerFromRequest(req)
+  const auth = await verifyCustomerSession(req)
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await db.stockNotification

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getCustomerFromRequest } from '@/lib/customer-auth'
+import { getCustomerFromRequest, verifyCustomerSession } from '@/lib/customer-auth'
 
 /** Lightweight "is this on my wishlist" check — used by product cards / PDP. */
 export async function GET(req: NextRequest, { params }: { params: { productId: string } }) {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { productId: s
 
 /** Remove from wishlist. Idempotent (404 not raised if missing). */
 export async function DELETE(req: NextRequest, { params }: { params: { productId: string } }) {
-  const auth = getCustomerFromRequest(req)
+  const auth = await verifyCustomerSession(req)
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await db.wishlist

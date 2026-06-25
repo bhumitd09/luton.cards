@@ -78,8 +78,16 @@ export function getCustomerFromRequest(req: NextRequest): CustomerJwtPayload | n
 }
 
 // ─── Async session check with 30s memoization (see admin-auth for rationale) ─
-const sessionCache = new Map<string, { ok: boolean; validatedAt: number }>()
+const sessionCache = new Map<string, { ok: boolean; validatedAt: number; userId: string }>()
 const SESSION_CACHE_TTL_MS = 30_000
+
+/** Drop all cached sessions for one customer — call after a tokenVersion bump
+ *  (password reset) so revocation is immediate, not delayed by the cache TTL. */
+export function clearCustomerSessionsForUser(userId: string): void {
+  for (const [token, entry] of sessionCache) {
+    if (entry.userId === userId) sessionCache.delete(token)
+  }
+}
 
 export async function verifyCustomerSession(req: NextRequest): Promise<CustomerJwtPayload | null> {
   const token = req.cookies.get(CUSTOMER_TOKEN_COOKIE)?.value
@@ -99,7 +107,7 @@ export async function verifyCustomerSession(req: NextRequest): Promise<CustomerJ
       select: { tokenVersion: true },
     })
     const ok = !!user && user.tokenVersion === payload.tv
-    sessionCache.set(token, { ok, validatedAt: Date.now() })
+    sessionCache.set(token, { ok, validatedAt: Date.now(), userId: payload.userId })
     if (sessionCache.size > 2000) {
       const firstKey = sessionCache.keys().next().value
       if (firstKey !== undefined) sessionCache.delete(firstKey)

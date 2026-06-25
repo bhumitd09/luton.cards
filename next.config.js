@@ -48,6 +48,11 @@ const securityHeaders = [
 
 const nextConfig = {
   images: {
+    // The app uses plain <img> everywhere (zero next/image imports), so the
+    // built-in /_next/image optimizer is pure unauthenticated attack surface
+    // (Image-Optimizer DoS + unbounded disk-cache-growth advisories). Disable
+    // it — images are served as-is, no behaviour change.
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'via.placeholder.com' },
