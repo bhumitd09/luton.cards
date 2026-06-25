@@ -146,13 +146,9 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             {product.name}
           </h3>
         </Link>
-        {product.description && (
-          <p style={{ fontSize: '0.8125rem', color: '#6b7280', lineHeight: 1.5, marginBottom: '0.75rem', flex: 1 }}>
-            {product.description.slice(0, 80)}…
-          </p>
-        )}
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Description intentionally not shown on the card — keeps every card the
+            same height. Full details live on the product page. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
           <div>
             <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#EC1E79' }}>
               £{product.price.toLocaleString()}
