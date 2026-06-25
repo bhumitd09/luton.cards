@@ -280,7 +280,17 @@ export default function AdminCardDatabasePage() {
       }
       const cards = Array.isArray(data?.cards) ? (data.cards as SearchCard[]) : []
       setSearchResults(cards)
-      if (cards.length === 0) toast.info('No cards matched that name')
+      if (cards.length === 0) {
+        // First search for a game builds the index in the background — tell the
+        // user to retry rather than implying the card doesn't exist.
+        if (data?.indexing) {
+          toast.info('Preparing the search index for this game — give it a few seconds and search again.')
+        } else if (!searchTcg) {
+          toast.info('No matches. Tip: pick a game (the first search per game builds its index).')
+        } else {
+          toast.info('No cards matched that name or number.')
+        }
+      }
     } catch {
       toast.error('Network error. Try again.')
     } finally {

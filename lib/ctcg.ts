@@ -91,11 +91,10 @@ export const browseSet = (tcg: string, code: string, page = 1, q = '') =>
   )
 
 export const searchByName = (q: string, tcg = '', page = 1) =>
-  // Longer timeout: the first search for a game may build the name index
-  // server-side (self-heal); subsequent searches are instant.
-  call<{ total: number; page: number; page_size: number; cards: CtcgCompactCard[] }>(
+  // Returns fast even on a cold index — a missing index builds in the
+  // background and the response carries `indexing: true`; retry shortly.
+  call<{ total: number; page: number; page_size: number; cards: CtcgCompactCard[]; indexing?: boolean }>(
     `/v1/search?q=${encodeURIComponent(q)}${tcg ? `&tcg=${encodeURIComponent(tcg)}` : ''}&page=${page}&page_size=50`,
-    120_000,
   )
 
 export const getCard = (tcg: string, cardId: string) =>
