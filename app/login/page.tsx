@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, LogIn } from 'lucide-react'
+import { identify } from '@/lib/analytics'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -34,6 +35,10 @@ function LoginContent() {
         setError(data?.error || 'Could not sign in.')
         setSubmitting(false)
         return
+      }
+      // Tie analytics to this customer.
+      if (data?.user?.id) {
+        identify(data.user.id, { email: data.user.email, name: data.user.name })
       }
       // Honour ?next=... if it's a safe internal path
       const dest = nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//') ? nextUrl : '/account'

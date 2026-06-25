@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { resetAnalytics } from '@/lib/analytics'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Package, LogOut, MapPin, Mail, Check, ArrowRight, Heart, Trash2 } from 'lucide-react'
@@ -95,6 +96,7 @@ export default function AccountPage() {
 
   const handleLogout = async () => {
     await fetch('/api/auth/login', { method: 'DELETE' })
+    resetAnalytics() // un-link analytics so the next visitor is anonymous
     router.replace('/')
     router.refresh()
   }

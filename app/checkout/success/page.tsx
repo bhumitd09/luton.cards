@@ -6,9 +6,10 @@ import { useSearchParams } from 'next/navigation'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
+import { track } from '@/lib/analytics'
 
 function CheckoutSuccessContent() {
-  const { clearCart } = useCart()
+  const { clearCart, items, discountedTotal, totalItems } = useCart()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const orderId = searchParams.get('order_id')
@@ -16,6 +17,14 @@ function CheckoutSuccessContent() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // Capture the purchase (with revenue) BEFORE clearing the cart.
+    track('order_completed', {
+      order_id: orderId || sessionId || undefined,
+      value: discountedTotal,
+      currency: 'GBP',
+      items_count: totalItems,
+      product_ids: items.map(i => i.product.id),
+    })
     clearCart()
     // Trigger animation after mount
     const timer = setTimeout(() => setVisible(true), 50)

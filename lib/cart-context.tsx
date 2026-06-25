@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import type { Product } from './products'
+import { track } from './analytics'
 
 /**
  * Cart items can now be variant-backed (Near Mint Holofoil, Damaged Normal,
@@ -219,6 +220,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         variantLabel: opts?.variantLabel,
         variantStock: opts?.variantStock,
       }]
+    })
+
+    track('product_added_to_cart', {
+      product_id: product.id,
+      product_name: product.name,
+      price: opts?.variantPrice ?? product.price,
+      variant: opts?.variantLabel,
+      game: product.game,
     })
   }
 

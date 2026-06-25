@@ -37,6 +37,9 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://api.stripe.com https://www.google-analytics.com",
+      // PostHog session replay runs in a blob web worker (events are proxied
+      // same-origin via /ingest, so connect-src 'self' already covers them).
+      "worker-src 'self' blob:",
       "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -70,6 +73,15 @@ const nextConfig = {
   },
   // Compression handled by Railway / Vercel proxy
   poweredByHeader: false,
+  // Proxy PostHog (EU) through our own domain so ad-blockers don't drop
+  // analytics. The client points at /ingest (see components/posthog-provider).
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      { source: '/ingest/static/:path*', destination: 'https://eu-assets.i.posthog.com/static/:path*' },
+      { source: '/ingest/:path*', destination: 'https://eu.i.posthog.com/:path*' },
+    ]
+  },
   async headers() {
     return [
       {

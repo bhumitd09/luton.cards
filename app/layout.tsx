@@ -5,6 +5,7 @@ import { AdminProvider } from '@/lib/admin-context'
 import { AnnouncementBar } from '@/components/announcement-bar'
 import { CookieBanner } from '@/components/cookie-banner'
 import { Analytics } from '@/components/analytics'
+import { PostHogProvider } from '@/components/posthog-provider'
 import { EditModeIndicator } from '@/components/editable/edit-mode-indicator'
 import { escapeJsonForScriptTag } from '@/lib/html-escape'
 import './globals.css'
@@ -88,14 +89,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: escapeJsonForScriptTag(localBusinessJsonLd) }}
         />
-        <AdminProvider>
-          <CartProvider>
-            <AnnouncementBar />
-            {children}
-            <CookieBanner />
-            <EditModeIndicator />
-          </CartProvider>
-        </AdminProvider>
+        <PostHogProvider>
+          <AdminProvider>
+            <CartProvider>
+              <AnnouncementBar />
+              {children}
+              <CookieBanner />
+              <EditModeIndicator />
+            </CartProvider>
+          </AdminProvider>
+        </PostHogProvider>
         <Analytics />
       </body>
     </html>
