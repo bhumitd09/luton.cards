@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { productListScope, isSuperadmin } from '@/lib/vendor-auth'
 import { isValidCondition, isValidFoil } from '@/lib/conditions'
+import { isGame, normalizeGame } from '@/lib/games'
 
 function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (category) where.category = category
-    if (game && (game === 'pokemon' || game === 'one-piece')) where.game = game
+    if (game && isGame(game)) where.game = game
     if (featured !== null && featured !== '') where.featured = featured === 'true'
     if (active !== null && active !== '') where.active = active === 'true'
     if (search) {
@@ -177,7 +178,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resolvedSlug = slug || generateSlug(name)
-    const resolvedGame = game === 'one-piece' || game === 'pokemon' ? game : 'pokemon'
+    const resolvedGame = normalizeGame(game)
 
     // Vendor assignment: superadmin can assign to another admin via vendorId;
     // everyone else owns what they create.

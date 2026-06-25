@@ -10,6 +10,7 @@ import {
 import { ImageUploader } from '@/components/admin/image-uploader'
 import { useToast } from '@/components/admin/toast'
 import { CONDITIONS, FOILS } from '@/lib/conditions'
+import { GAMES, GAME_LABELS, normalizeGame } from '@/lib/games'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ interface Product {
 }
 
 type CategoryFilter = 'all' | 'single' | 'graded' | 'booster' | 'sealed'
-type GameFilter = 'all' | 'pokemon' | 'one-piece'
+type GameFilter = 'all' | (typeof GAMES)[number]
 type StockFilter = 'all' | 'in' | 'low' | 'out'
 
 const CATEGORY_COLORS: Record<string, { bg: string; color: string; label: string }> = {
@@ -275,7 +276,7 @@ function ProductModal({
   const initialForm: FormData = product
     ? {
         name: product.name,
-        game: product.game === 'one-piece' ? 'one-piece' : 'pokemon',
+        game: normalizeGame(product.game),
         category: product.category,
         price: String(product.price),
         comparePrice: product.comparePrice != null ? String(product.comparePrice) : '',
@@ -455,8 +456,9 @@ function ProductModal({
               value={form.game}
               onChange={e => update('game', e.target.value)}
             >
-              <option value="pokemon">Pokémon</option>
-              <option value="one-piece">One Piece</option>
+              {GAMES.map(g => (
+                <option key={g} value={g}>{GAME_LABELS[g]}</option>
+              ))}
             </select>
           </div>
 
@@ -970,8 +972,7 @@ export default function AdminProductsPage() {
 
   const GAME_PILLS: { label: string; value: GameFilter }[] = [
     { label: 'All Games', value: 'all' },
-    { label: 'Pokémon', value: 'pokemon' },
-    { label: 'One Piece', value: 'one-piece' },
+    ...GAMES.map(g => ({ label: GAME_LABELS[g], value: g })),
   ]
 
   const STOCK_OPTIONS: { label: string; value: StockFilter }[] = [

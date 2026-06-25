@@ -10,6 +10,7 @@ import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
+import { GAMES, GAME_LABELS, isGame } from '@/lib/games'
 
 const categories = [
   { value: 'all', label: 'All' },
@@ -21,8 +22,7 @@ const categories = [
 
 const games = [
   { value: 'all', label: 'All Games' },
-  { value: 'pokemon', label: 'Pokémon' },
-  { value: 'one-piece', label: 'One Piece' },
+  ...GAMES.map(g => ({ value: g, label: GAME_LABELS[g] })),
 ]
 
 const sortOptions = [
@@ -260,7 +260,7 @@ function ProductsContent() {
                 fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900,
                 color: '#fff', letterSpacing: '-0.025em',
               }}>
-                {game === 'pokemon' ? 'Pokémon Cards' : game === 'one-piece' ? 'One Piece TCG' : 'Shop All Cards'}
+                {isGame(game) ? `${GAME_LABELS[game]} Cards` : 'Shop All Cards'}
               </h1>
             </motion.div>
           </div>

@@ -4,6 +4,7 @@ import { verifyAdminSession } from '@/lib/admin-auth'
 import { sendBackInStockNotification } from '@/lib/email'
 import { isSuperadmin } from '@/lib/vendor-auth'
 import { isValidCondition, isValidFoil } from '@/lib/conditions'
+import { isGame } from '@/lib/games'
 
 function generateSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -174,7 +175,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           comparePrice: comparePrice !== undefined ? parseFloat(comparePrice) : existing.comparePrice,
           stock: newStock,
           category: category ?? existing.category,
-          game: game === 'one-piece' || game === 'pokemon' ? game : existing.game,
+          game: isGame(game) ? game : existing.game,
           images: images ?? existing.images,
           grade: grade !== undefined ? grade : existing.grade,
           grader: grader !== undefined ? grader : existing.grader,
