@@ -3,30 +3,22 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { getConsent, setConsent } from '@/lib/consent'
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const consent = localStorage.getItem('cookie_consent')
-      if (!consent) {
-        setVisible(true)
-      }
-    }
+    if (!getConsent()) setVisible(true)
   }, [])
 
   function handleAccept() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cookie_consent', 'accepted')
-    }
+    setConsent('accepted') // turns analytics on immediately
     setVisible(false)
   }
 
   function handleDecline() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cookie_consent', 'declined')
-    }
+    setConsent('declined') // analytics stay off
     setVisible(false)
   }
 
