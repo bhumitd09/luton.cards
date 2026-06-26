@@ -82,7 +82,20 @@ export async function POST(req: NextRequest) {
     data: { status: 'paid' },
   })
   if (updated.count === 0) {
-    // Already processed (or cancelled). No-op.
+    // We didn't flip it. Either a benign replay of an already-paid order, OR a
+    // real payment landed on an order that's no longer payable (e.g. it was
+    // cancelled while the customer paid a duplicate). The second case means
+    // money was taken with no fulfillable order — surface it LOUDLY so it gets
+    // refunded/reconciled rather than silently swallowed.
+    if (order.status !== 'paid') {
+      console.error('Stripe webhook: payment received for non-pending order', { orderId, status: order.status })
+      await notifyAdmins({
+        type: 'refund',
+        title: `⚠️ Paid but order is ${order.status}`,
+        body: `Order #${order.id.slice(-8).toUpperCase()} (${order.name}) was paid on Stripe but is marked ${order.status}. Money was taken — refund or reinstate it.`,
+        href: '/admin/orders',
+      }).catch(() => {})
+    }
     return NextResponse.json({ received: true, alreadyProcessed: true })
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -240,6 +240,25 @@ export default function CheckoutPage() {
     discountCode: discountApplied?.code || undefined,
   })
 
+  // Reuse the pending order created for the current cart so repeated attempts
+  // (e.g. retrying after a payment hiccup) don't pile up duplicate orders. We
+  // only create a new order when nothing exists yet or the cart/details change.
+  const pendingOrderRef = useRef<{ id: string; sig: string } | null>(null)
+
+  const createOrder = async (payload: ReturnType<typeof buildOrderPayload>): Promise<string | null> => {
+    const orderRes = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const orderData = await orderRes.json().catch(() => ({}))
+    if (!orderRes.ok || !orderData.orderId) {
+      setError(orderData.error || 'Could not start your order. Please try again.')
+      return null
+    }
+    return orderData.orderId as string
+  }
+
   const handlePayWithCard = async () => {
     if (!validateAll()) {
       setError('Please fill in all required fields.')
@@ -248,28 +267,41 @@ export default function CheckoutPage() {
     setError(null)
     setSubmitting('card')
     try {
-      // Two-step: create the Order first (pending status, server recomputes
-      // every price + applies discount), then ask Stripe for a session
-      // bound to that orderId. The webhook verifies session amount matches
-      // the stored order.total before flipping to 'paid'.
-      const orderRes = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildOrderPayload()),
-      })
-      const orderData = await orderRes.json()
-      if (!orderRes.ok || !orderData.orderId) {
-        setError(orderData.error || 'Could not start your order. Please try again.')
-        setSubmitting(null)
-        return
+      // Server recomputes every price + applies the discount; the webhook then
+      // verifies Stripe's amount matches the stored order.total before paying.
+      const payload = buildOrderPayload()
+      const sig = JSON.stringify(payload)
+
+      // Reuse our existing pending order for this exact cart if we have one;
+      // otherwise create it once and remember it.
+      let orderId = pendingOrderRef.current?.sig === sig ? pendingOrderRef.current!.id : null
+      if (!orderId) {
+        orderId = await createOrder(payload)
+        if (!orderId) { setSubmitting(null); return }
+        pendingOrderRef.current = { id: orderId, sig }
       }
 
-      const res = await fetch('/api/checkout', {
+      let res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: orderData.orderId }),
+        body: JSON.stringify({ orderId }),
       })
-      const data = await res.json()
+
+      // The remembered order is no longer payable (already paid, or cancelled).
+      // Forget it and create a fresh one once so the customer can still pay.
+      if (res.status === 409) {
+        pendingOrderRef.current = null
+        orderId = await createOrder(payload)
+        if (!orderId) { setSubmitting(null); return }
+        pendingOrderRef.current = { id: orderId, sig }
+        res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        })
+      }
+
+      const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.url) {
         setError(data.error || 'Could not start payment. Please try again.')
         setSubmitting(null)
