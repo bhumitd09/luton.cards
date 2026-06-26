@@ -275,20 +275,23 @@ export async function redeemDiscountByCode(code: string | null | undefined): Pro
  * the `stockDecremented` flag is flipped atomically, so only the first caller
  * actually decrements — no double-counting if two paths fire.
  */
-export async function decrementStockForOrderOnce(orderId: string): Promise<void> {
+export async function decrementStockForOrderOnce(
+  orderId: string,
+): Promise<{ productId: string; variantId: string | null; quantity: number; productName?: string }[]> {
   const claim = await db.order.updateMany({
     where: { id: orderId, stockDecremented: false },
     data: { stockDecremented: true },
   })
-  if (claim.count === 0) return // already done
+  if (claim.count === 0) return [] // already done
   const order = await db.order.findUnique({ where: { id: orderId }, include: { items: true } })
-  if (!order) return
+  if (!order) return []
   const failed = await decrementStockForLines(
     order.items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity, productName: i.productName })),
   )
   if (failed.length) {
     console.error('decrementStockForOrderOnce: oversold lines', { orderId, failed })
   }
+  return failed
 }
 
 /**

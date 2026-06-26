@@ -1,8 +1,7 @@
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { redeemDiscountByCode, decrementStockForOrderOnce } from '@/lib/orders'
-import { sendAdminSaleNotification, sendOrderConfirmation } from '@/lib/email'
+import { markOrderPaidOnce } from '@/lib/payments/fulfill'
 import { notifyAdmins } from '@/lib/notifications'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-08-16' })
@@ -75,93 +74,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
-  // (4) Idempotent flip: only act on pending orders. Use updateMany with the
-  //     status guard so a replayed event can't double-decrement stock.
-  const updated = await db.order.updateMany({
-    where: { id: orderId, status: 'pending' },
-    data: { status: 'paid' },
-  })
-  if (updated.count === 0) {
-    // We didn't flip it. Either a benign replay of an already-paid order, OR a
-    // real payment landed on an order that's no longer payable (e.g. it was
-    // cancelled while the customer paid a duplicate). The second case means
-    // money was taken with no fulfillable order — surface it LOUDLY so it gets
-    // refunded/reconciled rather than silently swallowed.
-    if (order.status !== 'paid') {
-      console.error('Stripe webhook: payment received for non-pending order', { orderId, status: order.status })
-      await notifyAdmins({
-        type: 'refund',
-        title: `⚠️ Paid but order is ${order.status}`,
-        body: `Order #${order.id.slice(-8).toUpperCase()} (${order.name}) was paid on Stripe but is marked ${order.status}. Money was taken — refund or reinstate it.`,
-        href: '/admin/orders',
-      }).catch(() => {})
-    }
-    return NextResponse.json({ received: true, alreadyProcessed: true })
+  // (3.5) Only treat a genuinely-paid session as paid. Card checkout is always
+  //       'paid' here; async payment methods can fire 'completed' while still
+  //       awaiting funds. 'no_payment_required' = a fully-discounted £0 order.
+  if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+    console.warn('Stripe webhook: session completed but not paid yet', { orderId, payment_status: session.payment_status })
+    return NextResponse.json({ received: true })
   }
 
-  // Take stock off the shelf now the order is paid. Idempotent (flag-guarded),
-  // variant-aware, and conditional so it can't drive stock negative — shared
-  // with the manual mark-as-paid path so stock decrements exactly once however
-  // an order becomes sold.
-  await decrementStockForOrderOnce(order.id).catch(err =>
-    console.error('Stripe webhook: stock decrement failed', { orderId, err }),
-  )
-
-  // Claim the discount use now that the order is actually paid (so abandoned
-  // checkouts never burn a limited-use code). Idempotent flip above guarantees
-  // this runs at most once per order.
-  if (order.discountCode) {
-    await redeemDiscountByCode(order.discountCode).catch(err =>
-      console.error('Stripe webhook: discount redeem failed', { orderId, err }),
-    )
-  }
-
-  // ─── Tell the shop owner something just SOLD: in-app bell + email ──────
-  // Best-effort; never let a notification failure affect the 200 we owe Stripe.
-  try {
-    const itemSummary = order.items.map(i => `${i.quantity}× ${i.productName}`).join(', ')
+  // (4) Flip to paid + fulfil (stock, discount, emails) exactly once. Shared
+  //     with the success-page reconciliation backstop; the atomic pending→paid
+  //     guard inside means only one path ever processes a given order.
+  const result = await markOrderPaidOnce(orderId)
+  if (!result.flipped && result.status !== 'paid' && result.status !== 'missing') {
+    // Real payment landed on an order that's no longer payable (e.g. cancelled).
+    console.error('Stripe webhook: payment received for non-pending order', { orderId, status: result.status })
     await notifyAdmins({
-      type: 'sale',
-      title: `Sale — £${order.total.toFixed(2)} paid`,
-      body: `Order #${order.id.slice(-8).toUpperCase()} · ${itemSummary}`,
+      type: 'refund',
+      title: `⚠️ Paid but order is ${result.status}`,
+      body: `Order #${order.id.slice(-8).toUpperCase()} (${order.name}) was paid on Stripe but is marked ${result.status}. Money was taken — refund or reinstate it.`,
       href: '/admin/orders',
-    })
-
-    // Per-product thumbnails for the email.
-    const ids = Array.from(new Set(order.items.map(i => i.productId).filter(Boolean)))
-    const imageByProduct = new Map<string, string>()
-    if (ids.length) {
-      const prods = await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, images: true } })
-      for (const p of prods) {
-        const first = Array.isArray(p.images) ? p.images.find((u): u is string => typeof u === 'string' && !!u) : undefined
-        if (first) imageByProduct.set(p.id, first)
-      }
-    }
-    const emailData = {
-      orderId: order.id,
-      customerName: order.name,
-      customerEmail: order.email,
-      items: order.items.map(i => ({
-        productName: i.productName,
-        quantity: i.quantity,
-        price: i.price,
-        productImage: imageByProduct.get(i.productId),
-      })),
-      subtotal: order.total - (order.shippingCost ?? 0) + (order.discountAmount ?? 0),
-      shippingCost: order.shippingCost ?? 0,
-      discount: order.discountAmount ?? 0,
-      total: order.total,
-      shippingMethod: order.shippingMethod ?? undefined,
-      shippingAddress: [order.shippingLine1, order.shippingCity, order.shippingPostcode].filter(Boolean).join(', '),
-    }
-    // Customer "Order confirmed" + admin "Sale" emails — both fire here, on
-    // PAYMENT, so an abandoned/failed checkout never sends a confirmation.
-    await Promise.allSettled([
-      sendOrderConfirmation(emailData),
-      sendAdminSaleNotification(emailData),
-    ])
-  } catch (err) {
-    console.error('Stripe webhook: sale notification failed', { orderId, err })
+    }).catch(() => {})
   }
 
   return NextResponse.json({ received: true })

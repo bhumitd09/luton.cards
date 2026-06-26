@@ -81,6 +81,15 @@ export class StripeDriver implements PaymentDriver {
     return { url: session.url, ref: session.id }
   }
 
+  async verifySession(ref: string): Promise<{ paid: boolean; amountPence: number; ref: string }> {
+    const session = await this.stripe.checkout.sessions.retrieve(ref)
+    return {
+      paid: session.payment_status === 'paid' || session.payment_status === 'no_payment_required',
+      amountPence: session.amount_total ?? 0,
+      ref: session.id,
+    }
+  }
+
   async refund(req: RefundRequest): Promise<RefundResult> {
     // The stored ref is a Checkout Session id. Resolve it to the underlying
     // PaymentIntent — that's what Stripe refunds against.

@@ -29,6 +29,19 @@ function CheckoutSuccessContent() {
   const [ref, setRef] = useState<string | null>(refParam)
   const [linked, setLinked] = useState<boolean | null>(null)
 
+  // Reconciliation backstop: confirm the payment server-side (re-checks Stripe)
+  // and flip the order to paid if the webhook hasn't landed yet — so a paying
+  // customer is never left with a stuck-pending order. Idempotent + harmless if
+  // the webhook already handled it.
+  useEffect(() => {
+    if (!sessionId) return
+    fetch('/api/checkout/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }),
+    }).catch(() => {})
+  }, [sessionId])
+
   // Translate the Stripe session id (or order id) into a friendly order
   // number, and learn whether it's already attached to an account.
   useEffect(() => {

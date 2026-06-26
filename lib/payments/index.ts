@@ -80,6 +80,10 @@ export interface PaymentDriver {
   createCheckout(order: CheckoutOrder): Promise<CheckoutResult>
   /** Refund all or part of a captured payment. */
   refund(req: RefundRequest): Promise<RefundResult>
+  /** Re-check a session/payment with the gateway (source of truth) — used by
+   *  the success-page reconciliation backstop so a missed webhook can't leave a
+   *  paid order stuck pending. Optional; drivers without it skip reconciliation. */
+  verifySession?(ref: string): Promise<{ paid: boolean; amountPence: number; ref: string }>
 }
 
 /**
