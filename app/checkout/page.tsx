@@ -92,6 +92,14 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState<'card' | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Checkout gateway: before showing the form we ask the shopper to sign in,
+  // create an account, or continue as a guest. Logged-in customers skip it and
+  // get their details pre-filled.
+  const [authChecked, setAuthChecked] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [guest, setGuest] = useState(false)
+  const showGate = authChecked && !loggedIn && !guest
+
   const selectedRate = shippingRates.find(r => r.id === selectedRateId) ?? null
   const shippingCost = selectedRate ? selectedRate.price : 0
   const subtotal = totalPrice
@@ -128,6 +136,33 @@ export default function CheckoutPage() {
       fetchRates(country, subtotal)
     }
   }, [country, subtotal, fetchRates])
+
+  // On load, see if the shopper is already signed in. If so, skip the gateway
+  // and pre-fill their saved contact + address details.
+  useEffect(() => {
+    fetch('/api/account')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        const u = d?.user
+        if (u) {
+          setLoggedIn(true)
+          if (u.name) {
+            const parts = String(u.name).trim().split(/\s+/)
+            setFirstName(parts[0] || '')
+            setLastName(parts.slice(1).join(' '))
+          }
+          if (u.email) setEmail(u.email)
+          if (u.phone) setPhone(u.phone)
+          if (u.addressLine1) setShippingLine1(u.addressLine1)
+          if (u.addressLine2) setShippingLine2(u.addressLine2)
+          if (u.city) setShippingCity(u.city)
+          if (u.postcode) setShippingPostcode(u.postcode)
+          if (u.country) setCountry(u.country)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setAuthChecked(true))
+  }, [])
 
   // Pre-populate the discount from the cart context (set on the cart page)
   // so the user doesn't have to re-enter it at checkout
@@ -440,7 +475,68 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Two-column layout */}
+        {!authChecked ? (
+          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '4rem 1.5rem', textAlign: 'center', color: '#9ca3af' }}>
+            Loading…
+          </div>
+        ) : showGate ? (
+          /* ── Checkout gateway ──────────────────────────────────────────── */
+          <div style={{ maxWidth: '460px', margin: '0 auto', padding: '3rem 1.5rem 4rem' }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#111', textAlign: 'center', letterSpacing: '-0.02em', marginBottom: '0.4rem' }}>
+              How would you like to check out?
+            </h2>
+            <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '0.9rem', marginBottom: '1.75rem', lineHeight: 1.55 }}>
+              Sign in for faster checkout and to track your order, or continue as a guest.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <Link
+                href="/login?next=/checkout"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  background: '#EC1E79', color: '#000', fontWeight: 800, fontSize: '0.95rem',
+                  padding: '0.95rem', borderRadius: '12px', textDecoration: 'none',
+                }}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register?next=/checkout"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  background: '#fff', color: '#111', fontWeight: 800, fontSize: '0.95rem',
+                  padding: '0.95rem', borderRadius: '12px', textDecoration: 'none',
+                  border: '1.5px solid #e5e7eb',
+                }}
+              >
+                Create an account
+              </Link>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.5rem 0' }}>
+                <div style={{ flex: 1, height: 1, background: '#ececef' }} />
+                <span style={{ fontSize: '0.8rem', color: '#9ca3af', fontWeight: 600 }}>or</span>
+                <div style={{ flex: 1, height: 1, background: '#ececef' }} />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setGuest(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                  background: '#f7f7f8', color: '#111', fontWeight: 800, fontSize: '0.95rem',
+                  padding: '0.95rem', borderRadius: '12px', border: '1.5px solid #e5e7eb', cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Continue as guest
+              </button>
+              <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.75rem', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                Guest checkout still needs your contact + delivery details. You can create an account afterwards to track this order.
+              </p>
+            </div>
+          </div>
+        ) : (
+        /* Two-column layout */
         <div className="checkout-layout" style={{
           maxWidth: '1100px',
           margin: '0 auto',
@@ -1137,6 +1233,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+        )}
       </main>
       <Footer />
 

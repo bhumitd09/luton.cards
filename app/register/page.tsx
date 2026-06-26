@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { UserPlus } from 'lucide-react'
@@ -12,8 +12,10 @@ import { Particles } from '@/components/magicui/particles'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { BorderBeam } from '@/components/magicui/border-beam'
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
+  const params = useSearchParams()
+  const nextUrl = params.get('next')
   const toast = useToast()
   const [form, setForm] = useState({ name: '', email: '', password: '', marketingOptIn: false })
   const [submitting, setSubmitting] = useState(false)
@@ -34,7 +36,8 @@ export default function RegisterPage() {
         return
       }
       toast.success('Account created — check your email to verify and link any past orders.')
-      router.replace('/account')
+      const dest = nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//') ? nextUrl : '/account'
+      router.replace(dest)
       router.refresh()
     } catch {
       toast.error('Network error. Please try again.')
@@ -137,6 +140,14 @@ export default function RegisterPage() {
       </main>
       <Footer />
     </>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterContent />
+    </Suspense>
   )
 }
 
