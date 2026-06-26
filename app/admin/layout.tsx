@@ -33,6 +33,7 @@ import {
   BadgeCheck,
   Library,
   Lock,
+  ChevronDown,
 } from 'lucide-react'
 
 interface AnalyticsBadges {
@@ -231,6 +232,112 @@ function RolePill({ role }: { role: string }) {
   )
 }
 
+// ─── Grouped navigation ───────────────────────────────────────────────────
+// Collapsible sections so the sidebar isn't one long congested list. Dashboard
+// stays a standalone link at the top; everything else lives under a group.
+interface NavChild {
+  href: string
+  icon: React.ElementType
+  label: string
+  badgeKey?: keyof AnalyticsBadges
+  badgeColor?: string
+  superadminOnly?: boolean
+}
+interface NavGroupDef { key: string; label: string; icon: React.ElementType; children: NavChild[] }
+
+const NAV_GROUPS: NavGroupDef[] = [
+  {
+    key: 'catalogue', label: 'Catalogue', icon: Boxes,
+    children: [
+      { href: '/admin/products', icon: Package, label: 'Products', badgeKey: 'outOfStockProducts', badgeColor: '#ef4444' },
+      { href: '/admin/inventory', icon: Boxes, label: 'Inventory' },
+      { href: '/admin/import', icon: Upload, label: 'Bulk Import' },
+      { href: '/admin/psa', icon: BadgeCheck, label: 'Add from PSA' },
+      { href: '/admin/card-database', icon: Library, label: 'Card Database' },
+      { href: '/admin/media', icon: Image, label: 'Media' },
+    ],
+  },
+  {
+    key: 'sales', label: 'Sales', icon: ShoppingBag,
+    children: [
+      { href: '/admin/orders', icon: ShoppingBag, label: 'Orders', badgeKey: 'pendingOrders', badgeColor: '#f59e0b' },
+      { href: '/admin/customers', icon: Users, label: 'Customers', superadminOnly: true },
+      { href: '/admin/discounts', icon: Tag, label: 'Discounts', superadminOnly: true },
+      { href: '/admin/sell', icon: Tag, label: 'Buy-back', superadminOnly: true },
+      { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+    ],
+  },
+  {
+    key: 'content', label: 'Content & CMS', icon: FileText,
+    children: [
+      { href: '/admin/pages', icon: Globe, label: 'Pages', superadminOnly: true },
+      { href: '/admin/content', icon: FileText, label: 'Content blocks', superadminOnly: true },
+      { href: '/admin/legal', icon: BookText, label: 'Legal Pages', superadminOnly: true },
+      { href: '/admin/instagram', icon: Instagram, label: 'Instagram', superadminOnly: true },
+      { href: '/admin/team', icon: Users, label: 'Team / About', superadminOnly: true },
+      { href: '/admin/reviews', icon: Star, label: 'Reviews', superadminOnly: true },
+    ],
+  },
+  {
+    key: 'messages', label: 'Messages', icon: Inbox,
+    children: [
+      { href: '/admin/contact', icon: Inbox, label: 'Contact Inbox', superadminOnly: true },
+      { href: '/admin/subscribers', icon: BellRing, label: 'Subscribers', superadminOnly: true },
+    ],
+  },
+  {
+    key: 'team', label: 'Team & payouts', icon: UserCog,
+    children: [
+      { href: '/admin/members', icon: UserCog, label: 'Team Members', superadminOnly: true },
+      { href: '/admin/payouts', icon: Wallet, label: 'Payouts' },
+    ],
+  },
+  {
+    key: 'system', label: 'System', icon: Settings,
+    children: [
+      { href: '/admin/integrations', icon: Plug, label: 'Integrations', superadminOnly: true },
+      { href: '/admin/shipping', icon: Truck, label: 'Shipping', superadminOnly: true },
+      { href: '/admin/maintenance', icon: Lock, label: 'Site Lock', superadminOnly: true },
+      { href: '/admin/settings', icon: Settings, label: 'Settings' },
+    ],
+  },
+]
+
+function NavGroup({
+  label, icon: Icon, open, hasActive, onToggle, children,
+}: {
+  label: string
+  icon: React.ElementType
+  open: boolean
+  hasActive: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div style={{ marginBottom: '0.1rem' }}>
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '0.7rem', width: '100%',
+          padding: '0.5rem 0.75rem', borderRadius: '9px', cursor: 'pointer',
+          background: hasActive && !open ? T.pinkSoft : 'transparent', border: 'none',
+          transition: 'background 0.15s', textAlign: 'left',
+        }}
+        onMouseEnter={e => { if (!(hasActive && !open)) (e.currentTarget as HTMLElement).style.background = '#161617' }}
+        onMouseLeave={e => { if (!(hasActive && !open)) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+      >
+        <Icon size={16.5} color={hasActive ? T.pink : '#71717a'} style={{ flexShrink: 0 }} />
+        <span style={{ flex: 1, fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: hasActive ? '#fff' : '#8a8a93' }}>
+          {label}
+        </span>
+        <ChevronDown size={15} color="#71717a" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s', flexShrink: 0 }} />
+      </button>
+      {open && <div style={{ paddingLeft: '0.4rem', marginTop: '0.1rem', marginBottom: '0.35rem' }}>{children}</div>}
+    </div>
+  )
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -238,6 +345,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [admin, setAdmin] = useState<AdminInfo | null>(null)
   const [badges, setBadges] = useState<AnalyticsBadges>({ outOfStockProducts: 0, pendingOrders: 0 })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const toggleGroup = (key: string) => setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }))
 
   useEffect(() => {
     if (pathname === '/admin/login') return
@@ -278,6 +387,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Close the mobile drawer whenever the route changes.
   useEffect(() => { setMobileMenuOpen(false) }, [pathname])
 
+  // Auto-expand the group that contains the current page (without collapsing
+  // any the user opened themselves).
+  useEffect(() => {
+    const active = NAV_GROUPS.find(g => g.children.some(c => pathname.startsWith(c.href)))
+    if (active) setOpenGroups(prev => (prev[active.key] ? prev : { ...prev, [active.key]: true }))
+  }, [pathname])
+
   const handleLogout = async () => {
     await fetch('/api/admin/auth', { method: 'DELETE' })
     router.replace('/admin/login')
@@ -303,47 +419,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const isSuper = role === 'superadmin'
 
-  // superadminOnly items are store-wide config / integrations / moderation —
-  // matched 1:1 with the server-side verifySuperadminSession gates. Vendors
-  // never see them in the nav (and would get 401 if they hit the route).
-  const navManage = [
-    { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
-    { href: '/admin/products', icon: Package, label: 'Products', badgeKey: 'outOfStockProducts' as const, badgeColor: '#ef4444' },
-    { href: '/admin/import', icon: Upload, label: 'Bulk Import' },
-    { href: '/admin/psa', icon: BadgeCheck, label: 'Add from PSA' },
-    { href: '/admin/card-database', icon: Library, label: 'Card Database' },
-    { href: '/admin/inventory', icon: Boxes, label: 'Inventory' },
-    { href: '/admin/media', icon: Image, label: 'Media' },
-    { href: '/admin/content', icon: FileText, label: 'Content', superadminOnly: true },
-    { href: '/admin/pages', icon: Globe, label: 'Pages', superadminOnly: true },
-    { href: '/admin/legal', icon: BookText, label: 'Legal Pages', superadminOnly: true },
-    { href: '/admin/instagram', icon: Instagram, label: 'Instagram', superadminOnly: true },
-    { href: '/admin/team', icon: Users, label: 'Team / About', superadminOnly: true },
-    { href: '/admin/integrations', icon: Plug, label: 'Integrations', superadminOnly: true },
-    { href: '/admin/shipping', icon: Truck, label: 'Shipping', superadminOnly: true },
-  ].filter(item => isSuper || !('superadminOnly' in item))
-
-  const navSales = [
-    { href: '/admin/orders', icon: ShoppingBag, label: 'Orders', badgeKey: 'pendingOrders' as const, badgeColor: '#f59e0b' },
-    { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
-    { href: '/admin/sell', icon: Tag, label: 'Buy-back', badgeColor: '#EC1E79', superadminOnly: true },
-    { href: '/admin/customers', icon: Users, label: 'Customers', superadminOnly: true },
-    { href: '/admin/discounts', icon: Tag, label: 'Discounts', superadminOnly: true },
-    { href: '/admin/reviews', icon: Star, label: 'Reviews', superadminOnly: true },
-    { href: '/admin/contact', icon: Inbox, label: 'Contact Inbox', superadminOnly: true },
-    { href: '/admin/subscribers', icon: BellRing, label: 'Subscribers', superadminOnly: true },
-  ].filter(item => isSuper || !('superadminOnly' in item))
-  const navCrew = isSuper
-    ? [
-        { href: '/admin/members', icon: UserCog, label: 'Team Members' },
-        { href: '/admin/payouts', icon: Wallet, label: 'Payouts' },
-      ]
-    : [{ href: '/admin/payouts', icon: Wallet, label: 'My Payouts' }]
-  const navSystem = [
-    ...(isSuper ? [{ href: '/admin/maintenance', icon: Lock, label: 'Site Lock' }] : []),
-    { href: '/admin/settings', icon: Settings, label: 'Settings' },
-  ]
-
   const closeMobile = () => setMobileMenuOpen(false)
 
   return (
@@ -361,6 +436,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         @media (min-width: 901px) {
           .admin-mobile-header { display: none !important; }
           .admin-overlay { display: none !important; }
+          /* Reserve space for the fixed sidebar so content never sits under it. */
+          .admin-main-content { margin-left: 248px !important; }
         }
         .admin-sidebar::-webkit-scrollbar { width: 6px; }
         .admin-sidebar::-webkit-scrollbar-thumb { background: #26262a; border-radius: 3px; }
@@ -404,11 +481,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           borderRight: `1px solid ${T.border}`,
           display: 'flex',
           flexDirection: 'column',
-          position: 'sticky',
+          // Locked, full-height panel with its own scroll — never drifts out of
+          // sync with a long page (the old sticky version could "stop").
+          position: 'fixed',
           top: 0,
+          left: 0,
           height: '100vh',
           flexShrink: 0,
           overflowY: 'auto',
+          zIndex: 100,
         }}
       >
         {/* Brand header */}
@@ -444,48 +525,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <style>{`.admin-sidebar-close { display: none !important; } @media (max-width: 900px) { .admin-sidebar-close { display: flex !important; } }`}</style>
 
-        {/* Nav */}
+        {/* Nav — Dashboard standalone, everything else in collapsible groups */}
         <nav style={{ padding: '0.9rem 0.65rem', flex: 1 }}>
-          <SectionLabel>Manage</SectionLabel>
-          {navManage.map(item => (
-            <NavItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              label={item.label}
-              isActive={item.exact ? pathname === item.href : pathname.startsWith(item.href)}
-              badge={item.badgeKey ? badges[item.badgeKey] : undefined}
-              badgeColor={item.badgeColor}
-              onNavigate={closeMobile}
-            />
-          ))}
+          <NavItem
+            href="/admin"
+            icon={LayoutDashboard}
+            label="Dashboard"
+            isActive={pathname === '/admin'}
+            onNavigate={closeMobile}
+          />
+          <div style={{ height: '0.6rem' }} />
 
-          <NavSeparator />
-          <SectionLabel>Sales</SectionLabel>
-          {navSales.map(item => (
-            <NavItem
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              label={item.label}
-              isActive={pathname.startsWith(item.href)}
-              badge={item.badgeKey ? badges[item.badgeKey] : undefined}
-              badgeColor={item.badgeColor}
-              onNavigate={closeMobile}
-            />
-          ))}
-
-          <NavSeparator />
-          <SectionLabel>Crew</SectionLabel>
-          {navCrew.map(item => (
-            <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label} isActive={pathname.startsWith(item.href)} onNavigate={closeMobile} />
-          ))}
-
-          <NavSeparator />
-          <SectionLabel>System</SectionLabel>
-          {navSystem.map(item => (
-            <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label} isActive={pathname.startsWith(item.href)} onNavigate={closeMobile} />
-          ))}
+          {NAV_GROUPS.map(group => {
+            const kids = group.children.filter(c => isSuper || !c.superadminOnly)
+            if (kids.length === 0) return null
+            const hasActive = kids.some(c => pathname.startsWith(c.href))
+            return (
+              <NavGroup
+                key={group.key}
+                label={group.label}
+                icon={group.icon}
+                open={!!openGroups[group.key]}
+                hasActive={hasActive}
+                onToggle={() => toggleGroup(group.key)}
+              >
+                {kids.map(c => (
+                  <NavItem
+                    key={c.href}
+                    href={c.href}
+                    icon={c.icon}
+                    label={c.label}
+                    isActive={pathname.startsWith(c.href)}
+                    badge={c.badgeKey ? badges[c.badgeKey] : undefined}
+                    badgeColor={c.badgeColor}
+                    onNavigate={closeMobile}
+                  />
+                ))}
+              </NavGroup>
+            )
+          })}
         </nav>
 
         {/* Account card — fills the footer with real identity + actions */}
