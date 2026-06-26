@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Search, SlidersHorizontal, Star, Tag, X } from 'lucide-react'
+import { ShoppingCart, Search, Star, Tag, X, SlidersHorizontal as FilterIcon } from 'lucide-react'
 import { formatGrade } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -148,24 +148,28 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         </Link>
         {/* Description intentionally not shown on the card — keeps every card the
             same height. Full details live on the product page. */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-          <div>
-            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#EC1E79' }}>
+        {/* Price + a FULL-WIDTH action button below it, so a long price
+            (e.g. £2,000) can never squash or wrap the button — every card's
+            button is identical and lines up across the grid. */}
+        <div style={{ marginTop: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.6rem' }}>
+            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#EC1E79', letterSpacing: '-0.01em' }}>
               £{product.price.toLocaleString()}
             </span>
             {product.stock > 0 && product.stock <= 5 && (
-              <span style={{ display: 'block', fontSize: '0.75rem', color: '#f59e0b', fontWeight: 600 }}>
-                {product.stock - cartQuantity(product.id)} left
+              <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                {Math.max(0, product.stock - cartQuantity(product.id))} left
               </span>
             )}
           </div>
           <motion.button
             onClick={handleAdd}
             disabled={!canAddMore(product) || added}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.94 }}
+            whileHover={canAddMore(product) && !added ? { scale: 1.02 } : undefined}
+            whileTap={canAddMore(product) && !added ? { scale: 0.98 } : undefined}
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              width: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem',
               background: added
                 ? '#c81c6b'
                 : product.stock === 0 || !canAddMore(product)
@@ -174,12 +178,12 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               color: product.stock === 0 || !canAddMore(product) ? '#9ca3af' : '#000',
               border: 'none',
               cursor: !canAddMore(product) ? 'not-allowed' : 'pointer',
-              padding: '0.55rem 1rem', borderRadius: '10px',
-              fontSize: '0.8125rem', fontWeight: 700,
+              padding: '0.7rem 1rem', borderRadius: '11px',
+              fontSize: '0.8125rem', fontWeight: 800,
               transition: 'background 0.2s ease',
             }}
           >
-            <ShoppingCart size={14} />
+            <ShoppingCart size={15} />
             {added
               ? 'Added!'
               : product.stock === 0
@@ -205,6 +209,7 @@ function ProductsContent() {
   const [category, setCategory] = useState(initialCategory)
   const [game, setGame] = useState(initialGame)
   const [sort, setSort] = useState('featured')
+  const [filtersOpen, setFiltersOpen] = useState(false) // mobile drawer
 
   // Update from URL params on nav
   useEffect(() => {
@@ -219,10 +224,23 @@ function ProductsContent() {
       .catch(() => setLoading(false))
   }, [])
 
+  // Shared predicates so the sidebar counts and the grid stay in lockstep.
+  const matchesSearch = (p: Product) =>
+    !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase())
+  const inGame = (p: Product) => game === 'all' || (p.game || 'pokemon') === game
+  const inCategory = (p: Product) => category === 'all' || p.category === category
+
+  // Live counts: a card-type count respects the current game + search (but not
+  // the type itself), and vice-versa, so the numbers reflect what a click yields.
+  const categoryCount = (value: string) =>
+    products.filter(p => matchesSearch(p) && inGame(p) && (value === 'all' || p.category === value)).length
+  const gameCount = (value: string) =>
+    products.filter(p => matchesSearch(p) && inCategory(p) && (value === 'all' || (p.game || 'pokemon') === value)).length
+
   const filtered = products
-    .filter(p => category === 'all' || p.category === category)
-    .filter(p => game === 'all' || (p.game || 'pokemon') === game)
-    .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase()))
+    .filter(inCategory)
+    .filter(inGame)
+    .filter(matchesSearch)
     .sort((a, b) => {
       if (sort === 'price-asc') return a.price - b.price
       if (sort === 'price-desc') return b.price - a.price
@@ -233,19 +251,62 @@ function ProductsContent() {
   return (
     <div style={{ minHeight: '100vh', background: '#fafafa' }}>
       <style>{`
-        @media (max-width: 768px) {
-          .products-header { padding: 2.5rem 0 2rem !important; }
-          .products-filter-bar { flex-direction: column !important; align-items: stretch !important; }
-          .products-pill-row { overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; padding-bottom: 0.25rem; }
-          .products-pill-row::-webkit-scrollbar { display: none; }
-          .products-sort { margin-left: 0 !important; width: 100%; }
-          .products-sort select { width: 100% !important; }
-          .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
-          /* Drop sticky on mobile — the filter bar stacks into a tall column
-             and the 73px desktop offset doesn't match the real mobile header
-             height. Static lets it scroll naturally with the page. */
-          .products-filter-wrap { position: static !important; padding: 0.75rem 0 !important; }
+        .lc-search {
+          width: 100%; box-sizing: border-box;
+          padding: 0.6rem 2.25rem 0.6rem 2.1rem;
+          background: #fafafa; border: 1px solid #e5e7eb; border-radius: 10px;
+          font-size: 0.9rem; color: #111; outline: none; font-family: inherit;
+          transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
         }
+        .lc-search::placeholder { color: #9ca3af; }
+        .lc-search:focus { background: #fff; border-color: rgba(236,30,121,0.45); box-shadow: 0 0 0 3px rgba(236,30,121,0.12); }
+        .lc-sort {
+          appearance: none; -webkit-appearance: none; width: 100%; box-sizing: border-box;
+          padding: 0.55rem 2rem 0.55rem 0.85rem;
+          background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat right 0.6rem center / 14px;
+          border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.85rem;
+          color: #374151; font-weight: 600; cursor: pointer; outline: none; font-family: inherit;
+        }
+        .lc-sort:focus { border-color: rgba(236,30,121,0.45); box-shadow: 0 0 0 3px rgba(236,30,121,0.12); }
+        /* Sidebar filter rows */
+        .lc-frow {
+          display: flex; align-items: center; justify-content: space-between;
+          width: 100%; box-sizing: border-box; text-align: left;
+          padding: 0.5rem 0.65rem; border-radius: 9px; border: 1px solid transparent;
+          background: transparent; color: #374151; font-size: 0.875rem; font-weight: 600;
+          cursor: pointer; font-family: inherit; transition: background 0.12s, color 0.12s;
+        }
+        .lc-frow:hover { background: #f4f4f5; color: #111; }
+        .lc-frow .lc-count { font-size: 0.75rem; font-weight: 600; color: #9ca3af; }
+        .lc-frow.is-type-active { background: #fdecf4; border-color: #f7c6dc; color: #EC1E79; font-weight: 800; }
+        .lc-frow.is-type-active .lc-count { color: #EC1E79; }
+        .lc-frow.is-game-active { background: #EC1E79; color: #fff; font-weight: 800; }
+        .lc-frow.is-game-active .lc-count { color: rgba(255,255,255,0.85); }
+        .lc-fhead { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #9ca3af; margin: 0 0 0.5rem 0.15rem; }
+        .products-filter-toggle { display: none; }
+        .products-sidebar-overlay { display: none; }
+        @media (max-width: 900px) {
+          .products-layout { display: block !important; }
+          .products-filter-toggle {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1.1rem; border-radius: 11px; border: 1px solid #e5e7eb;
+            background: #fff; color: #111; font-weight: 800; font-size: 0.875rem;
+            cursor: pointer; margin-bottom: 1.25rem;
+          }
+          .products-sidebar {
+            position: fixed !important; top: 0 !important; left: 0 !important; bottom: 0 !important;
+            width: 290px !important; max-width: 85vw; z-index: 120 !important;
+            transform: translateX(-105%); transition: transform 0.28s ease;
+            overflow-y: auto; border-radius: 0 !important; height: 100vh !important;
+            box-shadow: 0 20px 60px -10px rgba(0,0,0,0.4);
+          }
+          .products-sidebar.open { transform: translateX(0); }
+          .products-sidebar-overlay.open { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 110; }
+          .products-sidebar-close { display: flex !important; }
+        }
+        @media (min-width: 901px) { .products-sidebar-close { display: none !important; } }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.25rem; }
+        @media (max-width: 520px) { .products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.85rem !important; } }
       `}</style>
       <Header />
       <main>
@@ -281,195 +342,142 @@ function ProductsContent() {
           </div>
         </div>
 
-        {/* Filters
-            Hierarchy:
-            - Primary filter (Game)     → solid pink-gradient pill when active
-            - Secondary filter (Category) → soft pink-tinted pill when active
-            - Tertiary (Sort)           → minimal styled select
-            One colour system across the row instead of pink-vs-black. */}
-        <div className="products-filter-wrap" style={{
-          background: '#fff', borderBottom: '1px solid #ececef',
-          position: 'sticky', top: '73px', zIndex: 50, padding: '0.85rem 0',
-        }}>
-          <style>{`
-            .lc-pill {
-              padding: 0.45rem 0.95rem;
-              border-radius: 9999px;
-              border: 1px solid #ececef;
-              background: #f7f7f8;
-              color: #4b5563;
-              font-weight: 600;
-              font-size: 0.825rem;
-              line-height: 1;
-              cursor: pointer;
-              letter-spacing: -0.005em;
-              transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-            }
-            .lc-pill:hover { background: #eef0f3; color: #111; }
-            .lc-pill.is-primary-active {
-              background: linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%);
-              border-color: transparent;
-              color: #fff;
-              box-shadow: 0 6px 18px -8px rgba(236,30,121,0.55);
-            }
-            .lc-pill.is-secondary-active {
-              background: rgba(236,30,121,0.1);
-              border-color: rgba(236,30,121,0.25);
-              color: #EC1E79;
-              font-weight: 700;
-            }
-            .lc-search {
-              width: 100%;
-              padding: 0.6rem 2.25rem 0.6rem 2.25rem;
-              background: #f5f5f7;
-              border: 1px solid transparent;
-              border-radius: 10px;
-              font-size: 0.9rem;
-              color: #111;
-              outline: none;
-              transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-              font-family: inherit;
-            }
-            .lc-search::placeholder { color: #9ca3af; }
-            .lc-search:focus {
-              background: #fff;
-              border-color: rgba(236,30,121,0.45);
-              box-shadow: 0 0 0 3px rgba(236,30,121,0.12);
-            }
-            .lc-sort {
-              appearance: none;
-              -webkit-appearance: none;
-              padding: 0.5rem 2rem 0.5rem 0.85rem;
-              background: #f7f7f8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat right 0.55rem center / 14px;
-              border: 1px solid #ececef;
-              border-radius: 10px;
-              font-size: 0.85rem;
-              color: #374151;
-              font-weight: 600;
-              cursor: pointer;
-              outline: none;
-              font-family: inherit;
-            }
-            .lc-sort:focus { border-color: rgba(236,30,121,0.45); box-shadow: 0 0 0 3px rgba(236,30,121,0.12); }
-            .lc-filter-divider {
-              width: 1px;
-              align-self: stretch;
-              background: #ececef;
-              flex-shrink: 0;
-            }
-            @media (max-width: 768px) {
-              .lc-filter-divider { display: none; }
-            }
-          `}</style>
+        {/* Shop: a filter sidebar (search + card type + game + sort) beside the
+            results grid. On mobile the sidebar becomes a slide-in drawer behind
+            a "Filters" button. */}
+        <div className="container" style={{ padding: '2rem 1.5rem 3.5rem' }}>
+          <button className="products-filter-toggle" onClick={() => setFiltersOpen(true)}>
+            <FilterIcon size={16} /> Filters
+          </button>
 
-          <div className="container products-filter-bar" style={{
-            display: 'flex', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center',
-          }}>
-            {/* Search */}
-            <div style={{ position: 'relative', flex: '1 1 260px', minWidth: '220px', maxWidth: '420px' }}>
-              <Search size={15} color="#9ca3af" style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              <input
-                type="text"
-                placeholder="Search cards..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="lc-search"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  aria-label="Clear search"
-                  style={{
-                    position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
-                    background: '#ececef', border: 'none', cursor: 'pointer',
-                    color: '#6b7280', borderRadius: 999, width: 22, height: 22,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <X size={12} />
-                </button>
+          <div className="products-layout" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+
+            {/* Filter sidebar */}
+            <aside
+              className={`products-sidebar${filtersOpen ? ' open' : ''}`}
+              style={{
+                flex: '0 0 220px', background: '#fff', border: '1px solid #ececef',
+                borderRadius: '16px', padding: '1.1rem', position: 'sticky', top: '90px',
+              }}
+            >
+              <button
+                className="products-sidebar-close"
+                onClick={() => setFiltersOpen(false)}
+                aria-label="Close filters"
+                style={{
+                  display: 'none', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+                  marginBottom: '1rem', background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#111', fontWeight: 800, fontSize: '1rem', padding: 0,
+                }}
+              >
+                Filters <X size={18} />
+              </button>
+
+              {/* Search */}
+              <div style={{ position: 'relative', marginBottom: '1.4rem' }}>
+                <Search size={15} color="#9ca3af" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  placeholder="Search cards..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="lc-search"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    aria-label="Clear search"
+                    style={{
+                      position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                      background: '#ececef', border: 'none', cursor: 'pointer',
+                      color: '#6b7280', borderRadius: 999, width: 22, height: 22,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+
+              {/* Card type */}
+              <div style={{ marginBottom: '1.4rem' }}>
+                <p className="lc-fhead">Card type</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {categories.map(cat => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => { setCategory(cat.value); setFiltersOpen(false) }}
+                      className={`lc-frow${category === cat.value ? ' is-type-active' : ''}`}
+                    >
+                      <span>{cat.label}</span>
+                      <span className="lc-count">{categoryCount(cat.value)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Game */}
+              <div style={{ marginBottom: '1.4rem' }}>
+                <p className="lc-fhead">Game</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {games.map(g => (
+                    <button
+                      key={g.value}
+                      type="button"
+                      onClick={() => { setGame(g.value); setFiltersOpen(false) }}
+                      className={`lc-frow${game === g.value ? ' is-game-active' : ''}`}
+                    >
+                      <span>{g.label}</span>
+                      <span className="lc-count">{gameCount(g.value)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sort */}
+              <div>
+                <p className="lc-fhead">Sort by</p>
+                <select value={sort} onChange={e => setSort(e.target.value)} className="lc-sort" aria-label="Sort cards">
+                  {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </aside>
+
+            {/* Mobile drawer backdrop */}
+            <div
+              className={`products-sidebar-overlay${filtersOpen ? ' open' : ''}`}
+              onClick={() => setFiltersOpen(false)}
+            />
+
+            {/* Results */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+                {loading ? 'Loading…' : `${filtered.length} card${filtered.length !== 1 ? 's' : ''} found`}
+              </p>
+
+              {loading ? (
+                <div className="products-grid">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} style={{ borderRadius: '18px', background: '#f0f0f0', height: '340px' }} />
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 0', color: '#9ca3af' }}>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>No cards found</p>
+                  <p>Try adjusting your search or filters</p>
+                </div>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  <motion.div layout className="products-grid">
+                    {filtered.map((product, i) => (
+                      <ProductCard key={product.id} product={product} index={i} />
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
               )}
             </div>
-
-            <div className="lc-filter-divider" />
-
-            {/* Game pills — PRIMARY filter */}
-            <div className="products-pill-row" style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-              {games.map(g => (
-                <button
-                  key={g.value}
-                  type="button"
-                  onClick={() => setGame(g.value)}
-                  className={`lc-pill ${game === g.value ? 'is-primary-active' : ''}`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="lc-filter-divider" />
-
-            {/* Category pills — SECONDARY filter */}
-            <div className="products-pill-row" style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-              {categories.map(cat => (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => setCategory(cat.value)}
-                  className={`lc-pill ${category === cat.value ? 'is-secondary-active' : ''}`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Sort */}
-            <div className="products-sort" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
-              <SlidersHorizontal size={14} color="#9ca3af" />
-              <select
-                value={sort}
-                onChange={e => setSort(e.target.value)}
-                className="lc-sort"
-                aria-label="Sort cards"
-              >
-                {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
           </div>
-        </div>
-
-        {/* Results */}
-        <div className="container" style={{ padding: '2.5rem 1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-              {loading ? 'Loading...' : `${filtered.length} card${filtered.length !== 1 ? 's' : ''} found`}
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' }}>
-              {[...Array(8)].map((_, i) => (
-                <div key={i} style={{ borderRadius: '18px', background: '#f0f0f0', height: '340px' }} />
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '5rem 0', color: '#9ca3af' }}>
-              <p style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>No cards found</p>
-              <p>Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            <AnimatePresence mode="popLayout">
-              <motion.div
-                layout
-                className="products-grid"
-                style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' }}
-              >
-                {filtered.map((product, i) => (
-                  <ProductCard key={product.id} product={product} index={i} />
-                ))}
-              </motion.div>
-            </AnimatePresence>
-          )}
         </div>
       </main>
       <Footer />
