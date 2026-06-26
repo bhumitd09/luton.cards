@@ -11,13 +11,7 @@ import { formatGrade, formatPrice } from '@/lib/utils'
 import type { Product } from '@/lib/products'
 import { conditionShort, conditionLabel, conditionColor } from '@/lib/conditions'
 
-const TABS = [
-  { value: 'all', label: 'All' },
-  { value: 'pokemon', label: 'Pokémon', kind: 'game' as const },
-  { value: 'one-piece', label: 'One Piece', kind: 'game' as const },
-  { value: 'graded', label: 'Graded', kind: 'category' as const },
-  { value: 'booster', label: 'Sealed', kind: 'category' as const },
-]
+const MAX_FEATURED = 6
 
 function ProductCard({ product, index, featured }: { product: Product; index: number; featured: boolean }) {
   const { addToCart, canAddMore } = useCart()
@@ -174,7 +168,6 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
 export function FeaturedProducts() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-60px' })
-  const [active, setActive] = useState<string>('all')
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -188,13 +181,9 @@ export function FeaturedProducts() {
       .catch(() => setLoading(false))
   }, [])
 
-  const activeTab = TABS.find(t => t.value === active)
-  const filtered = !activeTab || activeTab.value === 'all'
-    ? products
-    : products.filter(p => {
-        if (activeTab.kind === 'game') return (p.game || 'pokemon') === activeTab.value
-        return p.category === activeTab.value
-      })
+  // Only your hand-picked featured cards, capped at 6. (Guard client-side too,
+  // so even if the API returns extras only featured ones show.)
+  const featured = products.filter(p => p.featured).slice(0, MAX_FEATURED)
 
   return (
     <section ref={ref} className="bg-[#fafafa] py-16 sm:py-20">
@@ -207,58 +196,43 @@ export function FeaturedProducts() {
         >
           <div>
             <p className="m-0 text-[10px] font-bold uppercase tracking-[0.16em] text-[#EC1E79]">
-              Current stock
+              Hand-picked
             </p>
             <h2 className="m-0 mt-2 text-[clamp(1.75rem,3.5vw,2.5rem)] font-black tracking-[-0.03em] text-neutral-900">
               Fresh in.
             </h2>
           </div>
-          {/* tabs */}
-          <div className="-mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 pb-1">
-            {TABS.map(tab => {
-              const isActive = active === tab.value
-              return (
-                <button
-                  key={tab.value}
-                  onClick={() => setActive(tab.value)}
-                  className={[
-                    'shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-xs font-bold transition-all',
-                    isActive
-                      ? 'border-[#EC1E79] bg-[#EC1E79] text-white shadow-[0_4px_14px_-4px_rgba(236,30,121,0.55)]'
-                      : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:text-neutral-900',
-                  ].join(' ')}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
+          <Link
+            href="/products"
+            className="hidden shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-bold text-neutral-700 transition-all hover:border-[#EC1E79] hover:text-[#EC1E79] sm:inline-flex"
+          >
+            Shop all cards <ArrowRight size={14} />
+          </Link>
         </motion.div>
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {[...Array(MAX_FEATURED)].map((_, i) => (
               <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-neutral-200" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : featured.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-white py-20 text-center">
             <Package className="mx-auto mb-3 text-neutral-300" size={36} />
-            <p className="m-0 text-sm font-bold text-neutral-500">
-              {active === 'all' ? 'No featured stock yet.' : 'Nothing here yet.'}
-            </p>
+            <p className="m-0 text-sm font-bold text-neutral-500">No featured cards yet.</p>
             <p className="m-0 mt-1 text-xs text-neutral-400">
-              Check back soon, restocks land weekly.
+              Star a few products in the back office to feature them here.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {filtered.map((p, i) => (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {featured.map((p, i) => (
               <ProductCard key={p.id} product={p} index={i} featured={p.featured} />
             ))}
           </div>
         )}
 
+        {/* Shop all — prominent button so visitors can see the full catalogue. */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
@@ -267,9 +241,9 @@ export function FeaturedProducts() {
         >
           <Link
             href="/products"
-            className="inline-flex items-center gap-1.5 border-b-2 border-[#EC1E79] pb-0.5 text-sm font-extrabold text-neutral-900 transition-all hover:gap-2.5"
+            className="inline-flex items-center gap-2 rounded-full bg-[#EC1E79] px-7 py-3 text-sm font-extrabold text-white shadow-[0_10px_30px_-10px_rgba(236,30,121,0.6)] transition-transform hover:-translate-y-0.5"
           >
-            View all cards <ArrowRight size={14} />
+            Shop all cards <ArrowRight size={16} />
           </Link>
         </motion.div>
       </div>
