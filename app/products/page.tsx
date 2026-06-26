@@ -12,14 +12,27 @@ import { useCart } from '@/lib/cart-context'
 import type { Product } from '@/lib/products'
 import { GAMES, GAME_LABELS, isGame } from '@/lib/games'
 import { conditionShort, conditionLabel, conditionColor } from '@/lib/conditions'
+import { PRODUCT_CATEGORIES, categoryLabel } from '@/lib/categories'
 
-const categories = [
-  { value: 'all', label: 'All' },
-  { value: 'single', label: 'Singles' },
-  { value: 'graded', label: 'Graded' },
-  { value: 'booster', label: 'Boosters' },
-  { value: 'sealed', label: 'Sealed' },
-]
+const categories = [{ value: 'all', label: 'All' }, ...PRODUCT_CATEGORIES]
+
+const PAGE_SIZE = 16
+
+function pageBtnStyle(active: boolean, disabled: boolean) {
+  return {
+    minWidth: 38,
+    padding: '0.5rem 0.75rem',
+    borderRadius: 10,
+    border: `1px solid ${active ? '#EC1E79' : '#e5e7eb'}`,
+    background: active ? '#EC1E79' : '#fff',
+    color: active ? '#fff' : disabled ? '#cbd5e1' : '#374151',
+    fontWeight: 700,
+    fontSize: '0.85rem',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+    fontFamily: 'inherit',
+  } as const
+}
 
 const games = [
   { value: 'all', label: 'All Games' },
@@ -79,9 +92,9 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               <span style={{
                 background: 'rgba(0,0,0,0.7)', color: '#fff',
                 padding: '0.2rem 0.6rem', borderRadius: '6px',
-                fontSize: '0.6875rem', fontWeight: 700, textTransform: 'capitalize',
+                fontSize: '0.6875rem', fontWeight: 700,
               }}>
-                {product.category}
+                {categoryLabel(product.category)}
               </span>
             </div>
             {formatGrade(product.grade, product.grader) && (
@@ -120,7 +133,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
           <Tag size={11} color="#9ca3af" />
-          <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'capitalize' }}>{product.category}</span>
+          <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{categoryLabel(product.category)}</span>
           {formatGrade(product.grade, product.grader) ? (
             <span style={{
               background: '#fef3c7', color: '#92400e',
@@ -210,6 +223,7 @@ function ProductsContent() {
   const [game, setGame] = useState(initialGame)
   const [sort, setSort] = useState('featured')
   const [filtersOpen, setFiltersOpen] = useState(false) // mobile drawer
+  const [page, setPage] = useState(1)
 
   // Update from URL params on nav
   useEffect(() => {
@@ -247,6 +261,18 @@ function ProductsContent() {
       if (sort === 'name') return a.name.localeCompare(b.name)
       return (b.featured ? 1 : 0) - (a.featured ? 1 : 0)
     })
+
+  // Paginate so a big catalogue doesn't render hundreds of cards at once.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  // Back to page 1 whenever the result set changes, and scroll up on page change.
+  useEffect(() => { setPage(1) }, [category, game, search, sort])
+  const goToPage = (p: number) => {
+    setPage(p)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#fafafa' }}>
@@ -468,13 +494,39 @@ function ProductsContent() {
                   <p>Try adjusting your search or filters</p>
                 </div>
               ) : (
-                <AnimatePresence mode="popLayout">
-                  <motion.div layout className="products-grid">
-                    {filtered.map((product, i) => (
-                      <ProductCard key={product.id} product={product} index={i} />
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
+                <>
+                  <AnimatePresence mode="popLayout">
+                    <motion.div layout className="products-grid">
+                      {paged.map((product, i) => (
+                        <ProductCard key={product.id} product={product} index={i} />
+                      ))}
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {totalPages > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginTop: '2.5rem', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        style={pageBtnStyle(false, currentPage === 1)}
+                      >
+                        Prev
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                        <button key={p} onClick={() => goToPage(p)} style={pageBtnStyle(p === currentPage, false)}>
+                          {p}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        style={pageBtnStyle(false, currentPage === totalPages)}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

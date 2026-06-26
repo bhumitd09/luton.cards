@@ -64,6 +64,11 @@ export default function SettingsPage() {
   const [storeLoading, setStoreLoading] = useState(false)
   const [loadingStore, setLoadingStore] = useState(true)
 
+  // Social links shown in the footer (icon only appears once a URL is set).
+  const SOCIAL_KEYS = ['instagram', 'youtube', 'twitter', 'facebook', 'discord'] as const
+  const [socials, setSocials] = useState<Record<string, string>>({ instagram: '', youtube: '', twitter: '', facebook: '', discord: '' })
+  const [socialsLoading, setSocialsLoading] = useState(false)
+
   // Email
   const [emailFrom, setEmailFrom] = useState('')
   const [emailFromLoading, setEmailFromLoading] = useState(false)
@@ -116,6 +121,22 @@ export default function SettingsPage() {
       if (siteRes?.content?.value) setSiteName(siteRes.content.value)
       if (emailRes?.content?.value) setContactEmail(emailRes.content.value)
     }).finally(() => setLoadingStore(false))
+  }, [])
+
+  useEffect(() => {
+    Promise.all(SOCIAL_KEYS.map(k => fetch(`/api/admin/content/social_${k}`).then(r => r.json()).catch(() => null)))
+      .then(results => {
+        setSocials(prev => {
+          const next = { ...prev }
+          SOCIAL_KEYS.forEach((k, i) => {
+            const v = results[i]?.content?.value
+            if (typeof v === 'string') next[k] = v
+          })
+          return next
+        })
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -327,6 +348,26 @@ export default function SettingsPage() {
       showToast('Network error', 'error')
     } finally {
       setStoreLoading(false)
+    }
+  }
+
+  const handleSocialsSave = async () => {
+    setSocialsLoading(true)
+    try {
+      const results = await Promise.all(
+        SOCIAL_KEYS.map(k =>
+          fetch('/api/admin/content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: `social_${k}`, value: (socials[k] || '').trim(), type: 'text', label: `Social: ${k}` }),
+          }),
+        ),
+      )
+      showToast(results.every(r => r.ok) ? 'Social links saved' : 'Save failed', results.every(r => r.ok) ? 'success' : 'error')
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setSocialsLoading(false)
     }
   }
 
@@ -573,6 +614,39 @@ export default function SettingsPage() {
                     {storeLoading && <Loader2 size={13} className="animate-spin" />}
                     Save store settings
                   </button>
+
+                  {/* Social links */}
+                  <div className="mt-10 border-t border-[#202022] pt-8">
+                    <h2 className="m-0 mb-3 text-[12px] font-extrabold uppercase tracking-[0.1em] text-[#f4f4f5]">
+                      Social links
+                    </h2>
+                    <p className="m-0 mb-5 text-[13px] text-[#9ca3af]">
+                      Paste the full URL for each. An icon only appears in the site footer once its URL is filled in — leave a field blank to hide it.
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      {([
+                        ['instagram', 'Instagram', 'https://instagram.com/yourshop'],
+                        ['youtube', 'YouTube', 'https://youtube.com/@yourshop'],
+                        ['twitter', 'Twitter / X', 'https://x.com/yourshop'],
+                        ['facebook', 'Facebook', 'https://facebook.com/yourshop'],
+                        ['discord', 'Discord', 'https://discord.gg/invite'],
+                      ] as const).map(([key, label, ph]) => (
+                        <Field key={key} label={label}>
+                          <input
+                            type="url"
+                            value={socials[key] || ''}
+                            onChange={e => setSocials(prev => ({ ...prev, [key]: e.target.value }))}
+                            placeholder={ph}
+                            className={darkInput}
+                          />
+                        </Field>
+                      ))}
+                    </div>
+                    <button onClick={handleSocialsSave} disabled={socialsLoading} className={primaryBtn}>
+                      {socialsLoading && <Loader2 size={13} className="animate-spin" />}
+                      Save social links
+                    </button>
+                  </div>
                 </motion.div>
               )}
 

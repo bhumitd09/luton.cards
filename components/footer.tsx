@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Instagram, Youtube, ArrowRight, Sparkles, Check, Mail } from 'lucide-react'
+import { Instagram, Youtube, Twitter, Facebook, MessageCircle, ArrowRight, Sparkles, Check, Mail } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { EditableText } from '@/components/editable/editable-text'
 import { Particles } from '@/components/magicui/particles'
@@ -15,14 +15,17 @@ function DiscordIcon({ size = 18 }: { size?: number }) {
   )
 }
 
-const CONTENT_KEYS = ['footer_tagline', 'social_instagram', 'social_youtube', 'social_twitter', 'social_facebook']
+const CONTENT_KEYS = ['footer_tagline', 'social_instagram', 'social_youtube', 'social_twitter', 'social_facebook', 'social_discord']
 
 const DEFAULTS: Record<string, string> = {
   footer_tagline: 'Pokemon cards for collectors. Cardboard enjoyers welcome.',
   social_instagram: 'https://instagram.com/lutoncardstcg',
-  social_youtube: 'https://www.youtube.com/@LutonCardsTCG',
+  // No defaults for the rest — an icon only shows once a URL is set in the
+  // back office (Settings → Social links).
+  social_youtube: '',
   social_twitter: '',
   social_facebook: '',
+  social_discord: '',
 }
 
 function NewsletterSection() {
@@ -281,6 +284,9 @@ export function Footer() {
   const socials = [
     ...(get('social_instagram') ? [{ icon: Instagram, label: 'Instagram', href: get('social_instagram') }] : []),
     ...(get('social_youtube') ? [{ icon: Youtube, label: 'YouTube', href: get('social_youtube') }] : []),
+    ...(get('social_twitter') ? [{ icon: Twitter, label: 'Twitter / X', href: get('social_twitter') }] : []),
+    ...(get('social_facebook') ? [{ icon: Facebook, label: 'Facebook', href: get('social_facebook') }] : []),
+    ...(get('social_discord') ? [{ icon: MessageCircle, label: 'Discord', href: get('social_discord') }] : []),
   ]
 
   return (
@@ -398,7 +404,7 @@ export function Footer() {
             <ul className="f-col-links">
               <li><Link href="/products">Single Cards</Link></li>
               <li><Link href="/products?category=graded">Graded Cards</Link></li>
-              <li><Link href="/products?category=booster">Booster Boxes</Link></li>
+              <li><Link href="/products?category=booster-box">Booster Boxes</Link></li>
             </ul>
           </div>
 

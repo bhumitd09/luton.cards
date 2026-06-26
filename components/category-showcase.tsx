@@ -43,7 +43,7 @@ const CATEGORIES: Category[] = [
   {
     name: 'Sealed',
     description: 'Booster boxes, ETBs, special sets.',
-    href: '/products?category=booster',
+    href: '/products?category=sealed',
     badge: 'In stock',
     variant: 'standard',
     glyph: '◰',

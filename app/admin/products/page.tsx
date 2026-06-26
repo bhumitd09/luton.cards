@@ -10,6 +10,7 @@ import {
 import { ImageUploader } from '@/components/admin/image-uploader'
 import { useToast } from '@/components/admin/toast'
 import { CONDITIONS, FOILS, conditionShort, conditionColor } from '@/lib/conditions'
+import { PRODUCT_CATEGORIES, CATEGORY_COLORS } from '@/lib/categories'
 import { GAMES, GAME_LABELS, normalizeGame } from '@/lib/games'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -50,16 +51,9 @@ interface Product {
   updatedAt: string
 }
 
-type CategoryFilter = 'all' | 'single' | 'graded' | 'booster' | 'sealed'
+type CategoryFilter = 'all' | 'single' | 'graded' | 'booster' | 'booster-box' | 'booster-pack' | 'sealed'
 type GameFilter = 'all' | (typeof GAMES)[number]
 type StockFilter = 'all' | 'in' | 'low' | 'out'
-
-const CATEGORY_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  graded: { bg: 'rgba(129,140,248,0.15)', color: '#818cf8', label: 'Graded' },
-  single: { bg: 'rgba(236,30,121,0.12)', color: '#EC1E79', label: 'Single' },
-  booster: { bg: 'rgba(245,158,11,0.13)', color: '#f59e0b', label: 'Booster' },
-  sealed: { bg: 'rgba(52,211,153,0.12)', color: '#34d399', label: 'Sealed' },
-}
 
 // Variant row in the editor — strings for inputs, normalised at save time.
 // foil = '' means "no foil specified" (saved as null on the server).
@@ -478,10 +472,11 @@ function ProductModal({
               value={form.category}
               onChange={e => update('category', e.target.value)}
             >
-              <option value="single">Single</option>
-              <option value="graded">Graded</option>
-              <option value="booster">Booster</option>
-              <option value="sealed">Sealed</option>
+              {PRODUCT_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+              {/* Keep legacy 'booster' selectable if an old product still uses it. */}
+              {form.category === 'booster' && <option value="booster">Booster (legacy)</option>}
             </select>
           </div>
 
@@ -998,7 +993,8 @@ export default function AdminProductsPage() {
     { label: 'All', value: 'all' },
     { label: 'Singles', value: 'single' },
     { label: 'Graded', value: 'graded' },
-    { label: 'Boosters', value: 'booster' },
+    { label: 'Booster Box', value: 'booster-box' },
+    { label: 'Booster Pack', value: 'booster-pack' },
     { label: 'Sealed', value: 'sealed' },
   ]
 

@@ -23,7 +23,7 @@ const MEGA_MENUS: MegaMenu[] = [
       { href: '/products?game=pokemon', label: 'All Pokémon', description: 'Every Pokémon card in stock' },
       { href: '/products?game=pokemon&category=single', label: 'Singles', description: 'Raw holos, ex, V, VMAX' },
       { href: '/products?game=pokemon&category=graded', label: 'Graded', description: 'PSA, CGC & ACE slabs' },
-      { href: '/products?game=pokemon&category=booster', label: 'Sealed', description: 'Booster boxes, ETBs, packs' },
+      { href: '/products?game=pokemon&category=sealed', label: 'Sealed', description: 'Booster boxes, ETBs, packs' },
     ],
   },
   {
@@ -33,7 +33,7 @@ const MEGA_MENUS: MegaMenu[] = [
       { href: '/products?game=one-piece', label: 'All One Piece', description: 'Every One Piece TCG card in stock' },
       { href: '/products?game=one-piece&category=single', label: 'Singles', description: 'Leaders, rares, alt arts' },
       { href: '/products?game=one-piece&category=graded', label: 'Graded', description: 'PSA & CGC slabs' },
-      { href: '/products?game=one-piece&category=booster', label: 'Sealed', description: 'Booster boxes & packs' },
+      { href: '/products?game=one-piece&category=sealed', label: 'Sealed', description: 'Booster boxes & packs' },
     ],
   },
 ]
