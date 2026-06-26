@@ -53,7 +53,9 @@ export async function GET(req: NextRequest) {
       // delivered). Cancelled + still-pending orders are excluded so the
       // headline number reflects real sales, not abandoned/cancelled ones.
       db.order.count({ where: { ...orderScope, status: { in: PAID_STATUSES } } }),
-      db.order.count({ where: { ...orderScope, status: 'pending' } }),
+      // Only manual/admin pending orders are "real" pending (drafts/invoices).
+      // Abandoned web checkouts (pending + not manual) are hidden everywhere.
+      db.order.count({ where: { ...orderScope, status: 'pending', isManual: true } }),
       db.product.count({ where: { ...productScope, stock: { lte: 2, gt: 0 } } }),
       db.product.count({ where: { ...productScope, stock: 0 } }),
       db.product.count({ where: { ...productScope, category: 'single' } }),

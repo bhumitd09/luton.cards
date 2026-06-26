@@ -17,7 +17,9 @@ export async function GET(req: NextRequest) {
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const orders = await db.order.findMany({
-    where: { userId: auth.userId },
+    // Hide the customer's own abandoned web checkouts (pending + not manual) —
+    // an order only shows once it's actually paid.
+    where: { userId: auth.userId, NOT: { status: 'pending', isManual: false } },
     include: { items: true },
     orderBy: { createdAt: 'desc' },
   })

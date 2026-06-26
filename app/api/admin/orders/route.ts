@@ -35,6 +35,21 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(100, parseInt(searchParams.get('limit') || '20', 10))
     const skip = (page - 1) * limit
 
+    // An order only really "exists" once it's paid. A customer who hits "Pay"
+    // then backs out of Stripe leaves an abandoned pending web order — those
+    // are noise, not real orders, so we hide them from the list AND every
+    // count. (Manual/admin-created pending orders are real drafts and stay.)
+    // Lazy housekeeping: purge abandoned web orders older than 2h — well past
+    // the Stripe session's 60-min expiry, so this can never delete one that's
+    // still payable.
+    await db.order.deleteMany({
+      where: {
+        status: 'pending',
+        isManual: false,
+        createdAt: { lt: new Date(Date.now() - 2 * 60 * 60_000) },
+      },
+    }).catch(() => {})
+
     const where: Record<string, unknown> = { ...orderListScope(admin) }
     if (status) where.status = status
     if (search && search.trim()) {
@@ -43,6 +58,8 @@ export async function GET(req: NextRequest) {
         { email: { contains: search.trim(), mode: 'insensitive' } },
       ]
     }
+    // Exclude unpaid web checkouts (pending + not manual) everywhere.
+    where.NOT = { status: 'pending', isManual: false }
 
     const [orders, total] = await Promise.all([
       db.order.findMany({

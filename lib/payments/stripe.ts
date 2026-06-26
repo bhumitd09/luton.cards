@@ -67,6 +67,9 @@ export class StripeDriver implements PaymentDriver {
       line_items: lineItems,
       customer_email: order.email,
       metadata: { orderId: order.id, customerName: order.name },
+      // Expire the session after 60 minutes so an abandoned checkout can't be
+      // paid much later (and the pending order can be safely cleaned up).
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 60,
       ...(discounts.length > 0 ? { discounts } : {}),
       // Carry the friendly order number in the return URL so the success page
       // shows "#ABCD1234" immediately — never the raw cs_… session id.
