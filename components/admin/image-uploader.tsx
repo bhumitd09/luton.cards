@@ -39,51 +39,51 @@ export function ImageUploader({
 
   // ── Upload logic ──────────────────────────────────────────────────────────
 
-  const uploadFile = useCallback(
-    async (file: File) => {
-      if (images.length + uploading.length >= max) return
-
-      // Client-side size check: 5 MB
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMsg(`"${file.name}" exceeds the 5 MB limit.`)
-        return
+  // Upload a single file and RETURN its URL (or null on failure) — it does not
+  // touch the images array itself, so multiple uploads can run at once without
+  // racing on stale state. It only manages its own spinner entry.
+  const uploadOne = useCallback(async (file: File): Promise<string | null> => {
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg(`"${file.name}" exceeds the 5 MB limit.`)
+      return null
+    }
+    const id = uid()
+    setUploading(prev => [...prev, { id, name: file.name }])
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        throw new Error(data.error ?? 'Upload failed')
       }
-
-      const id = uid()
-      setUploading(prev => [...prev, { id, name: file.name }])
-      setErrorMsg(null)
-
-      try {
-        const fd = new FormData()
-        fd.append('file', file)
-
-        const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({})) as { error?: string }
-          throw new Error(data.error ?? 'Upload failed')
-        }
-
-        const data = await res.json() as { url: string }
-        onChange([...images, data.url])
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Upload failed'
-        setErrorMsg(`${msg} — add a URL instead`)
-      } finally {
-        setUploading(prev => prev.filter(e => e.id !== id))
-      }
-    },
-    [images, uploading, max, onChange]
-  )
+      const data = await res.json() as { url: string }
+      return data.url
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Upload failed'
+      setErrorMsg(`${msg} — add a URL instead`)
+      return null
+    } finally {
+      setUploading(prev => prev.filter(e => e.id !== id))
+    }
+  }, [])
 
   const handleFiles = useCallback(
-    (files: FileList | null) => {
+    async (files: FileList | null) => {
       if (!files) return
-      Array.from(files).forEach(f => {
-        if (f.type.startsWith('image/')) uploadFile(f)
-      })
+      const incoming = Array.from(files).filter(f => f.type.startsWith('image/'))
+      if (incoming.length === 0) return
+      setErrorMsg(null)
+      // Only take as many as there's room for (respects the max + anything mid-upload).
+      const room = Math.max(0, max - images.length - uploading.length)
+      const batch = incoming.slice(0, room)
+      if (batch.length === 0) return
+      // Upload them all, then append the successful URLs in ONE update — so
+      // dragging several at once adds every one (no stale-state clobbering).
+      const urls = (await Promise.all(batch.map(uploadOne))).filter((u): u is string => !!u)
+      if (urls.length) onChange([...images, ...urls])
     },
-    [uploadFile]
+    [images, uploading, max, onChange, uploadOne]
   )
 
   // ── Drag & drop ───────────────────────────────────────────────────────────
@@ -200,7 +200,7 @@ export function ImageUploader({
             accept="image/*"
             multiple
             style={{ display: 'none' }}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => handleFiles(e.target.files)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => { const el = e.target; handleFiles(el.files); el.value = '' }}
           />
         </div>
       )}
