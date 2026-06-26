@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { sendSellNotification } from '@/lib/email'
 import { notifyAdmins } from '@/lib/notifications'
+import { looksLikeSpam } from '@/lib/anti-spam'
 
 const MAX_IMAGES = 12
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB per image (base64)
@@ -28,6 +29,11 @@ export async function POST(req: NextRequest) {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  // Honeypot + time-trap: pretend success, but don't save, so bots move on.
+  if (looksLikeSpam(body)) {
+    return NextResponse.json({ ok: true }, { status: 201 })
   }
 
   const name = typeof body.name === 'string' ? body.name.trim() : ''

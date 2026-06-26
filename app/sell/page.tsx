@@ -38,6 +38,9 @@ export default function SellPage() {
   const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Anti-spam: hidden honeypot + when the form was opened (time-trap).
+  const [honeypot, setHoneypot] = useState('')
+  const mountedAt = useRef(Date.now())
 
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -75,7 +78,7 @@ export default function SellPage() {
       const res = await fetch('/api/sell', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, images }),
+        body: JSON.stringify({ ...form, images, company: honeypot, elapsedMs: Date.now() - mountedAt.current }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -182,6 +185,17 @@ export default function SellPage() {
                 exit={{ opacity: 0 }}
                 className="flex flex-col gap-5"
               >
+                {/* Honeypot — hidden from people, catches bots that fill every field. */}
+                <input
+                  type="text"
+                  name="company"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={honeypot}
+                  onChange={e => setHoneypot(e.target.value)}
+                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Your Name *" htmlFor="name">
                     <input

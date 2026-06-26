@@ -37,6 +37,9 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
   const [formHovered, setFormHovered] = useState(false)
   const heroRef = useRef<HTMLDivElement>(null)
+  // Anti-spam: hidden honeypot + when the form was opened (time-trap).
+  const [honeypot, setHoneypot] = useState('')
+  const mountedAt = useRef(Date.now())
 
   useEffect(() => {
     fetch(`/api/content?keys=${CONTENT_KEYS.join(',')}`)
@@ -67,7 +70,7 @@ export default function ContactPage() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, company: honeypot, elapsedMs: Date.now() - mountedAt.current }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -178,6 +181,17 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  {/* Honeypot — hidden from people, catches bots that fill every field. */}
+                  <input
+                    type="text"
+                    name="company"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    value={honeypot}
+                    onChange={e => setHoneypot(e.target.value)}
+                    style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                  />
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Name">
                       <input

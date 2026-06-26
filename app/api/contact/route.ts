@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { sendContactNotification } from '@/lib/email'
 import { notifyAdmins } from '@/lib/notifications'
+import { looksLikeSpam } from '@/lib/anti-spam'
 
 export async function POST(req: NextRequest) {
   // 5 per hour per IP. The previous code wrote one Content row per submission
@@ -17,6 +18,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
+
+    // Honeypot + time-trap: pretend success, but don't save, so bots move on.
+    if (looksLikeSpam(body)) {
+      return NextResponse.json({ success: true })
+    }
+
     const { name, email, subject, message } = body
 
     if (!name || typeof name !== 'string' || !name.trim()) {
