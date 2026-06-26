@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, Search, Star, Tag, X, SlidersHorizontal as FilterIcon } from 'lucide-react'
+import { ShoppingCart, Search, Tag, X, SlidersHorizontal as FilterIcon } from 'lucide-react'
 import { formatGrade, formatPrice } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -348,16 +348,6 @@ function ProductsContent() {
           }} />
           <div className="container" style={{ position: 'relative' }}>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                background: 'rgba(236,30,121,0.1)', color: '#EC1E79',
-                border: '1px solid rgba(236,30,121,0.25)',
-                padding: '0.35rem 0.9rem', borderRadius: '9999px',
-                fontSize: '0.8125rem', fontWeight: 700, marginBottom: '1rem',
-              }}>
-                <Star size={12} fill="#EC1E79" />
-                Full Collection
-              </div>
               <h1 style={{
                 fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900,
                 color: '#fff', letterSpacing: '-0.025em',
