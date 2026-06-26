@@ -7,7 +7,7 @@ import { ShoppingCart, ArrowRight, Package } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { BorderBeam } from '@/components/magicui/border-beam'
 import { WishlistButton } from '@/components/wishlist-button'
-import { formatGrade } from '@/lib/utils'
+import { formatGrade, formatPrice } from '@/lib/utils'
 import type { Product } from '@/lib/products'
 import { conditionShort, conditionLabel, conditionColor } from '@/lib/conditions'
 
@@ -135,7 +135,7 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
           </h3>
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-neutral-100 pt-3">
             <span className="text-lg font-black tracking-tight text-[#EC1E79]">
-              £{product.price.toLocaleString()}
+              {formatPrice(product.price)}
             </span>
             <motion.button
               onClick={handleAdd}

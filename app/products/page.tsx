@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, Search, Star, Tag, X, SlidersHorizontal as FilterIcon } from 'lucide-react'
-import { formatGrade } from '@/lib/utils'
+import { formatGrade, formatPrice } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { useCart } from '@/lib/cart-context'
@@ -154,7 +154,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         <div style={{ marginTop: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.6rem' }}>
             <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#EC1E79', letterSpacing: '-0.01em' }}>
-              £{product.price.toLocaleString()}
+              {formatPrice(product.price)}
             </span>
             {product.stock > 0 && product.stock <= 5 && (
               <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700, whiteSpace: 'nowrap' }}>

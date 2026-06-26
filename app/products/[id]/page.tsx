@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShoppingCart, ArrowLeft, Tag, Package } from 'lucide-react'
-import { formatGrade } from '@/lib/utils'
+import { formatGrade, formatPrice } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { WishlistButton } from '@/components/wishlist-button'
@@ -112,7 +112,7 @@ function RelatedProductCard({ product, index }: { product: Product; index: numbe
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
           <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#EC1E79' }}>
-            £{product.price.toLocaleString()}
+            {formatPrice(product.price)}
           </span>
           <motion.button
             onClick={handleAdd}
@@ -606,14 +606,14 @@ export default function ProductDetailPage() {
                       textDecoration: 'line-through', margin: '0 0 0.2rem',
                       fontWeight: 500,
                     }}>
-                      £{product.comparePrice.toFixed(2)}
+                      {formatPrice(product.comparePrice)}
                     </p>
                   )}
                   <p style={{
                     fontSize: '2.25rem', fontWeight: 900, color: '#EC1E79',
                     margin: 0, letterSpacing: '-0.03em', lineHeight: 1,
                   }}>
-                    £{effectivePrice.toFixed(2)}
+                    {formatPrice(effectivePrice)}
                   </p>
                   {hasVariants && selectedVariant && (
                     <p style={{ margin: '0.45rem 0 0', fontSize: '0.8125rem', color: '#6b7280', fontWeight: 600 }}>
