@@ -1,7 +1,7 @@
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { redeemDiscountByCode } from '@/lib/orders'
+import { redeemDiscountByCode, decrementStockForOrderOnce } from '@/lib/orders'
 import { sendAdminSaleNotification } from '@/lib/email'
 import { notifyAdmins } from '@/lib/notifications'
 
@@ -99,42 +99,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true, alreadyProcessed: true })
   }
 
-  // Decrement stock now that we know we just won the status flip race.
-  // Variant-aware: if the line carries a variantId, the inventory we sold
-  // from is the variant row, not the parent Product.stock. We keep the
-  // parent product.stock untouched for variant-backed orders so it can act
-  // as an "aggregate" if the admin chooses to surface it later.
-  for (const item of order.items) {
-    try {
-      if (item.variantId) {
-        // Conditional decrement: only when enough stock remains, so two
-        // buyers racing on the last unit can't drive stock negative
-        // (oversell). count===0 means we sold past available — log it loudly
-        // so the order can be reconciled/refunded rather than silently shipped.
-        const res = await db.productVariant.updateMany({
-          where: { id: item.variantId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
-        })
-        if (res.count === 0) {
-          console.error('Stripe webhook: OVERSOLD variant — stock could not be decremented', {
-            orderId, variantId: item.variantId, qty: item.quantity,
-          })
-        }
-      } else if (item.productId) {
-        const res = await db.product.updateMany({
-          where: { id: item.productId, stock: { gte: item.quantity } },
-          data: { stock: { decrement: item.quantity } },
-        })
-        if (res.count === 0) {
-          console.error('Stripe webhook: OVERSOLD product — stock could not be decremented', {
-            orderId, productId: item.productId, qty: item.quantity,
-          })
-        }
-      }
-    } catch (err) {
-      console.error('Stripe webhook: stock decrement error', { orderId, err })
-    }
-  }
+  // Take stock off the shelf now the order is paid. Idempotent (flag-guarded),
+  // variant-aware, and conditional so it can't drive stock negative — shared
+  // with the manual mark-as-paid path so stock decrements exactly once however
+  // an order becomes sold.
+  await decrementStockForOrderOnce(order.id).catch(err =>
+    console.error('Stripe webhook: stock decrement failed', { orderId, err }),
+  )
 
   // Claim the discount use now that the order is actually paid (so abandoned
   // checkouts never burn a limited-use code). Idempotent flip above guarantees

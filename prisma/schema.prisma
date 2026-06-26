@@ -224,6 +224,11 @@ model Order {
   // means money went back.
   refundedAmount   Float?      @default(0)
   refundedAt       DateTime?
+  // True once this order's stock has been taken off the shelf. Set when the
+  // order becomes paid/sold (Stripe webhook OR a manual status change), guarded
+  // so stock is only ever decremented once. Flipped back if the order is later
+  // cancelled (stock returns to the shelf).
+  stockDecremented Boolean     @default(false)
   // True for admin-created orders (phone / in-person / marketplace) so they
   // can be told apart from customer web checkouts.
   isManual         Boolean     @default(false)

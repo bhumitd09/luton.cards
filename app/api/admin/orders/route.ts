@@ -135,6 +135,9 @@ export async function POST(req: NextRequest) {
         shippingCost: safeShipping,
         status,
         total: finalTotal,
+        // Mark stock as already taken when we decrement below, so a later
+        // status change can't double-decrement (the flag guards it).
+        stockDecremented: status !== 'pending' && status !== 'cancelled',
         isManual: true,
         discountCode: appliedDiscount?.code ?? null,
         discountAmount: discountSavings,

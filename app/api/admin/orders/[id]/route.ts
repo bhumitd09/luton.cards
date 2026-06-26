@@ -3,6 +3,9 @@ import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin } from '@/lib/vendor-auth'
 import { sendStatusTransitionEmail } from '@/lib/email'
+import { decrementStockForOrderOnce, restockForOrderOnce } from '@/lib/orders'
+
+const SOLD_STATUSES = ['paid', 'shipped', 'delivered']
 
 const VALID_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
 
@@ -117,6 +120,20 @@ async function updateOrder(req: NextRequest, id: string) {
     },
     include: { items: true },
   })
+
+  // Keep stock in sync with the status. When an order first becomes sold
+  // (paid/shipped/delivered) take its stock off the shelf; when it's cancelled
+  // put it back. Both are idempotent + shared with the Stripe webhook, so stock
+  // moves exactly once no matter which path marks the order. This is what makes
+  // a manual "mark as paid" (or reinstating a cancelled-but-paid order) reduce
+  // stock just like a normal online sale.
+  if (status !== undefined && status !== prevStatus) {
+    if (SOLD_STATUSES.includes(status)) {
+      await decrementStockForOrderOnce(id).catch(err => console.error('Stock decrement on status change failed:', err))
+    } else if (status === 'cancelled') {
+      await restockForOrderOnce(id).catch(err => console.error('Restock on cancel failed:', err))
+    }
+  }
 
   // Auto-send the matching customer email on any status transition
   // (shipped → tracking email, delivered → delivered email, cancelled →

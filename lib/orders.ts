@@ -269,6 +269,54 @@ export async function redeemDiscountByCode(code: string | null | undefined): Pro
   }).catch(() => {})
 }
 
+/**
+ * Take an order's stock off the shelf exactly once. Safe to call from every
+ * "this order is now sold" path (Stripe webhook, manual mark-as-paid, etc.):
+ * the `stockDecremented` flag is flipped atomically, so only the first caller
+ * actually decrements — no double-counting if two paths fire.
+ */
+export async function decrementStockForOrderOnce(orderId: string): Promise<void> {
+  const claim = await db.order.updateMany({
+    where: { id: orderId, stockDecremented: false },
+    data: { stockDecremented: true },
+  })
+  if (claim.count === 0) return // already done
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { items: true } })
+  if (!order) return
+  const failed = await decrementStockForLines(
+    order.items.map(i => ({ productId: i.productId, variantId: i.variantId, quantity: i.quantity, productName: i.productName })),
+  )
+  if (failed.length) {
+    console.error('decrementStockForOrderOnce: oversold lines', { orderId, failed })
+  }
+}
+
+/**
+ * Put an order's stock back on the shelf exactly once — the counterpart to
+ * decrementStockForOrderOnce, used when a previously-sold order is cancelled.
+ * No-ops if the order's stock was never taken (flag already false).
+ */
+export async function restockForOrderOnce(orderId: string): Promise<void> {
+  const claim = await db.order.updateMany({
+    where: { id: orderId, stockDecremented: true },
+    data: { stockDecremented: false },
+  })
+  if (claim.count === 0) return // nothing to put back
+  const order = await db.order.findUnique({ where: { id: orderId }, include: { items: true } })
+  if (!order) return
+  for (const i of order.items) {
+    try {
+      if (i.variantId) {
+        await db.productVariant.updateMany({ where: { id: i.variantId }, data: { stock: { increment: i.quantity } } })
+      } else if (i.productId) {
+        await db.product.updateMany({ where: { id: i.productId }, data: { stock: { increment: i.quantity } } })
+      }
+    } catch (err) {
+      console.error('restockForOrderOnce error', { orderId, err })
+    }
+  }
+}
+
 /** Decrement stock for sold lines, variant-aware. Mirrors the Stripe webhook
  *  so manual/admin orders (which have no gateway webhook) keep inventory
  *  accurate. Conditional (`stock >= qty`) so it can't drive stock negative;
