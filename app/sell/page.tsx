@@ -9,6 +9,7 @@ import { Upload, X, Check, AlertCircle, Banknote } from 'lucide-react'
 import { Particles } from '@/components/magicui/particles'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
+import { Turnstile, turnstileEnabled } from '@/components/turnstile'
 
 const MAX_IMAGES = 12
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024
@@ -40,6 +41,7 @@ export default function SellPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   // Anti-spam: hidden honeypot + when the form was opened (time-trap).
   const [honeypot, setHoneypot] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
   const mountedAt = useRef(Date.now())
 
   const update = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -78,7 +80,7 @@ export default function SellPage() {
       const res = await fetch('/api/sell', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, images, company: honeypot, elapsedMs: Date.now() - mountedAt.current }),
+        body: JSON.stringify({ ...form, images, company: honeypot, elapsedMs: Date.now() - mountedAt.current, turnstileToken: captchaToken }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -330,9 +332,11 @@ export default function SellPage() {
                   </div>
                 )}
 
+                <Turnstile onVerify={setCaptchaToken} />
+
                 <ShimmerButton
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || (turnstileEnabled && !captchaToken)}
                   className="w-full px-6 py-4 text-sm"
                   background="linear-gradient(135deg, #EC1E79 0%, #FF4DA6 100%)"
                 >

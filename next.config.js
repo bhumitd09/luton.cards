@@ -33,14 +33,14 @@ const securityHeaders = [
       "img-src 'self' data: https: blob:",
       // Scripts: self + Stripe checkout iframe. 'unsafe-inline' still needed
       // for Next's inline runtime (no nonce yet); 'unsafe-eval' only in dev.
-      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://www.googletagmanager.com`,
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://www.googletagmanager.com https://challenges.cloudflare.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://api.stripe.com https://www.google-analytics.com",
       // PostHog session replay runs in a blob web worker (events are proxied
       // same-origin via /ingest, so connect-src 'self' already covers them).
       "worker-src 'self' blob:",
-      "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
+      "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://challenges.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self' https://checkout.stripe.com",

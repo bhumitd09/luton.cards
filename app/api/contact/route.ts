@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
 import { sendContactNotification } from '@/lib/email'
 import { notifyAdmins } from '@/lib/notifications'
-import { looksLikeSpam } from '@/lib/anti-spam'
+import { looksLikeSpam, turnstileConfigured, verifyTurnstile, clientIp } from '@/lib/anti-spam'
 
 export async function POST(req: NextRequest) {
   // 5 per hour per IP. The previous code wrote one Content row per submission
@@ -22,6 +22,12 @@ export async function POST(req: NextRequest) {
     // Honeypot + time-trap: pretend success, but don't save, so bots move on.
     if (looksLikeSpam(body)) {
       return NextResponse.json({ success: true })
+    }
+
+    // Cloudflare Turnstile (when configured) — a failed/missing token is a real
+    // verification failure, so tell the user to retry.
+    if (turnstileConfigured() && !(await verifyTurnstile(body.turnstileToken, clientIp(req)))) {
+      return NextResponse.json({ error: 'Could not verify you are human. Please try again.' }, { status: 400 })
     }
 
     const { name, email, subject, message } = body

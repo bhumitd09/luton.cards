@@ -34,3 +34,42 @@ export function submittedTooFast(body: Record<string, unknown>): boolean {
 export function looksLikeSpam(body: Record<string, unknown>): boolean {
   return honeypotTripped(body) || submittedTooFast(body)
 }
+
+// ─── Cloudflare Turnstile (strong, near-invisible CAPTCHA) ──────────────────
+// Only enforced when TURNSTILE_SECRET_KEY is set, so the forms keep working
+// (honeypot + time-trap only) until both keys are configured.
+
+export function turnstileConfigured(): boolean {
+  return Boolean(process.env.TURNSTILE_SECRET_KEY)
+}
+
+/** Verify a Turnstile token with Cloudflare. Returns true if Turnstile isn't
+ *  configured (not enforced); false if configured and the token is missing or
+ *  rejected. */
+export async function verifyTurnstile(token: unknown, ip?: string | null): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY
+  if (!secret) return true // not enforced
+  if (typeof token !== 'string' || token.length === 0) return false
+  try {
+    const params = new URLSearchParams()
+    params.set('secret', secret)
+    params.set('response', token)
+    if (ip) params.set('remoteip', ip)
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    })
+    const data = (await res.json().catch(() => ({}))) as { success?: boolean }
+    return data.success === true
+  } catch {
+    return false
+  }
+}
+
+/** Best-effort client IP from proxy headers, for Turnstile's remoteip. */
+export function clientIp(req: Request): string | null {
+  const fwd = req.headers.get('x-forwarded-for')
+  if (fwd) return fwd.split(',')[0].trim()
+  return req.headers.get('x-real-ip')
+}

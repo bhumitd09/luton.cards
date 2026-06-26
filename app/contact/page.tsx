@@ -6,6 +6,7 @@ import {
   Mail, Instagram, MapPin, Send, Check, Loader2, ArrowRight,
 } from 'lucide-react'
 import { useToast } from '@/components/admin/toast'
+import { Turnstile, turnstileEnabled } from '@/components/turnstile'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Particles } from '@/components/magicui/particles'
@@ -39,6 +40,7 @@ export default function ContactPage() {
   const heroRef = useRef<HTMLDivElement>(null)
   // Anti-spam: hidden honeypot + when the form was opened (time-trap).
   const [honeypot, setHoneypot] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
   const mountedAt = useRef(Date.now())
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function ContactPage() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, company: honeypot, elapsedMs: Date.now() - mountedAt.current }),
+        body: JSON.stringify({ ...form, company: honeypot, elapsedMs: Date.now() - mountedAt.current, turnstileToken: captchaToken }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -239,9 +241,11 @@ export default function ContactPage() {
                     />
                   </Field>
 
+                  <Turnstile onVerify={setCaptchaToken} />
+
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || (turnstileEnabled && !captchaToken)}
                     className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#EC1E79] to-[#FF4DA6] px-6 py-3.5 text-[0.95rem] font-extrabold text-white shadow-[0_10px_26px_-10px_rgba(236,30,121,0.7)] transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-60"
                   >
                     {submitting ? (
