@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
+import { sendSellNotification } from '@/lib/email'
+import { notifyAdmins } from '@/lib/notifications'
 
-const MAX_IMAGES = 5
+const MAX_IMAGES = 12
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024 // 3MB per image (base64)
 const VALID_GAMES = new Set(['pokemon', 'one-piece', 'mixed'])
 
@@ -77,6 +79,18 @@ export async function POST(req: NextRequest) {
         images,
       },
     })
+
+    // Notify the team — email (with the photos attached) + in-app bell.
+    // Best-effort; the submission is already saved + visible in admin → Buy-back.
+    sendSellNotification({ name, email, phone, game: gameRaw, details, estimate, images })
+      .catch(e => console.error('Sell email failed:', e))
+    notifyAdmins({
+      type: 'contact',
+      title: 'New sell submission',
+      body: `${name} wants to sell${estimate ? ` (est. ${estimate})` : ''} · ${images.length} photo${images.length === 1 ? '' : 's'}`,
+      href: '/admin/sell',
+    }).catch(() => {})
+
     return NextResponse.json({ ok: true, id: submission.id }, { status: 201 })
   } catch (err) {
     console.error('Sell submission error:', err)

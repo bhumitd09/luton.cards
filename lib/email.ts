@@ -234,14 +234,24 @@ function buildAdminNotificationHtml(data: OrderEmailData): string {
   })
 }
 
+// Inbound-notification recipients — where contact + sell-form submissions are
+// emailed (in addition to landing in the admin inboxes).
+export const NOTIFY_EMAILS = ['bhumit@lutoncards.com', 'contact@lutoncards.com']
+
 async function sendEmail(payload: {
   from: string
-  to: string
+  to: string | string[]
   subject: string
   html: string
+  replyTo?: string
+  attachments?: { filename: string; content: string }[]
 }): Promise<void> {
   const key = process.env.RESEND_API_KEY
   if (!key) return
+
+  // Map our camelCase replyTo → Resend's reply_to.
+  const { replyTo, ...rest } = payload
+  const body = { ...rest, ...(replyTo ? { reply_to: replyTo } : {}) }
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -249,7 +259,7 @@ async function sendEmail(payload: {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   })
 
   if (!res.ok) {
@@ -704,5 +714,87 @@ export async function sendPasswordResetEmail(data: PasswordResetEmailData): Prom
       preheader: 'Reset your Luton Cards password (link expires soon).',
       content,
     }),
+  })
+}
+
+// ─── Contact form (admin notification) ──────────────────────────────────────
+
+export interface ContactNotificationData {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
+
+export async function sendContactNotification(data: ContactNotificationData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  const content = `
+    ${eyebrow('Contact form')}
+    ${heading('New message')}
+    <p style="margin:16px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">From <strong style="color:#f4f4f5;">${escapeHtml(data.name)}</strong> &lt;<a href="mailto:${escapeHtml(data.email)}" style="color:#EC1E79;text-decoration:none;">${escapeHtml(data.email)}</a>&gt;</p>
+    <div style="margin-top:18px;background:#161617;border:1px solid #202022;border-radius:12px;padding:16px 18px;">
+      <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Subject</div>
+      <div style="font-size:14px;color:#e4e4e7;margin-bottom:14px;">${escapeHtml(data.subject)}</div>
+      <div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Message</div>
+      <div style="font-size:14px;color:#e4e4e7;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.message)}</div>
+    </div>
+    ${ctaButton(`${appBase()}/admin/contact`, 'Open in admin')}`
+  await sendEmail({
+    from: await getFrom(),
+    to: NOTIFY_EMAILS,
+    replyTo: data.email,
+    subject: `New contact: ${data.subject}`.slice(0, 120),
+    html: emailShell({ title: 'New contact message', preheader: `${data.name}: ${data.subject}`, content }),
+  })
+}
+
+// ─── Sell / buy-back submission (admin notification + photos) ────────────────
+
+export interface SellNotificationData {
+  name: string
+  email: string
+  phone?: string | null
+  game: string
+  details: string
+  estimate?: string | null
+  images: string[] // data: URIs
+}
+
+export async function sendSellNotification(data: SellNotificationData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
+  // Turn the data-URI photos into real email attachments so the recipient gets
+  // the images, not a wall of base64. Cap attachments to keep the email under
+  // provider size limits — all photos remain viewable in the admin buy-back page.
+  const attachments = data.images
+    .slice(0, 12)
+    .map((uri, i) => {
+      const m = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i.exec(uri)
+      if (!m) return null
+      const ext = m[1].split('/')[1].replace('+xml', '').replace('jpeg', 'jpg')
+      return { filename: `card-${i + 1}.${ext}`, content: m[2] }
+    })
+    .filter((a): a is { filename: string; content: string } => a !== null)
+
+  const gameLabel = data.game === 'one-piece' ? 'One Piece' : data.game === 'mixed' ? 'Mixed' : 'Pokémon'
+  const facts = [
+    `<div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Game</div><div style="font-size:14px;color:#e4e4e7;margin-bottom:14px;">${escapeHtml(gameLabel)}</div>`,
+    data.estimate ? `<div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Estimate</div><div style="font-size:14px;color:#e4e4e7;margin-bottom:14px;">${escapeHtml(data.estimate)}</div>` : '',
+    `<div style="font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">What they're selling</div><div style="font-size:14px;color:#e4e4e7;line-height:1.6;white-space:pre-wrap;">${escapeHtml(data.details)}</div>`,
+  ].join('')
+  const contactLine = `${escapeHtml(data.name)} &lt;<a href="mailto:${escapeHtml(data.email)}" style="color:#EC1E79;text-decoration:none;">${escapeHtml(data.email)}</a>&gt;${data.phone ? ` · ${escapeHtml(data.phone)}` : ''}`
+  const content = `
+    ${eyebrow('Sell to us')}
+    ${heading('Someone wants to sell')}
+    <p style="margin:16px 0 0;font-size:15px;line-height:1.7;color:#a1a1aa;">From ${contactLine}</p>
+    <div style="margin-top:18px;background:#161617;border:1px solid #202022;border-radius:12px;padding:16px 18px;">${facts}</div>
+    <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">${data.images.length} photo${data.images.length === 1 ? '' : 's'} submitted${attachments.length < data.images.length ? ` (${attachments.length} attached — see admin for all)` : attachments.length ? ' (attached)' : ''}.</p>
+    ${ctaButton(`${appBase()}/admin/sell`, 'Open in admin')}`
+  await sendEmail({
+    from: await getFrom(),
+    to: NOTIFY_EMAILS,
+    replyTo: data.email,
+    subject: `Sell offer from ${data.name}`.slice(0, 120),
+    html: emailShell({ title: 'New sell submission', preheader: `${data.name} wants to sell ${gameLabel} cards`, content }),
+    ...(attachments.length ? { attachments } : {}),
   })
 }

@@ -10,7 +10,7 @@ import { Particles } from '@/components/magicui/particles'
 import { ShimmerButton } from '@/components/magicui/shimmer-button'
 import { AnimatedGradientText } from '@/components/magicui/animated-gradient-text'
 
-const MAX_IMAGES = 5
+const MAX_IMAGES = 12
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 
 function readFileAsDataURL(file: File): Promise<string> {

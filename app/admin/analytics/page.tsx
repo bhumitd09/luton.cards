@@ -526,9 +526,9 @@ export default function AnalyticsPage() {
         </motion.div>
 
         {/* ── Row 1: Top Metrics ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
           {loading ? (
-            [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
+            [...Array(5)].map((_, i) => <SkeletonCard key={i} />)
           ) : (
             <>
               <StatCard
@@ -567,6 +567,16 @@ export default function AnalyticsPage() {
                 color="#34d399"
                 sub="Revenue ÷ orders"
                 delay={0.2}
+                loading={loading}
+              />
+              <StatCard
+                icon={Package}
+                label="Stock Value"
+                value={Math.round(data?.catalogueValue ?? 0)}
+                prefix="£"
+                color="#fbbf24"
+                sub="All in-stock at sale price"
+                delay={0.25}
                 loading={loading}
               />
             </>

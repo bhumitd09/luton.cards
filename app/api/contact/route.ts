@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { enforceRateLimit } from '@/lib/rate-limit'
+import { sendContactNotification } from '@/lib/email'
+import { notifyAdmins } from '@/lib/notifications'
 
 export async function POST(req: NextRequest) {
   // 5 per hour per IP. The previous code wrote one Content row per submission
@@ -30,14 +32,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
-    await db.contactMessage.create({
-      data: {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        subject: subject.trim(),
-        message: message.trim(),
-      },
-    })
+    const saved = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      subject: subject.trim(),
+      message: message.trim(),
+    }
+    await db.contactMessage.create({ data: saved })
+
+    // Notify the team — email + in-app bell. Best-effort; the message is
+    // already safely stored + visible in the admin inbox.
+    sendContactNotification(saved).catch(e => console.error('Contact email failed:', e))
+    notifyAdmins({
+      type: 'contact',
+      title: 'New contact message',
+      body: `${saved.name}: ${saved.subject}`,
+      href: '/admin/contact',
+    }).catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (error) {
