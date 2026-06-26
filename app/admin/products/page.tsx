@@ -349,8 +349,9 @@ function ProductModal({
         stock: Number(form.stock),
         grade: form.category === 'graded' ? form.grade || null : null,
         grader: form.category === 'graded' ? form.grader || null : null,
-        // Raw-single condition — send null when "— None —" is selected.
-        condition: form.condition || null,
+        // Condition only applies to raw singles — never store it on graded /
+        // sealed / booster products (the grade or the sealed state says it).
+        condition: form.category === 'single' ? (form.condition || null) : null,
         description: form.description || null,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         featured: form.featured,
@@ -558,20 +559,23 @@ function ProductModal({
             </>
           )}
 
-          {/* Condition — for raw singles. Graded cards can leave this on None. */}
-          <div>
-            <label style={labelStyle}>Condition</label>
-            <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={form.condition}
-              onChange={e => update('condition', e.target.value)}
-            >
-              <option value="">— None —</option>
-              {CONDITIONS.map(c => (
-                <option key={c.slug} value={c.slug}>{c.label}</option>
-              ))}
-            </select>
-          </div>
+          {/* Condition — only for raw singles. A graded card's grade already
+              says it; sealed/booster product has no "condition". */}
+          {form.category === 'single' && (
+            <div>
+              <label style={labelStyle}>Condition</label>
+              <select
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                value={form.condition}
+                onChange={e => update('condition', e.target.value)}
+              >
+                <option value="">— None —</option>
+                {CONDITIONS.map(c => (
+                  <option key={c.slug} value={c.slug}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Description */}
           <div style={{ gridColumn: '1/-1' }}>
