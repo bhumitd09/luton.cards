@@ -51,6 +51,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Order has no items.' }, { status: 400 })
   }
 
+  // Stripe won't process card payments below £0.30 — fail with a clear message
+  // up front rather than letting the gateway throw a generic error.
+  if (order.total > 0 && order.total < 0.3) {
+    return NextResponse.json(
+      { error: 'The minimum card payment is £0.30. Please add a little more to your basket to check out.' },
+      { status: 400 },
+    )
+  }
+
   const provider = paymentProvider()
 
   let result: { url: string; ref: string }

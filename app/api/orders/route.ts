@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { sendOrderConfirmation, sendAdminOrderNotification } from '@/lib/email'
 import { getCustomerFromRequest } from '@/lib/customer-auth'
 import { priceOrderLines, applyDiscountCode, resolveShippingCost, buildOrderItemCreates, PricingError } from '@/lib/orders'
 import { enforceRateLimit } from '@/lib/rate-limit'
-import { notifyAdmins } from '@/lib/notifications'
 
 /**
  * POST /api/orders — guest or logged-in checkout.
@@ -150,52 +148,11 @@ export async function POST(req: NextRequest) {
 
     // (Discount use was already claimed atomically above, before pricing.)
 
-    // ─── Emails (fire-and-forget) ─────────────────────────────────────────
-    // Pull the first image per product so the confirmation/admin emails can
-    // show a thumbnail of what was bought.
-    const imageByProduct = new Map<string, string>()
-    {
-      const ids = Array.from(new Set(order.items.map(i => i.productId).filter(Boolean)))
-      if (ids.length) {
-        const prods = await db.product.findMany({ where: { id: { in: ids } }, select: { id: true, images: true } })
-        for (const p of prods) {
-          const first = Array.isArray(p.images) ? p.images.find((u): u is string => typeof u === 'string' && !!u) : undefined
-          if (first) imageByProduct.set(p.id, first)
-        }
-      }
-    }
-    const emailData = {
-      orderId: order.id,
-      customerName: order.name,
-      customerEmail: order.email,
-      items: order.items.map(i => ({
-        productName: i.productName,
-        quantity: i.quantity,
-        price: i.price,
-        productImage: imageByProduct.get(i.productId),
-      })),
-      subtotal,
-      shippingCost: safeShipping,
-      discount: discountSavings,
-      total: finalTotal,
-      shippingMethod,
-      shippingAddress: [shippingLine1, shippingCity, shippingPostcode]
-        .filter(Boolean)
-        .join(', '),
-    }
-    Promise.allSettled([
-      sendOrderConfirmation(emailData),
-      sendAdminOrderNotification(emailData),
-    ]).catch(() => {})
-
-    // In-app bell: a new order has come in (payment may still be pending). The
-    // 'sale' notification fires separately from the Stripe webhook once paid.
-    notifyAdmins({
-      type: 'order',
-      title: `New order — £${finalTotal.toFixed(2)}`,
-      body: `Order #${order.id.slice(-8).toUpperCase()} · ${order.name}`,
-      href: '/admin/orders',
-    }).catch(() => {})
+    // NB: no emails or admin notifications here. The order is still 'pending'
+    // (unpaid) at this point — sending an "Order confirmed" email now would
+    // fire even for abandoned/failed payments. The customer confirmation +
+    // admin sale alerts are sent from the Stripe webhook once the order is
+    // actually PAID.
 
     return NextResponse.json({ orderId: order.id, total: finalTotal, success: true }, { status: 201 })
   } catch (error) {

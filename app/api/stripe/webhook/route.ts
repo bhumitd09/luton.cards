@@ -2,7 +2,7 @@ import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { redeemDiscountByCode, decrementStockForOrderOnce } from '@/lib/orders'
-import { sendAdminSaleNotification } from '@/lib/email'
+import { sendAdminSaleNotification, sendOrderConfirmation } from '@/lib/email'
 import { notifyAdmins } from '@/lib/notifications'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-08-16' })
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
         if (first) imageByProduct.set(p.id, first)
       }
     }
-    await sendAdminSaleNotification({
+    const emailData = {
       orderId: order.id,
       customerName: order.name,
       customerEmail: order.email,
@@ -153,7 +153,13 @@ export async function POST(req: NextRequest) {
       total: order.total,
       shippingMethod: order.shippingMethod ?? undefined,
       shippingAddress: [order.shippingLine1, order.shippingCity, order.shippingPostcode].filter(Boolean).join(', '),
-    })
+    }
+    // Customer "Order confirmed" + admin "Sale" emails — both fire here, on
+    // PAYMENT, so an abandoned/failed checkout never sends a confirmation.
+    await Promise.allSettled([
+      sendOrderConfirmation(emailData),
+      sendAdminSaleNotification(emailData),
+    ])
   } catch (err) {
     console.error('Stripe webhook: sale notification failed', { orderId, err })
   }
