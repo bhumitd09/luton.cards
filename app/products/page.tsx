@@ -289,7 +289,7 @@ function ProductsContent() {
         .lc-sort {
           appearance: none; -webkit-appearance: none; width: 100%; box-sizing: border-box;
           padding: 0.55rem 2rem 0.55rem 0.85rem;
-          background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat right 0.6rem center / 14px;
+          background: #fafafa url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 20 20%27 fill=%27%236b7280%27%3E%3Cpath fill-rule=%27evenodd%27 d=%27M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z%27 clip-rule=%27evenodd%27/%3E%3C/svg%3E") no-repeat right 0.6rem center / 14px;
           border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.85rem;
           color: #374151; font-weight: 600; cursor: pointer; outline: none; font-family: inherit;
         }

@@ -84,7 +84,7 @@ export function Header() {
     >
       <style>{`
         /* Phone + tablet: shrink the header so the hamburger drawer is the
-           star. Desktop nav doesn't render here so we don't reserve space
+           star. Desktop nav does not render here so we do not reserve space
            for it. */
         @media (max-width: 1023px) {
           .header-content { height: auto !important; padding: 0.65rem 1rem !important; }
