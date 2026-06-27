@@ -397,13 +397,18 @@ export default function AdminCardDatabasePage() {
         return
       }
       const lookup = data as CardLookupResult
-      // The detail lookup occasionally omits the collector number; fall back to
-      // the number we already had from the search/browse row so it's never lost.
-      const card = { ...lookup.card, number: lookup.card.number ?? ref.number ?? null }
+      // Work out the real collector number. The detail lookup has no number
+      // field, so we derive it from the row we clicked: for clean entries the
+      // card_id is "<set>-<number>" (e.g. "pl3-106"). Scraped TCGs
+      // (pokemon-intl/jp) instead use a bare internal id as both the card_id
+      // AND the "number" (e.g. "4874") — that is NOT a collector number, so we
+      // leave it blank rather than auto-fill garbage.
+      const collectorNo = collectorNumber(ref.cardId, ref.number)
+      const card = { ...lookup.card, number: collectorNo }
       setResult({ ...lookup, card })
       setName(buildDefaultName(card))
       setDescription(buildDefaultDescription(card))
-      setCardNumber(card.number ?? '')
+      setCardNumber(collectorNo ?? '')
       setPrice('')
       setComparePrice('')
       setCategory('single')
@@ -1115,6 +1120,24 @@ export default function AdminCardDatabasePage() {
 }
 
 // ─── Defaults + formatting helpers ──────────────────────────────────────────
+
+/**
+ * Real collector number for a card row. Clean entries carry it as the card_id
+ * suffix ("pl3-106" → "106") and in the `number` field. Scraped catalogues
+ * (pokemon-intl / pokemon-jp) instead use a bare internal id as BOTH the
+ * card_id and the number (e.g. "4874") — that is not a collector number, so we
+ * return null and let the admin type the real one.
+ */
+function collectorNumber(cardId: string, number?: string | null): string | null {
+  const id = String(cardId ?? '')
+  // Bare all-digit ids are internal scrape ids, never printed collector numbers.
+  if (/^\d+$/.test(id)) return null
+  const num = (number ?? '').toString().trim()
+  if (num) return num
+  // Fallback: the suffix after the set code ("pl3-106" → "106", "sma-SV38" → "SV38").
+  const dash = id.lastIndexOf('-')
+  return dash > 0 ? id.slice(dash + 1) || null : null
+}
 
 function buildDefaultName(card: CardDetail): string {
   const set = card.set_name || card.set_code

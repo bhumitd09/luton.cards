@@ -92,6 +92,17 @@ export async function POST(req: NextRequest) {
 
     const slug = `${slugify(name)}-${slugify(tcg)}-${slugify(cardId)}`.slice(0, 120)
 
+    // Real collector number. Prefer what the admin confirmed in the form; else
+    // derive it from the card_id ("pl3-106" → "106", "sma-SV38" → "SV38").
+    // Scraped catalogues (pokemon-intl / pokemon-jp) use a bare all-digit
+    // internal id as the card_id (e.g. "4874") which is NOT a collector number,
+    // so leave it null rather than storing garbage.
+    const formCardNumber = typeof body.cardNumber === 'string' ? body.cardNumber.trim() : ''
+    const derivedCardNumber = /^\d+$/.test(cardId)
+      ? ''
+      : (cardId.includes('-') ? cardId.slice(cardId.lastIndexOf('-') + 1) : (card.number ? String(card.number).trim() : ''))
+    const resolvedCardNumber = formCardNumber || derivedCardNumber || null
+
     // Tags: the set name (e.g. "Roaring Skies") + the game (e.g. "pokemon").
     // De-duped, blanks dropped. No internal "ctcg" tag.
     const tags = Array.from(new Set(
@@ -108,13 +119,9 @@ export async function POST(req: NextRequest) {
         stock,
         category,
         game,
-        // Collector number (e.g. "6/12", "100") so the listing carries it and
-        // storefront search can match on it. Prefer what the admin confirmed in
-        // the form; fall back to the authoritative number from the card record.
-        cardNumber:
-          (typeof body.cardNumber === 'string' && body.cardNumber.trim())
-            ? body.cardNumber.trim()
-            : (card.number ? String(card.number).trim() : null),
+        // Collector number (e.g. "106", "SV38") so the listing carries it and
+        // storefront search can match on it.
+        cardNumber: resolvedCardNumber,
         // Raw singles from the catalogue: default to Near Mint, admin can change.
         condition: isValidCondition(body.condition) ? body.condition : 'near-mint',
         images: stored,
