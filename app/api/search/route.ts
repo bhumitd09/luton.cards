@@ -64,6 +64,8 @@ export async function GET(request: Request) {
           { name: { contains: q, mode: 'insensitive' } },
           { description: { contains: q, mode: 'insensitive' } },
           { grade: { contains: q, mode: 'insensitive' } },
+          // Let buyers find a card by its collector number (e.g. "6/12", "100").
+          { cardNumber: { contains: q, mode: 'insensitive' } },
           { tags: { has: q.toLowerCase() } },
         ],
       },

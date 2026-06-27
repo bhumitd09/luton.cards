@@ -26,6 +26,11 @@ model Product {
   // Shown on the storefront card instead of the stock badge. Graded slabs use
   // grade/grader instead; products with per-condition variants use those.
   condition    String?
+  // Collector card number within its set, e.g. "6/12", "001", "100". Comes
+  // from the card database on import; can be set manually on any listing.
+  // Surfaced on the product page and matched by storefront search so buyers
+  // can find a card by its number.
+  cardNumber   String?
   featured     Boolean  @default(false)
   active       Boolean  @default(true)
   tags         String[]

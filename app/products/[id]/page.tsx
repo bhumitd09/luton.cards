@@ -587,6 +587,17 @@ export default function ProductDetailPage() {
                       {conditionLabel(product.condition)}
                     </span>
                   )}
+                  {/* Collector card number — handy for buyers who search/know
+                      a card by its number. */}
+                  {product.cardNumber && (
+                    <span style={{
+                      background: '#f3f4f6', color: '#374151',
+                      padding: '0.3rem 0.85rem', borderRadius: '9999px',
+                      fontSize: '0.8125rem', fontWeight: 700,
+                    }}>
+                      No. {product.cardNumber}
+                    </span>
+                  )}
                 </div>
 
                 {/* Product name */}

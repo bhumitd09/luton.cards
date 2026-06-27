@@ -239,8 +239,13 @@ function ProductsContent() {
   }, [])
 
   // Shared predicates so the sidebar counts and the grid stay in lockstep.
-  const matchesSearch = (p: Product) =>
-    !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase())
+  const matchesSearch = (p: Product) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return p.name.toLowerCase().includes(q)
+      || (p.description || '').toLowerCase().includes(q)
+      || (p.cardNumber || '').toLowerCase().includes(q)
+  }
   const inGame = (p: Product) => game === 'all' || (p.game || 'pokemon') === game
   const inCategory = (p: Product) => category === 'all' || p.category === category
 

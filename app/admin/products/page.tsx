@@ -31,6 +31,8 @@ interface Product {
   /** Raw-single card condition slug (Near Mint, Lightly Played, …). Null for
    *  graded cards / products where condition isn't relevant. */
   condition?: string | null
+  /** Collector card number within its set, e.g. "6/12", "100". */
+  cardNumber?: string | null
   featured: boolean
   active: boolean
   tags: string[]
@@ -76,6 +78,7 @@ const EMPTY_FORM = {
   grade: '',
   grader: 'PSA',
   condition: '',
+  cardNumber: '',
   description: '',
   tags: '',
   featured: false,
@@ -286,6 +289,7 @@ function ProductModal({
         grade: product.grade ?? '',
         grader: product.grader ?? 'PSA',
         condition: product.condition ?? '',
+        cardNumber: product.cardNumber ?? '',
         description: product.description ?? '',
         tags: product.tags.join(', '),
         featured: product.featured,
@@ -362,6 +366,9 @@ function ProductModal({
         // Condition only applies to raw singles — never store it on graded /
         // sealed / booster products (the grade or the sealed state says it).
         condition: form.category === 'single' ? (form.condition || null) : null,
+        // Collector card number (e.g. "6/12", "100") — searchable on the
+        // storefront. Optional, applies to any listing.
+        cardNumber: form.cardNumber.trim() || null,
         description: form.description || null,
         tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         featured: form.featured,
@@ -590,6 +597,20 @@ function ProductModal({
               </select>
             </div>
           )}
+
+          {/* Card number — collector number within the set. Optional, searchable. */}
+          <div>
+            <label style={labelStyle}>Card number</label>
+            <input
+              style={inputStyle}
+              value={form.cardNumber}
+              onChange={e => update('cardNumber', e.target.value)}
+              placeholder="e.g. 6/12 or 100"
+            />
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.72rem', color: '#6b7280' }}>
+              Lets buyers find this card by its number in search. Auto-filled when listing from the card database.
+            </p>
+          </div>
 
           {/* Description */}
           <div style={{ gridColumn: '1/-1' }}>
