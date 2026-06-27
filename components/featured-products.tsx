@@ -175,7 +175,16 @@ export function FeaturedProducts() {
     fetch('/api/products?featured=true')
       .then(r => r.json())
       .then(data => {
-        setProducts(Array.isArray(data) ? data : [])
+        const all = (Array.isArray(data) ? data : []).filter((p: Product) => p.featured)
+        // Shuffle so that when more than 6 cards are featured, a different
+        // mix surfaces on every visit/refresh instead of always the first 6.
+        // Safe to randomise here — this runs client-side after the loading
+        // skeleton, so there's no SSR/hydration mismatch.
+        for (let i = all.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1))
+          ;[all[i], all[j]] = [all[j], all[i]]
+        }
+        setProducts(all)
         setLoading(false)
       })
       .catch(() => setLoading(false))
