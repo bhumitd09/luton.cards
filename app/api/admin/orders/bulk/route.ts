@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { isSuperadmin } from '@/lib/vendor-auth'
 import { sendStatusTransitionEmail } from '@/lib/email'
+import { restockForOrderOnce } from '@/lib/orders'
 
 const VALID_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
 
@@ -10,6 +11,11 @@ const VALID_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
  * POST /api/admin/orders/bulk  — apply a status change to many orders at once.
  *
  * Body: { ids: string[], status: 'paid'|'shipped'|'delivered'|'cancelled' }
+ *   — OR —
+ * Body: { ids: string[], delete: true }  — permanently remove the orders
+ *   (used to clean up test orders). Any stock those orders had decremented
+ *   is restocked first so inventory stays correct, then the orders + their
+ *   line items are deleted (OrderItem cascades on Order delete).
  *
  * Superadmin only (same gate as the single-order mutations). For each order
  * whose status actually changes, the matching customer email is auto-sent via
@@ -32,6 +38,20 @@ export async function POST(req: NextRequest) {
     if (ids.length === 0) {
       return NextResponse.json({ error: 'No orders selected' }, { status: 400 })
     }
+
+    // --- Delete branch (clean up test orders) ----------------------------
+    if (body?.delete === true) {
+      // Restock anything these orders had taken out of inventory, so deleting
+      // a test sale doesn't permanently lose stock. Idempotent + best-effort.
+      for (const id of ids) {
+        await restockForOrderOnce(id).catch(err =>
+          console.error('Restock before delete failed:', id, err),
+        )
+      }
+      const result = await db.order.deleteMany({ where: { id: { in: ids } } })
+      return NextResponse.json({ deleted: result.count })
+    }
+
     if (!VALID_STATUSES.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }

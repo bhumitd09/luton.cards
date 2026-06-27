@@ -1813,6 +1813,43 @@ export default function OrdersPage() {
     }
   }
 
+  // ── Bulk delete (clean up test orders — permanent, no emails) ───────────
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    const ok = await confirm({
+      title: `Delete ${ids.length} order${ids.length > 1 ? 's' : ''}?`,
+      message: 'These orders will be permanently removed and will disappear from analytics. Any stock they used is returned to inventory. No customer is emailed. This cannot be undone — only use it for test orders.',
+      danger: true,
+      confirmLabel: 'Delete permanently',
+    })
+    if (!ok) return
+
+    setBulkBusy(true)
+    try {
+      const res = await fetch('/api/admin/orders/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, delete: true }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(data?.error || 'Delete failed')
+        return
+      }
+      const n = data.deleted ?? 0
+      toast.success(`${n} order${n === 1 ? '' : 's'} deleted`)
+      clearSelection()
+      await fetchOrders(statusFilter, pagination.page, search)
+      fetchStatusCounts()
+    } catch {
+      toast.error('Network error. Try again.')
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   // ── One-click fulfil (ship + tracking + auto-email) ──────────────────────
   const handleFulfil = async (orderId: string, trackingNumber: string, trackingCarrier: string) => {
     await handleOrderUpdate(orderId, {
@@ -2596,6 +2633,20 @@ export default function OrdersPage() {
               }}
             >
               Cancel
+            </button>
+            <button
+              disabled={bulkBusy}
+              onClick={handleBulkDelete}
+              title="Permanently delete the selected orders (for test orders)"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                padding: '0.45rem 0.85rem', borderRadius: 10,
+                background: '#ef4444', border: '1px solid #ef4444',
+                color: '#fff', fontSize: '0.8rem', fontWeight: 700,
+                cursor: bulkBusy ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              <Trash2 size={14} /> Delete
             </button>
             <span style={{ width: 1, height: 22, background: '#2a2a2e' }} />
             <button

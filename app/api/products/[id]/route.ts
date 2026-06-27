@@ -10,6 +10,10 @@ import { db } from '@/lib/db'
  * the security audit and have been removed entirely.
  *
  * Includes active variants so the PDP can render the condition selector.
+ *
+ * The `[id]` segment accepts EITHER the raw cuid OR the human-friendly slug
+ * (e.g. /products/charizard-ex-151) — we resolve whichever matches so pretty
+ * URLs and any legacy id links both work.
  */
 
 export async function GET(
@@ -17,8 +21,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const product = await db.product.findUnique({
-      where: { id: params.id },
+    const product = await db.product.findFirst({
+      where: { OR: [{ id: params.id }, { slug: params.id }] },
       include: {
         variants: {
           where: { active: true },

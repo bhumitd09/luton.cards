@@ -46,7 +46,7 @@ function ProductCard({ product, index, featured }: { product: Product; index: nu
     >
       <Link
         ref={cardRef}
-        href={`/products/${product.id}`}
+        href={`/products/${product.slug ?? product.id}`}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}

@@ -75,7 +75,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       }}
     >
       {/* Badges */}
-      <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Link href={`/products/${product.slug ?? product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
         <div style={{ position: 'relative' }}>
           <div
             style={{
@@ -154,7 +154,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           ) : null}
         </div>
 
-        <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={`/products/${product.slug ?? product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
           <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111', marginBottom: '0.35rem', lineHeight: 1.3 }}>
             {product.name}
           </h3>

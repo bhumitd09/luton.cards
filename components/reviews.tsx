@@ -38,7 +38,12 @@ export function ProductReviews({ productId }: { productId: string }) {
   useEffect(load, [productId])
 
   return (
-    <section style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #eee' }}>
+    <section style={{
+      marginTop: '3rem', marginBottom: '3rem',
+      background: '#fff', border: '1px solid #ececec', borderRadius: 18,
+      padding: '1.75rem 1.75rem 2rem',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+    }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',

@@ -6,6 +6,7 @@ export type Game = 'pokemon' | 'one-piece'
 // Legacy JSON-based product type (used as fallback if DB unavailable)
 export interface Product {
   id: string
+  slug?: string
   name: string
   category: string
   game?: Game

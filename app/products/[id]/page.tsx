@@ -59,7 +59,7 @@ function RelatedProductCard({ product, index }: { product: Product; index: numbe
         flexDirection: 'column',
       }}
     >
-      <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Link href={`/products/${product.slug ?? product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
         <div style={{
           width: '100%', aspectRatio: '4/3',
           background: '#f5f5f5', overflow: 'hidden',
@@ -99,7 +99,7 @@ function RelatedProductCard({ product, index }: { product: Product; index: numbe
       </Link>
 
       <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={`/products/${product.slug ?? product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
           <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#111', marginBottom: '0.35rem', lineHeight: 1.3 }}>
             {product.name}
           </h3>
