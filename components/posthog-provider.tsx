@@ -39,6 +39,18 @@ function initPostHog() {
     capture_pageleave: true,
     person_profiles: 'identified_only',
     autocapture: true,
+    // PostHog lazy-loads several add-on bundles from `${api_host}/static/*`
+    // (session replay, surveys, web-vitals, dead-clicks). Those proxied asset
+    // fetches are blocked by PostHog's own CDN/WAF (the server-side request is
+    // 403'd while a direct one passes), so they never loaded — they only
+    // spammed the console with 403s. Our dashboard runs on pageviews + custom
+    // events (which use a different, working path), so disable the extras.
+    // To bring session replay back, the /ingest/static/* proxy needs to stop
+    // being blocked upstream (PostHog support / a different asset host).
+    disable_session_recording: true,
+    disable_surveys: true,
+    capture_performance: false,
+    capture_dead_clicks: false,
     // Exclude the back office entirely — drop anything fired from /admin.
     before_send: (event) => (isAdminPath() ? null : event),
   })
