@@ -355,6 +355,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
         if (data?.user) {
+          // First-login onboarding gate: a freshly-created member must finish
+          // /admin/onboarding before anything else in the back office.
+          if (data.user.mustOnboard && pathname !== '/admin/onboarding') {
+            router.replace('/admin/onboarding')
+            return
+          }
           setAuthenticated(true)
           setAdmin({
             name: data.user.name ?? null,
@@ -400,6 +406,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   if (pathname === '/admin/login') return <>{children}</>
+  // The onboarding wizard renders full-screen (no sidebar/topbar) and does its
+  // own session check + completion redirect.
+  if (pathname === '/admin/onboarding') return <>{children}</>
   if (authenticated !== true) {
     // Lightweight loading state instead of a blank flash.
     return (

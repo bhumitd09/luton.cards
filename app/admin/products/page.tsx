@@ -82,6 +82,10 @@ const EMPTY_FORM = {
   active: true,
   images: [] as string[],
   variants: [] as VariantRow[],
+  // Card owner — superadmin can assign a product to a team member (e.g. a
+  // friend's consignment) so their sales show on the Payouts page. Empty
+  // string means "assign to me" (the logged-in admin).
+  vendorId: '',
 }
 
 type FormData = typeof EMPTY_FORM
@@ -287,6 +291,7 @@ function ProductModal({
         featured: product.featured,
         active: product.active,
         images: product.images,
+        vendorId: product.vendorId ?? '',
         // Variants come back from the API with numeric prices + condition/foil
         // slugs; the editor stores them as strings so inputs are uncontrolled-friendly.
         variants: (product.variants ?? []).map(v => ({
@@ -304,6 +309,17 @@ function ProductModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const toast = useToast()
+
+  // Team members for the "Card owner" select. The endpoint is superadmin-only
+  // (returns 403 for vendors), so a non-empty list also tells us the current
+  // user is allowed to reassign ownership — we hide the select otherwise.
+  const [members, setMembers] = useState<{ id: string; name: string | null; email: string; role: string }[]>([])
+  useEffect(() => {
+    fetch('/api/admin/members')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.members) setMembers(d.members) })
+      .catch(() => {})
+  }, [])
 
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setForm(f => ({ ...f, [k]: v }))
@@ -351,6 +367,9 @@ function ProductModal({
         featured: form.featured,
         active: form.active,
         images: form.images,
+        // Card owner. Empty string = assign to the logged-in admin. Only
+        // honoured by the API for superadmin; ignored for vendors.
+        vendorId: form.vendorId || undefined,
         // Always send the array (possibly empty) so existing variants can be
         // cleared by emptying the editor. The PUT route treats missing field
         // as "leave alone" — that branch is only used by other patch paths.
@@ -596,6 +615,29 @@ function ProductModal({
               />
             </div>
           </div>
+
+          {/* Card owner — superadmin only. Assigns the product to a team
+              member so their sales appear on the Payouts page. */}
+          {members.length > 0 && (
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Card owner</label>
+              <select
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                value={form.vendorId}
+                onChange={e => update('vendorId', e.target.value)}
+              >
+                <option value="">Me (default)</option>
+                {members.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {(m.name || m.email.split('@')[0])}{m.role === 'superadmin' ? ' (admin)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p style={{ margin: '0.4rem 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+                Who owns this card. Their sales show on the Payouts page. Once assigned to someone else, only they can edit it.
+              </p>
+            </div>
+          )}
 
           {/* Images */}
           <div style={{ gridColumn: '1/-1' }}>

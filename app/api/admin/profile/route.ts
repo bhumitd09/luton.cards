@@ -19,6 +19,9 @@ export async function GET(req: NextRequest) {
         name: true,
         email: true,
         role: true,
+        payoutNotes: true,
+        totpEnabled: true,
+        mustOnboard: true,
         createdAt: true,
         lastLogin: true,
       },
@@ -48,10 +51,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, currentPassword, newPassword } = body as {
+    const { name, currentPassword, newPassword, payoutNotes } = body as {
       name?: string
       currentPassword?: string
       newPassword?: string
+      payoutNotes?: string
     }
 
     const adminUser = await db.adminUser.findUnique({
@@ -64,6 +68,10 @@ export async function PATCH(req: NextRequest) {
 
     let newName: string | undefined
     let newPasswordHash: string | undefined
+    // Members manage their own payout details (used during onboarding + from
+    // the settings page). Empty string clears it back to null.
+    const newPayoutNotes: string | null | undefined =
+      payoutNotes !== undefined ? (payoutNotes.trim() || null) : undefined
 
     if (name !== undefined && name.trim()) {
       newName = name.trim()
@@ -80,7 +88,7 @@ export async function PATCH(req: NextRequest) {
       newPasswordHash = await bcrypt.hash(newPassword, 12)
     }
 
-    if (!newName && !newPasswordHash) {
+    if (!newName && !newPasswordHash && newPayoutNotes === undefined) {
       return NextResponse.json({ error: 'No updates provided' }, { status: 400 })
     }
 
@@ -88,6 +96,7 @@ export async function PATCH(req: NextRequest) {
       where: { id: admin.userId },
       data: {
         ...(newName !== undefined ? { name: newName } : {}),
+        ...(newPayoutNotes !== undefined ? { payoutNotes: newPayoutNotes } : {}),
         ...(newPasswordHash !== undefined ? {
           passwordHash: newPasswordHash,
           // Bump tokenVersion to invalidate every existing session.
@@ -99,6 +108,7 @@ export async function PATCH(req: NextRequest) {
         name: true,
         email: true,
         role: true,
+        payoutNotes: true,
         createdAt: true,
         lastLogin: true,
       },

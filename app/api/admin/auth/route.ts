@@ -158,7 +158,7 @@ export async function GET(req: NextRequest) {
 
     const adminUser = await db.adminUser.findUnique({
       where: { id: admin.userId },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, name: true, role: true, mustOnboard: true },
     })
 
     if (!adminUser) {

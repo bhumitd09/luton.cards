@@ -116,6 +116,12 @@ model AdminUser {
   // can't log in or create new stock.
   active         Boolean   @default(true)
 
+  // First-login onboarding gate. Set true when a superadmin creates the
+  // account; the member is forced through /admin/onboarding (change password
+  // → set up 2FA → enter payout details) before they can use the back office.
+  // Cleared the moment they finish (on password change).
+  mustOnboard    Boolean   @default(false)
+
   // ─── Two-factor authentication (TOTP) ─────────────────────────────────
   // Encrypted secret (AES-GCM, key derived from ADMIN_JWT_SECRET). Null
   // until the user starts enrolment.

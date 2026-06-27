@@ -54,6 +54,9 @@ export async function PUT(req: NextRequest) {
       data: {
         passwordHash: newHash,
         tokenVersion: { increment: 1 },
+        // Changing the temp password is the final onboarding step — clear the
+        // gate so the next login goes straight to the dashboard.
+        mustOnboard: false,
       },
     })
     clearAdminSessionsForUser(admin.userId) // immediate revocation

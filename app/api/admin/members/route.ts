@@ -91,6 +91,9 @@ export async function POST(req: NextRequest) {
         payoutNotes: payoutNotes?.trim() || null,
         avatarUrl: avatarUrl?.trim() || null,
         active: active !== undefined ? !!active : true,
+        // Force the new member through first-login onboarding (change the
+        // temp password, enrol 2FA, enter payout details).
+        mustOnboard: true,
       },
       select: {
         id: true,
