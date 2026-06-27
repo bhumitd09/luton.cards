@@ -108,9 +108,13 @@ export async function POST(req: NextRequest) {
         stock,
         category,
         game,
-        // Collector number from the card database (e.g. "6/12", "100") so the
-        // listing carries it and storefront search can match on it.
-        cardNumber: card.number ? String(card.number).trim() : null,
+        // Collector number (e.g. "6/12", "100") so the listing carries it and
+        // storefront search can match on it. Prefer what the admin confirmed in
+        // the form; fall back to the authoritative number from the card record.
+        cardNumber:
+          (typeof body.cardNumber === 'string' && body.cardNumber.trim())
+            ? body.cardNumber.trim()
+            : (card.number ? String(card.number).trim() : null),
         // Raw singles from the catalogue: default to Near Mint, admin can change.
         condition: isValidCondition(body.condition) ? body.condition : 'near-mint',
         images: stored,

@@ -53,6 +53,10 @@ interface SearchCard {
 interface CardRef {
   tcg: string
   cardId: string
+  // The collector number is present on the search/browse list rows but the
+  // per-card detail lookup sometimes omits it — carry it through as a fallback
+  // so the listing form always has the number.
+  number?: string | null
 }
 
 interface CardImage {
@@ -238,6 +242,7 @@ export default function AdminCardDatabasePage() {
   const [category, setCategory] = useState('single')
   const [game, setGame] = useState<SuggestedGame>('pokemon')
   const [condition, setCondition] = useState('near-mint')
+  const [cardNumber, setCardNumber] = useState('')
   const [stock, setStock] = useState('1')
   const [featured, setFeatured] = useState(false)
   const [active, setActive] = useState(true)
@@ -392,10 +397,13 @@ export default function AdminCardDatabasePage() {
         return
       }
       const lookup = data as CardLookupResult
-      const card = lookup.card
-      setResult(lookup)
+      // The detail lookup occasionally omits the collector number; fall back to
+      // the number we already had from the search/browse row so it's never lost.
+      const card = { ...lookup.card, number: lookup.card.number ?? ref.number ?? null }
+      setResult({ ...lookup, card })
       setName(buildDefaultName(card))
       setDescription(buildDefaultDescription(card))
+      setCardNumber(card.number ?? '')
       setPrice('')
       setComparePrice('')
       setCategory('single')
@@ -420,6 +428,7 @@ export default function AdminCardDatabasePage() {
     setCategory('single')
     setGame('pokemon')
     setCondition('near-mint')
+    setCardNumber('')
     setStock('1')
     setFeatured(false)
     setActive(true)
@@ -448,6 +457,7 @@ export default function AdminCardDatabasePage() {
           category: category.trim() || undefined,
           game,
           condition: condition || undefined,
+          cardNumber: cardNumber.trim() || undefined,
           name: name.trim() || undefined,
           description: description.trim() || undefined,
           stock:
@@ -634,6 +644,23 @@ export default function AdminCardDatabasePage() {
                   placeholder="Listing name"
                   style={inputStyle}
                 />
+              </div>
+
+              <div style={{ marginBottom: '1.1rem' }}>
+                <label style={labelStyle} htmlFor="cd-card-number">
+                  Card number
+                </label>
+                <input
+                  id="cd-card-number"
+                  type="text"
+                  value={cardNumber}
+                  onChange={e => setCardNumber(e.target.value)}
+                  placeholder="e.g. 6/12 or 100"
+                  style={inputStyle}
+                />
+                <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: '#9ca3af' }}>
+                  Auto-filled from the card database — buyers can search the store by this number.
+                </p>
               </div>
 
               <div style={{ marginBottom: '1.1rem' }}>
@@ -876,7 +903,7 @@ export default function AdminCardDatabasePage() {
                           name={c.name}
                           subtitle={[c.set_code, c.rarity].filter(Boolean).join(' · ')}
                           disabled={loadingCard}
-                          onClick={() => void openCard({ tcg: c.tcg, cardId: c.card_id })}
+                          onClick={() => void openCard({ tcg: c.tcg, cardId: c.card_id, number: c.number })}
                         />
                       ))}
                     </div>
@@ -991,7 +1018,7 @@ export default function AdminCardDatabasePage() {
                               .filter(Boolean)
                               .join(' · ')}
                             disabled={loadingCard}
-                            onClick={() => void openCard({ tcg: browseTcg, cardId: c.card_id })}
+                            onClick={() => void openCard({ tcg: browseTcg, cardId: c.card_id, number: c.number })}
                           />
                         ))}
                       </div>
