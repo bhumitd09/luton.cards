@@ -36,7 +36,7 @@ const securityHeaders = [
       `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://js.stripe.com https://www.googletagmanager.com https://challenges.cloudflare.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://api.stripe.com https://www.google-analytics.com",
+      "connect-src 'self' https://api.stripe.com https://*.google-analytics.com https://*.googletagmanager.com",
       // PostHog session replay runs in a blob web worker (events are proxied
       // same-origin via /ingest, so connect-src 'self' already covers them).
       "worker-src 'self' blob:",

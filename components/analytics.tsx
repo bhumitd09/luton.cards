@@ -14,7 +14,9 @@ import { getConsent, onConsentChange, type Consent } from '@/lib/consent'
  * afterInteractive so it never blocks first paint or LCP.
  */
 export function Analytics() {
-  const id = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  // GA4 measurement id. Public by design (it ships in the page), so a hardcoded
+  // fallback is fine — an env var override still wins if set.
+  const id = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-836L4Y229W'
   const pathname = usePathname()
   const [consent, setConsentState] = useState<Consent>(null)
 
