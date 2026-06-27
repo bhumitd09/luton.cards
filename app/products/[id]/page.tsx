@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCart, ArrowLeft, Tag, Package } from 'lucide-react'
+import { ShoppingCart, ArrowLeft, Tag, Package, ZoomIn, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatGrade, formatPrice } from '@/lib/utils'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -270,6 +270,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  const [zoomOpen, setZoomOpen] = useState(false)
   const [added, setAdded] = useState(false)
   // null when product has no variants. Otherwise the currently-selected
   // ProductVariant.id (defaults to the first active variant with stock).
@@ -364,6 +365,28 @@ export default function ProductDetailPage() {
         ? { label: `Low Stock (${effectiveStock} left)`, color: '#f59e0b', bg: '#fffbeb' }
         : { label: `In Stock (${effectiveStock} available)`, color: '#10b981', bg: '#ecfdf5' }
     : null
+
+  const showPrev = () => setActiveImage(i => (i - 1 + images.length) % images.length)
+  const showNext = () => setActiveImage(i => (i + 1) % images.length)
+
+  // Keyboard control for the zoom viewer: Esc closes, arrows page through
+  // images. Also lock body scroll while it's open.
+  useEffect(() => {
+    if (!zoomOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoomOpen(false)
+      else if (e.key === 'ArrowLeft' && images.length > 1) showPrev()
+      else if (e.key === 'ArrowRight' && images.length > 1) showNext()
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomOpen, images.length])
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column' }}>
@@ -471,6 +494,7 @@ export default function ProductDetailPage() {
                           key={activeImage}
                           src={images[activeImage]}
                           alt={product.name}
+                          onClick={() => setZoomOpen(true)}
                           initial={{ opacity: 0, scale: 0.97 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 1.02 }}
@@ -479,6 +503,7 @@ export default function ProductDetailPage() {
                             width: '100%', height: '100%',
                             aspectRatio: '4/3',
                             objectFit: 'contain', padding: '1.5rem',
+                            cursor: 'zoom-in',
                           }}
                         />
                       ) : (
@@ -512,6 +537,25 @@ export default function ProductDetailPage() {
                         </motion.div>
                       )}
                     </AnimatePresence>
+
+                    {/* Zoom hint — click the image to open the full-size viewer */}
+                    {images.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setZoomOpen(true)}
+                        aria-label="Zoom in"
+                        style={{
+                          position: 'absolute', bottom: '0.85rem', right: '0.85rem',
+                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                          background: 'rgba(17,17,17,0.72)', color: '#fff',
+                          border: 'none', borderRadius: '9999px',
+                          padding: '0.4rem 0.7rem', fontSize: '0.75rem', fontWeight: 700,
+                          cursor: 'zoom-in', backdropFilter: 'blur(4px)',
+                        }}
+                      >
+                        <ZoomIn size={14} /> Zoom
+                      </button>
+                    )}
                   </div>
 
                   {/* Thumbnails */}
@@ -811,7 +855,100 @@ export default function ProductDetailPage() {
         )}
       </main>
 
+      {/* ── Full-screen image viewer (click image / Zoom) ── */}
+      <AnimatePresence>
+        {zoomOpen && images.length > 0 && product && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setZoomOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(6px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '2.5rem 1rem',
+            }}
+          >
+            {/* Close */}
+            <button
+              type="button"
+              onClick={() => setZoomOpen(false)}
+              aria-label="Close"
+              style={{
+                position: 'absolute', top: '1rem', right: '1rem',
+                width: 44, height: 44, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              <X size={22} />
+            </button>
+
+            {/* Prev / Next when there are multiple angles */}
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); showPrev() }}
+                  aria-label="Previous image"
+                  style={navArrowStyle('left')}
+                >
+                  <ChevronLeft size={26} />
+                </button>
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); showNext() }}
+                  aria-label="Next image"
+                  style={navArrowStyle('right')}
+                >
+                  <ChevronRight size={26} />
+                </button>
+              </>
+            )}
+
+            {/* The image — clicking it does not close (so users can pan/inspect) */}
+            <motion.img
+              key={activeImage}
+              src={images[activeImage]}
+              alt={product.name}
+              onClick={e => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                maxWidth: '92vw', maxHeight: '85vh',
+                objectFit: 'contain', cursor: 'zoom-out',
+                borderRadius: 12, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)',
+              }}
+            />
+
+            {/* Counter */}
+            {images.length > 1 && (
+              <div style={{
+                position: 'absolute', bottom: '1.25rem', left: '50%', transform: 'translateX(-50%)',
+                color: 'rgba(255,255,255,0.85)', fontSize: '0.8rem', fontWeight: 700,
+                background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.8rem', borderRadius: '9999px',
+              }}>
+                {activeImage + 1} / {images.length}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Footer />
     </div>
   )
+}
+
+function navArrowStyle(side: 'left' | 'right'): CSSProperties {
+  return {
+    position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+    [side]: '1rem',
+    width: 48, height: 48, borderRadius: '50%',
+    background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+  }
 }
