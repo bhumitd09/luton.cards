@@ -92,10 +92,33 @@ const nextConfig = {
   // every crawler + SEO tool understands.
   async redirects() {
     return [
+      // Elementor "explore" landing pages → the game-filtered shop.
       { source: '/explore-pokemon', destination: '/products?game=pokemon', statusCode: 301 },
       { source: '/explore-pokemon/', destination: '/products?game=pokemon', statusCode: 301 },
       { source: '/explore-one-piece', destination: '/products?game=one-piece', statusCode: 301 },
       { source: '/explore-one-piece/', destination: '/products?game=one-piece', statusCode: 301 },
+      // Standard WordPress pages → their new equivalents (both slash forms;
+      // the old WP site used trailing slashes and skipTrailingSlashRedirect is on).
+      { source: '/about-us', destination: '/about', statusCode: 301 },
+      { source: '/about-us/', destination: '/about', statusCode: 301 },
+      { source: '/contact-us', destination: '/contact', statusCode: 301 },
+      { source: '/contact-us/', destination: '/contact', statusCode: 301 },
+      { source: '/privacy-policy', destination: '/privacy', statusCode: 301 },
+      { source: '/privacy-policy/', destination: '/privacy', statusCode: 301 },
+      { source: '/terms-and-conditions', destination: '/terms', statusCode: 301 },
+      { source: '/terms-and-conditions/', destination: '/terms', statusCode: 301 },
+      { source: '/cookie-policy', destination: '/cookies', statusCode: 301 },
+      { source: '/cookie-policy/', destination: '/cookies', statusCode: 301 },
+      { source: '/faqs', destination: '/faq', statusCode: 301 },
+      { source: '/faqs/', destination: '/faq', statusCode: 301 },
+      // WooCommerce structural URLs. Old product/category slugs don't map 1:1
+      // to the new catalogue, so send them to the shop rather than 404.
+      { source: '/shop', destination: '/products', statusCode: 301 },
+      { source: '/shop/', destination: '/products', statusCode: 301 },
+      { source: '/product/:rest(.*)', destination: '/products', statusCode: 301 },
+      { source: '/product-category/:rest(.*)', destination: '/products', statusCode: 301 },
+      { source: '/my-account/:rest(.*)', destination: '/login', statusCode: 301 },
+      { source: '/my-account', destination: '/login', statusCode: 301 },
       // Any other legacy /explore… landing page → the full catalogue.
       { source: '/explore:rest(.*)', destination: '/products', statusCode: 301 },
     ]
