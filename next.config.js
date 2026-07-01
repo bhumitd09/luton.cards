@@ -82,6 +82,24 @@ const nextConfig = {
       { source: '/ingest/:path*', destination: 'https://eu.i.posthog.com/:path*' },
     ]
   },
+  // ─── Legacy-URL redirects (SEO) ───────────────────────────────────────────
+  // The previous site's pages (e.g. /explore-pokemon/) are still in Google's
+  // index. Without these they 404 on the new site — so searching the brand
+  // surfaces dead links. 301 them to the closest live page so Google updates
+  // the index and visitors land somewhere useful. Specific game pages keep
+  // their filter; anything else under /explore falls back to the full shop.
+  // statusCode 301 (not permanent:true/308) — the classic permanent redirect
+  // every crawler + SEO tool understands.
+  async redirects() {
+    return [
+      { source: '/explore-pokemon', destination: '/products?game=pokemon', statusCode: 301 },
+      { source: '/explore-pokemon/', destination: '/products?game=pokemon', statusCode: 301 },
+      { source: '/explore-one-piece', destination: '/products?game=one-piece', statusCode: 301 },
+      { source: '/explore-one-piece/', destination: '/products?game=one-piece', statusCode: 301 },
+      // Any other legacy /explore… landing page → the full catalogue.
+      { source: '/explore:rest(.*)', destination: '/products', statusCode: 301 },
+    ]
+  },
   async headers() {
     return [
       {
